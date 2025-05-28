@@ -2,33 +2,37 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
-// Necesitarás DTOs de respuesta si quieres devolver algo diferente a la entidad o al DTO de entrada.
-// Por simplicidad, aquí a menudo devolveremos el mismo DTO de entrada/entidad o un DTO genérico.
-// import ElBuenSabor.ProyectoFinal.DTO.ArticuloResponseDTO; // DTO genérico para respuestas de listados
+import ElBuenSabor.ProyectoFinal.DTO.RegistrarCompraDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Articulo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Service.ArticuloService;
-
-// Importaciones para el mapeo a DTOs de respuesta
-import ElBuenSabor.ProyectoFinal.DTO.CategoriaDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
-import ElBuenSabor.ProyectoFinal.DTO.UnidadMedidaDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDetalleDTO;
-
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+
+// Imports para el helper convertToGenericArticuloDTO si se mantiene en el controller
+// Aunque idealmente el servicio ya devuelve los DTOs correctos para estos endpoints.
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturadoDetalle;
+import ElBuenSabor.ProyectoFinal.Entities.Categoria;
+import ElBuenSabor.ProyectoFinal.Entities.Imagen;
+import ElBuenSabor.ProyectoFinal.Entities.UnidadMedida;
+import ElBuenSabor.ProyectoFinal.DTO.ArticuloSimpleBaseDTO;
+import ElBuenSabor.ProyectoFinal.DTO.CategoriaDTO;
+import ElBuenSabor.ProyectoFinal.DTO.UnidadMedidaDTO;
+import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
+import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDetalleDTO;
+import java.util.HashSet;
 import java.util.stream.Collectors;
-import java.util.Set;
+
 
 @RestController
 @RequestMapping("/api/v1/articulos")
-@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad
+@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad en producción
 public class ArticuloController {
 
     @Autowired
@@ -37,10 +41,10 @@ public class ArticuloController {
     // --- Endpoints para ArticuloInsumo ---
 
     @PostMapping("/insumos")
-    public ResponseEntity<?> crearArticuloInsumo(@RequestBody ArticuloInsumoDTO insumoDTO) {
+    public ResponseEntity<?> crearArticuloInsumo(@Valid @RequestBody ArticuloInsumoDTO insumoDTO) {
         try {
-            ArticuloInsumo nuevoInsumo = articuloService.createArticuloInsumo(insumoDTO);
-            return new ResponseEntity<>(convertToArticuloInsumoDTO(nuevoInsumo), HttpStatus.CREATED);
+            ArticuloInsumoDTO nuevoInsumo = articuloService.createArticuloInsumo(insumoDTO);
+            return new ResponseEntity<>(nuevoInsumo, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -49,56 +53,60 @@ public class ArticuloController {
     @GetMapping("/insumos/{id}")
     public ResponseEntity<?> obtenerArticuloInsumoPorId(@PathVariable Long id) {
         try {
-            // ArticuloService podría tener un findArticuloInsumoById que devuelva ArticuloInsumo
-            // o usamos el genérico y casteamos/validamos.
-            Optional<Articulo> articuloOptional = articuloService.findById(id); //
-            if (articuloOptional.isPresent() && articuloOptional.get() instanceof ArticuloInsumo) {
-                return ResponseEntity.ok(convertToArticuloInsumoDTO((ArticuloInsumo) articuloOptional.get()));
+            ArticuloInsumoDTO dto = articuloService.findArticuloInsumoById(id);
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
             } else {
-                return new ResponseEntity<>("Artículo Insumo no encontrado.", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Artículo Insumo activo no encontrado con ID: " + id, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener el Artículo Insumo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/insumos/{id}")
-    public ResponseEntity<?> actualizarArticuloInsumo(@PathVariable Long id, @RequestBody ArticuloInsumoDTO insumoDTO) {
+    public ResponseEntity<?> actualizarArticuloInsumo(@PathVariable Long id, @Valid @RequestBody ArticuloInsumoDTO insumoDTO) {
         try {
-            ArticuloInsumo insumoActualizado = articuloService.updateArticuloInsumo(id, insumoDTO);
-            return ResponseEntity.ok(convertToArticuloInsumoDTO(insumoActualizado));
+            ArticuloInsumoDTO insumoActualizado = articuloService.updateArticuloInsumo(id, insumoDTO);
+            return ResponseEntity.ok(insumoActualizado);
         } catch (Exception e) {
+            if (e.getMessage().contains("no encontrado")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
     @GetMapping("/insumos")
-    public ResponseEntity<?> listarArticulosInsumo() {
+    public ResponseEntity<?> listarArticulosInsumoActivos() {
         try {
-            List<ArticuloInsumo> insumos = articuloService.findAllArticulosInsumo();
-            List<ArticuloInsumoDTO> dtos = insumos.stream()
-                    .map(this::convertToArticuloInsumoDTO)
-                    .collect(Collectors.toList());
+            List<ArticuloInsumoDTO> dtos = articuloService.findAllArticulosInsumo();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al listar Artículos Insumo activos: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("/insumos/stock-bajo")
-    public ResponseEntity<?> listarArticulosInsumoConStockBajo(@RequestParam(defaultValue = "0") Double stockMinimoReferencia) {
+    public ResponseEntity<?> listarArticulosInsumoConStockBajo() {
         try {
-            // Este método podría usar el stockMinimo de cada artículo o un valor de referencia.
-            // El servicio ya tiene findArticulosInsumoByStockActualLessThanEqual que usa el stockMinimo de la entidad.
-            // Si queremos usar un parámetro, el servicio debería tener un método que lo acepte.
-            // Por ahora, usaré el método existente que compara con el stockMinimo propio del insumo.
-            List<ArticuloInsumo> insumos = articuloService.findArticulosInsumoByStockActualLessThanEqual(stockMinimoReferencia); //
-            List<ArticuloInsumoDTO> dtos = insumos.stream()
-                    .map(this::convertToArticuloInsumoDTO)
-                    .collect(Collectors.toList());
+            List<ArticuloInsumoDTO> dtos = articuloService.findArticulosInsumoByStockBajo();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al listar Artículos Insumo con stock bajo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/insumos/{id}/registrar-compra")
+    public ResponseEntity<?> registrarCompraInsumo(@PathVariable Long id, @Valid @RequestBody RegistrarCompraDTO compraDTO) {
+        try {
+            ArticuloInsumoDTO insumoActualizado = articuloService.registrarCompraInsumo(id, compraDTO.getCantidadComprada(), compraDTO.getNuevoPrecioCosto());
+            return ResponseEntity.ok(insumoActualizado);
+        } catch (Exception e) {
+            if (e.getMessage().contains("no encontrado") || e.getMessage().contains("dado de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -106,10 +114,10 @@ public class ArticuloController {
     // --- Endpoints para ArticuloManufacturado ---
 
     @PostMapping("/manufacturados")
-    public ResponseEntity<?> crearArticuloManufacturado(@RequestBody ArticuloManufacturadoDTO manufacturadoDTO) {
+    public ResponseEntity<?> crearArticuloManufacturado(@Valid @RequestBody ArticuloManufacturadoDTO manufacturadoDTO) {
         try {
-            ArticuloManufacturado nuevoManufacturado = articuloService.createArticuloManufacturado(manufacturadoDTO);
-            return new ResponseEntity<>(convertToArticuloManufacturadoDTO(nuevoManufacturado), HttpStatus.CREATED);
+            ArticuloManufacturadoDTO nuevoManufacturado = articuloService.createArticuloManufacturado(manufacturadoDTO);
+            return new ResponseEntity<>(nuevoManufacturado, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -118,125 +126,158 @@ public class ArticuloController {
     @GetMapping("/manufacturados/{id}")
     public ResponseEntity<?> obtenerArticuloManufacturadoPorId(@PathVariable Long id) {
         try {
-            Optional<Articulo> articuloOptional = articuloService.findById(id); //
-            if (articuloOptional.isPresent() && articuloOptional.get() instanceof ArticuloManufacturado) {
-                return ResponseEntity.ok(convertToArticuloManufacturadoDTO((ArticuloManufacturado) articuloOptional.get()));
+            ArticuloManufacturadoDTO dto = articuloService.findArticuloManufacturadoById(id);
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
             } else {
-                return new ResponseEntity<>("Artículo Manufacturado no encontrado.", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Artículo Manufacturado activo no encontrado con ID: " + id, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener el Artículo Manufacturado: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/manufacturados/{id}")
-    public ResponseEntity<?> actualizarArticuloManufacturado(@PathVariable Long id, @RequestBody ArticuloManufacturadoDTO manufacturadoDTO) {
+    public ResponseEntity<?> actualizarArticuloManufacturado(@PathVariable Long id, @Valid @RequestBody ArticuloManufacturadoDTO manufacturadoDTO) {
         try {
-            ArticuloManufacturado manufacturadoActualizado = articuloService.updateArticuloManufacturado(id, manufacturadoDTO);
-            return ResponseEntity.ok(convertToArticuloManufacturadoDTO(manufacturadoActualizado));
+            ArticuloManufacturadoDTO manufacturadoActualizado = articuloService.updateArticuloManufacturado(id, manufacturadoDTO);
+            return ResponseEntity.ok(manufacturadoActualizado);
         } catch (Exception e) {
+            if (e.getMessage().contains("no encontrado")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
     @GetMapping("/manufacturados")
-    public ResponseEntity<?> listarArticulosManufacturado() {
+    public ResponseEntity<?> listarArticulosManufacturadoActivos() {
         try {
-            List<ArticuloManufacturado> manufacturados = articuloService.findAllArticulosManufacturados();
-            List<ArticuloManufacturadoDTO> dtos = manufacturados.stream()
-                    .map(this::convertToArticuloManufacturadoDTO)
-                    .collect(Collectors.toList());
+            List<ArticuloManufacturadoDTO> dtos = articuloService.findAllArticulosManufacturados();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
+            return new ResponseEntity<>("Error al listar Artículos Manufacturados activos: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/manufacturados/{id}/maximo-producible")
+    public ResponseEntity<?> obtenerMaximoProducible(@PathVariable Long id) {
+        try {
+            Integer maximo = articuloService.calcularMaximoProducible(id);
+            return ResponseEntity.ok(maximo);
+        } catch (Exception e) {
+            if (e.getMessage().contains("no encontrado") || e.getMessage().contains("dado de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     // --- Endpoints Generales para Articulos (Insumos y Manufacturados) ---
 
-    // Endpoint para buscar artículos por denominación
     @GetMapping("/buscar")
     public ResponseEntity<?> buscarArticulosPorDenominacion(@RequestParam String denominacion) {
         try {
-            List<Articulo> articulos = articuloService.findByDenominacionContainingIgnoreCase(denominacion); //
-            // Necesitamos una forma de convertir Articulo a un DTO genérico o específico
-            List<Object> dtos = articulos.stream().map(articulo -> {
-                if (articulo instanceof ArticuloInsumo) {
-                    return convertToArticuloInsumoDTO((ArticuloInsumo) articulo);
-                } else if (articulo instanceof ArticuloManufacturado) {
-                    return convertToArticuloManufacturadoDTO((ArticuloManufacturado) articulo);
-                }
-                return null; // O un DTO base de Articulo
-            }).collect(Collectors.toList());
+            List<Object> dtos = articuloService.findArticulosByDenominacion(denominacion);
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al buscar artículos por denominación: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Endpoint para buscar artículos por categoría
     @GetMapping("/categoria/{categoriaId}")
     public ResponseEntity<?> buscarArticulosPorCategoria(@PathVariable Long categoriaId) {
         try {
-            List<Articulo> articulos = articuloService.findByCategoriaId(categoriaId); //
-            List<Object> dtos = articulos.stream().map(articulo -> {
-                if (articulo instanceof ArticuloInsumo) {
-                    return convertToArticuloInsumoDTO((ArticuloInsumo) articulo);
-                } else if (articulo instanceof ArticuloManufacturado) {
-                    return convertToArticuloManufacturadoDTO((ArticuloManufacturado) articulo);
-                }
-                return null;
-            }).collect(Collectors.toList());
+            List<Object> dtos = articuloService.findArticulosByCategoriaId(categoriaId);
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            if (e.getMessage().contains("no encontrada")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>("Error al buscar artículos por categoría: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Endpoint para obtener todos los artículos (insumos y manufacturados)
-    @GetMapping("")
-    public ResponseEntity<?> listarTodosLosArticulos() {
-        try {
-            List<Articulo> articulos = articuloService.findAll(); //
-            List<Object> dtos = articulos.stream().map(articulo -> {
-                if (articulo instanceof ArticuloInsumo) {
-                    return convertToArticuloInsumoDTO((ArticuloInsumo) articulo);
-                } else if (articulo instanceof ArticuloManufacturado) {
-                    return convertToArticuloManufacturadoDTO((ArticuloManufacturado) articulo);
-                }
-                // Considerar un ArticuloBaseDTO si no es ninguno de los dos (aunque no debería pasar con JOINED)
-                return null;
-            }).collect(Collectors.toList());
-            return ResponseEntity.ok(dtos);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // --- Endpoints de Administración (Soft Delete, Reactivate, Listar Todos) ---
 
-
-    // Endpoint para eliminar un artículo (Insumo o Manufacturado)
-    // Podría requerir lógica adicional en el servicio para verificar dependencias
-    // (ej. si un insumo es parte de un manufacturado, si un manufacturado está en una promoción o pedido)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarArticulo(@PathVariable Long id) {
+    public ResponseEntity<?> darBajaArticulo(@PathVariable Long id) {
         try {
-            // Antes de borrar, el servicio podría verificar si el artículo es Insumo o Manufacturado
-            // y aplicar reglas específicas (ej. no borrar insumo si está en uso por un manufacturado).
-            // La implementación actual de BaseService.delete(id) simplemente lo borrará.
-            boolean eliminado = articuloService.delete(id); //
-            if (eliminado) {
-                return ResponseEntity.ok("Artículo eliminado correctamente.");
+            articuloService.softDelete(id); // El servicio maneja la lógica de isArticuloInActiveUse
+            return ResponseEntity.ok("Artículo ID: " + id + " dado de baja correctamente (borrado lógico).");
+        } catch (Exception e) {
+            if (e.getMessage().contains("no encontrado") || e.getMessage().contains("ya está dado de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            if (e.getMessage().contains("está en uso activo")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT); // 409 Conflict
+            }
+            return new ResponseEntity<>("Error al dar de baja el artículo: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<?> reactivarArticulo(@PathVariable Long id) {
+        try {
+            Articulo articuloReactivado = articuloService.reactivate(id);
+            // El servicio devuelve la entidad, el controlador la convierte al DTO apropiado.
+            Object dto = convertToGenericArticuloDTO(articuloReactivado);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            if (e.getMessage().contains("no encontrado") || e.getMessage().contains("no está dado de baja") || e.getMessage().contains("no se puede reactivar")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>("Error al reactivar el artículo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/todos")
+    public ResponseEntity<?> getAllArticulosIncludingDeletedForAdmin() {
+        try {
+            List<Object> dtos = articuloService.findAllArticulosRawDTOs();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error al obtener todos los artículos (incluyendo bajas): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<?> getArticuloByIdIncludingDeletedForAdmin(@PathVariable Long id) {
+        try {
+            Object dto = articuloService.findArticuloByIdRawDTO(id);
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
             } else {
-                // Esto no debería pasar si findById antes de delete lanza excepción si no existe.
-                // Pero si delete devuelve false por no encontrarlo:
-                return new ResponseEntity<>("Artículo no encontrado para eliminar.", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Artículo (activo o inactivo) no encontrado con ID: " + id, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error al obtener el artículo (incluyendo bajas): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // --- Métodos Helper para convertir a DTOs de Respuesta ---
+    // --- Helpers de Conversión DTO (Idealmente en una clase Mapper o en el Servicio) ---
+    // Estos se mantienen aquí para el caso de que el servicio devuelva entidades (ej. reactivate)
+    // y el controlador necesite convertirlas. Si el servicio siempre devuelve DTOs, estos helpers aquí son menos necesarios.
+
+    private Object convertToGenericArticuloDTO(Articulo articulo) {
+        if (articulo == null) return null;
+        if (articulo instanceof ArticuloInsumo) {
+            return convertToArticuloInsumoDTO((ArticuloInsumo) articulo);
+        } else if (articulo instanceof ArticuloManufacturado) {
+            return convertToArticuloManufacturadoDTO((ArticuloManufacturado) articulo);
+        }
+        // Fallback para un Articulo que no sea ni Insumo ni Manufacturado
+        ArticuloSimpleBaseDTO baseDto = new ArticuloSimpleBaseDTO(); // Asegúrate que ArticuloSimpleBaseDTO exista y esté bien definido
+        baseDto.setId(articulo.getId());
+        baseDto.setDenominacion(articulo.getDenominacion());
+        baseDto.setPrecioVenta(articulo.getPrecioVenta());
+        baseDto.setBaja(articulo.isBaja());
+        if (articulo.getCategoria() != null) baseDto.setCategoria(convertToCategoriaSimpleDTO(articulo.getCategoria()));
+        if (articulo.getUnidadMedida() != null) baseDto.setUnidadMedida(convertToUnidadMedidaDTO(articulo.getUnidadMedida()));
+        if (articulo.getImagen() != null) baseDto.setImagen(convertToImagenDTO(articulo.getImagen()));
+        baseDto.setTipo(articulo.getClass().getSimpleName());
+        return baseDto;
+    }
 
     private ArticuloInsumoDTO convertToArticuloInsumoDTO(ArticuloInsumo insumo) {
         if (insumo == null) return null;
@@ -244,33 +285,23 @@ public class ArticuloController {
         dto.setId(insumo.getId());
         dto.setDenominacion(insumo.getDenominacion());
         dto.setPrecioVenta(insumo.getPrecioVenta());
+        dto.setBaja(insumo.isBaja());
+        if (insumo.getCategoria() != null) {
+            dto.setCategoriaId(insumo.getCategoria().getId());
+            dto.setCategoria(convertToCategoriaSimpleDTO(insumo.getCategoria()));
+        }
+        if (insumo.getUnidadMedida() != null) {
+            dto.setUnidadMedidaId(insumo.getUnidadMedida().getId());
+            dto.setUnidadMedida(convertToUnidadMedidaDTO(insumo.getUnidadMedida()));
+        }
+        if (insumo.getImagen() != null) {
+            dto.setImagenId(insumo.getImagen().getId());
+            dto.setImagen(convertToImagenDTO(insumo.getImagen()));
+        }
         dto.setPrecioCompra(insumo.getPrecioCompra());
         dto.setStockActual(insumo.getStockActual());
         dto.setStockMinimo(insumo.getStockMinimo());
         dto.setEsParaElaborar(insumo.getEsParaElaborar());
-
-        if (insumo.getUnidadMedida() != null) {
-            dto.setUnidadMedidaId(insumo.getUnidadMedida().getId());
-            UnidadMedidaDTO umDto = new UnidadMedidaDTO();
-            umDto.setId(insumo.getUnidadMedida().getId());
-            umDto.setDenominacion(insumo.getUnidadMedida().getDenominacion());
-            dto.setUnidadMedida(umDto);
-        }
-        if (insumo.getCategoria() != null) {
-            dto.setCategoriaId(insumo.getCategoria().getId());
-            CategoriaDTO catDto = new CategoriaDTO();
-            catDto.setId(insumo.getCategoria().getId());
-            catDto.setDenominacion(insumo.getCategoria().getDenominacion());
-            // No cargar sub/padre categorías aquí para evitar complejidad
-            dto.setCategoria(catDto);
-        }
-        if (insumo.getImagen() != null) {
-            dto.setImagenId(insumo.getImagen().getId());
-            ImagenDTO imgDto = new ImagenDTO();
-            imgDto.setId(insumo.getImagen().getId());
-            imgDto.setDenominacion(insumo.getImagen().getDenominacion());
-            dto.setImagen(imgDto);
-        }
         return dto;
     }
 
@@ -280,49 +311,75 @@ public class ArticuloController {
         dto.setId(manufacturado.getId());
         dto.setDenominacion(manufacturado.getDenominacion());
         dto.setPrecioVenta(manufacturado.getPrecioVenta());
-        dto.setDescripcion(manufacturado.getDescripcion());
-        dto.setTiempoEstimadoMinutos(manufacturado.getTiempoEstimadoMinutos());
-        dto.setPreparacion(manufacturado.getPreparacion());
-
-        if (manufacturado.getUnidadMedida() != null) {
-            dto.setUnidadMedidaId(manufacturado.getUnidadMedida().getId());
-            UnidadMedidaDTO umDto = new UnidadMedidaDTO();
-            umDto.setId(manufacturado.getUnidadMedida().getId());
-            umDto.setDenominacion(manufacturado.getUnidadMedida().getDenominacion());
-            dto.setUnidadMedida(umDto);
-        }
+        dto.setBaja(manufacturado.isBaja());
         if (manufacturado.getCategoria() != null) {
             dto.setCategoriaId(manufacturado.getCategoria().getId());
-            CategoriaDTO catDto = new CategoriaDTO();
-            catDto.setId(manufacturado.getCategoria().getId());
-            catDto.setDenominacion(manufacturado.getCategoria().getDenominacion());
-            dto.setCategoria(catDto);
+            dto.setCategoria(convertToCategoriaSimpleDTO(manufacturado.getCategoria()));
+        }
+        if (manufacturado.getUnidadMedida() != null) {
+            dto.setUnidadMedidaId(manufacturado.getUnidadMedida().getId());
+            dto.setUnidadMedida(convertToUnidadMedidaDTO(manufacturado.getUnidadMedida()));
         }
         if (manufacturado.getImagen() != null) {
             dto.setImagenId(manufacturado.getImagen().getId());
-            ImagenDTO imgDto = new ImagenDTO();
-            imgDto.setId(manufacturado.getImagen().getId());
-            imgDto.setDenominacion(manufacturado.getImagen().getDenominacion());
-            dto.setImagen(imgDto);
+            dto.setImagen(convertToImagenDTO(manufacturado.getImagen()));
         }
-
+        dto.setDescripcion(manufacturado.getDescripcion());
+        dto.setTiempoEstimadoMinutos(manufacturado.getTiempoEstimadoMinutos());
+        dto.setPreparacion(manufacturado.getPreparacion());
         if (manufacturado.getDetalles() != null) {
-            Set<ArticuloManufacturadoDetalleDTO> detallesDTO = manufacturado.getDetalles().stream().map(detalle -> {
-                ArticuloManufacturadoDetalleDTO detalleDTO = new ArticuloManufacturadoDetalleDTO();
-                detalleDTO.setId(detalle.getId());
-                detalleDTO.setCantidad(detalle.getCantidad());
-                if (detalle.getArticuloInsumo() != null) {
-                    detalleDTO.setArticuloInsumoId(detalle.getArticuloInsumo().getId());
-                    // Podrías anidar un ArticuloInsumoSimpleDTO aquí si es necesario
-                    ArticuloInsumoDTO insumoDetalleDto = new ArticuloInsumoDTO();
-                    insumoDetalleDto.setId(detalle.getArticuloInsumo().getId());
-                    insumoDetalleDto.setDenominacion(detalle.getArticuloInsumo().getDenominacion());
-                    detalleDTO.setArticuloInsumo(insumoDetalleDto);
-                }
-                return detalleDTO;
-            }).collect(Collectors.toSet());
-            dto.setDetalles(detallesDTO);
+            dto.setDetalles(manufacturado.getDetalles().stream()
+                    .map(this::convertToArticuloManufacturadoDetalleDTO)
+                    .collect(Collectors.toSet()));
+        } else {
+            dto.setDetalles(new HashSet<>());
         }
+        return dto;
+    }
+
+    private ArticuloManufacturadoDetalleDTO convertToArticuloManufacturadoDetalleDTO(ArticuloManufacturadoDetalle detalle) {
+        if (detalle == null) return null;
+        ArticuloManufacturadoDetalleDTO dto = new ArticuloManufacturadoDetalleDTO();
+        dto.setId(detalle.getId());
+        dto.setCantidad(detalle.getCantidad());
+        if (detalle.getArticuloInsumo() != null) {
+            dto.setArticuloInsumoId(detalle.getArticuloInsumo().getId());
+            ArticuloInsumoDTO insumoSimpleDto = new ArticuloInsumoDTO();
+            insumoSimpleDto.setId(detalle.getArticuloInsumo().getId());
+            insumoSimpleDto.setDenominacion(detalle.getArticuloInsumo().getDenominacion());
+            insumoSimpleDto.setBaja(detalle.getArticuloInsumo().isBaja());
+            if (detalle.getArticuloInsumo().getUnidadMedida() != null){
+                insumoSimpleDto.setUnidadMedida(convertToUnidadMedidaDTO(detalle.getArticuloInsumo().getUnidadMedida()));
+            }
+            dto.setArticuloInsumo(insumoSimpleDto);
+        }
+        return dto;
+    }
+
+    private CategoriaDTO convertToCategoriaSimpleDTO(Categoria categoria) {
+        if (categoria == null) return null;
+        CategoriaDTO dto = new CategoriaDTO();
+        dto.setId(categoria.getId());
+        dto.setDenominacion(categoria.getDenominacion());
+        dto.setBaja(categoria.isBaja());
+        return dto;
+    }
+
+    private UnidadMedidaDTO convertToUnidadMedidaDTO(UnidadMedida unidadMedida) {
+        if (unidadMedida == null) return null;
+        UnidadMedidaDTO dto = new UnidadMedidaDTO();
+        dto.setId(unidadMedida.getId());
+        dto.setDenominacion(unidadMedida.getDenominacion());
+        dto.setBaja(unidadMedida.isBaja());
+        return dto;
+    }
+
+    private ImagenDTO convertToImagenDTO(Imagen imagen) {
+        if (imagen == null) return null;
+        ImagenDTO dto = new ImagenDTO();
+        dto.setId(imagen.getId());
+        dto.setDenominacion(imagen.getDenominacion());
+        dto.setBaja(imagen.isBaja());
         return dto;
     }
 }

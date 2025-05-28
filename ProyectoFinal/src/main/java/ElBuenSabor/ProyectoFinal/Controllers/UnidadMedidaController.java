@@ -1,16 +1,15 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.UnidadMedidaDTO;
-import ElBuenSabor.ProyectoFinal.Entities.UnidadMedida;
+import ElBuenSabor.ProyectoFinal.Entities.UnidadMedida; // Para el tipo de retorno de reactivate
 import ElBuenSabor.ProyectoFinal.Service.UnidadMedidaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/unidades-medida")
@@ -21,10 +20,10 @@ public class UnidadMedidaController {
     private UnidadMedidaService unidadMedidaService;
 
     @PostMapping("")
-    public ResponseEntity<?> createUnidadMedida(@RequestBody UnidadMedidaDTO unidadMedidaDTO) {
+    public ResponseEntity<?> createUnidadMedida(@Valid @RequestBody UnidadMedidaDTO unidadMedidaDTO) {
         try {
-            UnidadMedida nuevaUnidad = unidadMedidaService.createUnidadMedida(unidadMedidaDTO);
-            return new ResponseEntity<>(convertToUnidadMedidaDTO(nuevaUnidad), HttpStatus.CREATED);
+            UnidadMedidaDTO nuevaUnidad = unidadMedidaService.createUnidadMedida(unidadMedidaDTO);
+            return new ResponseEntity<>(nuevaUnidad, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -33,74 +32,114 @@ public class UnidadMedidaController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getUnidadMedidaById(@PathVariable Long id) {
         try {
-            Optional<UnidadMedida> unidadOptional = unidadMedidaService.findById(id);
-            if (unidadOptional.isPresent()) {
-                return ResponseEntity.ok(convertToUnidadMedidaDTO(unidadOptional.get()));
+            UnidadMedidaDTO dto = unidadMedidaService.findUnidadMedidaById(id); // Devuelve activas
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
             } else {
-                return new ResponseEntity<>("Unidad de Medida no encontrada.", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Unidad de Medida activa no encontrada con ID: " + id, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener la unidad de medida: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("/buscar")
     public ResponseEntity<?> getUnidadMedidaByDenominacion(@RequestParam String denominacion) {
         try {
-            UnidadMedida unidad = unidadMedidaService.findByDenominacion(denominacion);
-            if (unidad != null) {
-                return ResponseEntity.ok(convertToUnidadMedidaDTO(unidad));
+            UnidadMedidaDTO dto = unidadMedidaService.findByDenominacion(denominacion); // Devuelve activas
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
             } else {
-                return new ResponseEntity<>("Unidad de Medida no encontrada: " + denominacion, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Unidad de Medida activa no encontrada: " + denominacion, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al buscar la unidad de medida: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("")
-    public ResponseEntity<?> getAllUnidadesMedida() {
+    public ResponseEntity<?> getAllUnidadesMedidaActivas() {
         try {
-            List<UnidadMedida> unidades = unidadMedidaService.findAll();
-            List<UnidadMedidaDTO> dtos = unidades.stream()
-                    .map(this::convertToUnidadMedidaDTO)
-                    .collect(Collectors.toList());
+            List<UnidadMedidaDTO> dtos = unidadMedidaService.findAllUnidadesMedida(); // Devuelve DTOs de activas
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener unidades de medida activas: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUnidadMedida(@PathVariable Long id, @RequestBody UnidadMedidaDTO unidadMedidaDTO) {
+    public ResponseEntity<?> updateUnidadMedida(@PathVariable Long id, @Valid @RequestBody UnidadMedidaDTO unidadMedidaDTO) {
         try {
-            UnidadMedida unidadActualizada = unidadMedidaService.updateUnidadMedida(id, unidadMedidaDTO);
-            return ResponseEntity.ok(convertToUnidadMedidaDTO(unidadActualizada));
+            UnidadMedidaDTO unidadActualizada = unidadMedidaService.updateUnidadMedida(id, unidadMedidaDTO);
+            return ResponseEntity.ok(unidadActualizada);
         } catch (Exception e) {
+            if (e.getMessage().contains("no encontrada")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUnidadMedida(@PathVariable Long id) {
+    public ResponseEntity<?> darBajaUnidadMedida(@PathVariable Long id) {
         try {
-            // Considerar no eliminar si está en uso por algún artículo.
-            boolean eliminado = unidadMedidaService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("Unidad de Medida eliminada correctamente.");
-            } else {
-                return new ResponseEntity<>("Unidad de Medida no encontrada.", HttpStatus.NOT_FOUND);
-            }
+            unidadMedidaService.softDelete(id);
+            return ResponseEntity.ok("Unidad de Medida dada de baja correctamente (borrado lógico).");
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            if (e.getMessage().contains("no encontrada") || e.getMessage().contains("ya está dada de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            // Considerar DataIntegrityViolationException si está en uso por artículos activos
+            return new ResponseEntity<>("Error al dar de baja la unidad de medida: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
-    private UnidadMedidaDTO convertToUnidadMedidaDTO(UnidadMedida unidad) {
-        if (unidad == null) return null;
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<?> reactivarUnidadMedida(@PathVariable Long id) {
+        try {
+            UnidadMedida unidadReactivadaEntity = unidadMedidaService.reactivate(id);
+            return ResponseEntity.ok(convertToUnidadMedidaDTO(unidadReactivadaEntity)); // Convertir entidad
+        } catch (Exception e) {
+            if (e.getMessage().contains("no encontrada") || e.getMessage().contains("no está dada de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>("Error al reactivar la unidad de medida: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/todos")
+    // @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllUnidadesMedidaIncludingDeletedForAdmin() {
+        try {
+            List<UnidadMedidaDTO> dtos = unidadMedidaService.findAllUnidadesMedidaIncludingDeleted();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error al obtener todas las unidades de medida (incluyendo bajas): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/{id}")
+    // @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getUnidadMedidaByIdIncludingDeletedForAdmin(@PathVariable Long id) {
+        try {
+            UnidadMedidaDTO dto = unidadMedidaService.findUnidadMedidaByIdIncludingDeleted(id);
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
+            } else {
+                return new ResponseEntity<>("Unidad de Medida (activa o inactiva) no encontrada con ID: " + id, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error al obtener la unidad de medida (incluyendo bajas): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Helper para convertir, si el servicio devuelve entidad en algún caso (ej. reactivate)
+    private UnidadMedidaDTO convertToUnidadMedidaDTO(UnidadMedida unidadMedida) {
+        if (unidadMedida == null) return null;
         UnidadMedidaDTO dto = new UnidadMedidaDTO();
-        dto.setId(unidad.getId());
-        dto.setDenominacion(unidad.getDenominacion());
+        dto.setId(unidadMedida.getId());
+        dto.setDenominacion(unidadMedida.getDenominacion());
+        dto.setBaja(unidadMedida.isBaja());
         return dto;
     }
 }

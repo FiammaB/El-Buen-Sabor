@@ -20,4 +20,8 @@ public abstract class BaseEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // Campo para el borrado lógico
+    // Por defecto, una nueva entidad no está dada de baja.
+    private boolean baja = false;
 }

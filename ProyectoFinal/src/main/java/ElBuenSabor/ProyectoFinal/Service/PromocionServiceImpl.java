@@ -1,22 +1,20 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PromocionDTO;
-import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO;
-import ElBuenSabor.ProyectoFinal.Entities.*;
-import ElBuenSabor.ProyectoFinal.Repositories.*;
+import ElBuenSabor.ProyectoFinal.DTO.*; // Importar todos los DTOs
+import ElBuenSabor.ProyectoFinal.Entities.*; // Importar todas las Entidades
+import ElBuenSabor.ProyectoFinal.Repositories.*; // Importar todos los Repositorios
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.ArrayList; // Para inicializar listas
 
 @Service
 public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> implements PromocionService {
@@ -25,113 +23,62 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
     private final SucursalRepository sucursalRepository;
     private final ImagenRepository imagenRepository;
+    private final PedidoRepository pedidoRepository; // Para verificar si una promoción fue usada
 
     @Autowired
     public PromocionServiceImpl(PromocionRepository promocionRepository,
                                 ArticuloManufacturadoRepository articuloManufacturadoRepository,
                                 SucursalRepository sucursalRepository,
-                                ImagenRepository imagenRepository) {
+                                ImagenRepository imagenRepository,
+                                PedidoRepository pedidoRepository) {
         super(promocionRepository);
         this.promocionRepository = promocionRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
         this.sucursalRepository = sucursalRepository;
         this.imagenRepository = imagenRepository;
+        this.pedidoRepository = pedidoRepository;
     }
 
     @Override
     @Transactional
-    public PromocionDTO createPromocion(PromocionDTO dto) throws Exception {
-        try {
-            Promocion promocion = new Promocion();
-            mapDtoToEntity(dto, promocion); // Método helper para mapear
-
-            // Manejar imagen
-            if (dto.getImagenId() != null) {
-                Imagen imagen = imagenRepository.findById(dto.getImagenId())
-                        .orElseThrow(() -> new Exception("Imagen no encontrada con ID: " + dto.getImagenId()));
-                promocion.setImagen(imagen);
-            } else if (dto.getImagen() != null && dto.getImagen().getDenominacion() != null && !dto.getImagen().getDenominacion().isEmpty()) {
-                Imagen nuevaImagen = Imagen.builder().denominacion(dto.getImagen().getDenominacion()).build();
-                promocion.setImagen(imagenRepository.save(nuevaImagen));
-            }
-
-
-            Promocion savedPromocion = promocionRepository.save(promocion);
-            return convertToDTO(savedPromocion);
-        } catch (Exception e) {
-            throw new Exception("Error al crear la promoción: " + e.getMessage(), e);
+    public PromocionDTO createPromocion(PromocionCreateUpdateDTO dto) throws Exception {
+        // Validar unicidad de denominación (opcional, pero buena práctica)
+        Optional<Promocion> existenteDenom = promocionRepository.findByDenominacionRaw(dto.getDenominacion().trim());
+        if (existenteDenom.isPresent()) {
+            throw new Exception("Ya existe una promoción con la denominación: " + dto.getDenominacion().trim());
         }
+
+        Promocion promocion = new Promocion();
+        mapDtoToEntity(dto, promocion); // Método helper para mapear
+        promocion.setBaja(false); // Nueva promoción nunca está de baja
+
+        Promocion savedPromocion = promocionRepository.save(promocion);
+        // Sincronizar el lado inverso de las relaciones ManyToMany si es necesario
+        // (Promocion es dueña de ambas JoinTable, así que guardar Promocion es suficiente para las tablas de unión)
+        return convertToDTO(savedPromocion);
     }
 
     @Override
     @Transactional
-    public PromocionDTO updatePromocion(Long id, PromocionDTO dto) throws Exception {
-        try {
-            Promocion promocion = promocionRepository.findById(id)
-                    .orElseThrow(() -> new Exception("Promoción no encontrada con ID: " + id));
-            mapDtoToEntity(dto, promocion);
+    public PromocionDTO updatePromocion(Long id, PromocionCreateUpdateDTO dto) throws Exception {
+        Promocion promocion = this.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new Exception("Promoción no encontrada con ID: " + id + " para actualizar."));
 
-            // Manejar imagen
-            if (dto.getImagenId() != null) {
-                if(dto.getImagenId() == 0L){ // Convención para quitar imagen
-                    if(promocion.getImagen() != null) {
-                        Imagen imgActual = promocion.getImagen();
-                        promocion.setImagen(null);
-                        // Opcional: borrar la imagen de ImagenRepository si no está referenciada en otro lugar
-                        // imagenRepository.delete(imgActual); (cuidado con esto)
-                    }
-                } else {
-                    Imagen imagen = imagenRepository.findById(dto.getImagenId())
-                            .orElseThrow(() -> new Exception("Imagen no encontrada con ID: " + dto.getImagenId()));
-                    promocion.setImagen(imagen);
-                }
-            } else if (dto.getImagen() != null && dto.getImagen().getDenominacion() != null && !dto.getImagen().getDenominacion().isEmpty()) {
-                Imagen imagenExistente = promocion.getImagen();
-                if (imagenExistente != null) {
-                    imagenExistente.setDenominacion(dto.getImagen().getDenominacion());
-                    promocion.setImagen(imagenRepository.save(imagenExistente));
-                } else {
-                    Imagen nuevaImagen = Imagen.builder().denominacion(dto.getImagen().getDenominacion()).build();
-                    promocion.setImagen(imagenRepository.save(nuevaImagen));
-                }
-            }
-
-
-            Promocion updatedPromocion = promocionRepository.save(promocion);
-            return convertToDTO(updatedPromocion);
-        } catch (Exception e) {
-            throw new Exception("Error al actualizar la promoción: " + e.getMessage(), e);
+        Optional<Promocion> existenteDenom = promocionRepository.findByDenominacionRaw(dto.getDenominacion().trim());
+        if (existenteDenom.isPresent() && !existenteDenom.get().getId().equals(id)) {
+            throw new Exception("Ya existe otra promoción con la denominacion: " + dto.getDenominacion().trim());
         }
+
+        mapDtoToEntity(dto, promocion);
+        // El estado 'baja' se maneja con softDelete/reactivate, o si el DTO lo permite explícitamente
+        // if (dto.getBaja() != null) promocion.setBaja(dto.isBaja());
+
+        Promocion updatedPromocion = promocionRepository.save(promocion);
+        return convertToDTO(updatedPromocion);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<PromocionDTO> findActivePromociones(LocalDate fechaActual, LocalTime horaActual) throws Exception { //
-        List<Promocion> promociones = promocionRepository.findByFechaDesdeLessThanEqualAndFechaHastaGreaterThanEqualAndHoraDesdeLessThanEqualAndHoraHastaGreaterThanEqual(
-                fechaActual, fechaActual, horaActual, horaActual
-        );
-        return promociones.stream().map(this::convertToDTO).collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<PromocionDTO> findPromocionesBySucursalId(Long sucursalId) throws Exception { //
-        // Necesitas una forma de obtener promociones por sucursal.
-        // Si la relación es Promocion ManyToMany Sucursal (Promocion dueña), usa:
-        // List<Promocion> promociones = promocionRepository.findBySucursalesId(sucursalId);
-        // Si Sucursal es dueña (Sucursal ManyToMany Promocion), entonces:
-        Sucursal sucursal = sucursalRepository.findById(sucursalId).orElse(null);
-        if (sucursal == null || sucursal.getPromociones() == null) return new ArrayList<>(); // Asumiendo que Sucursal tiene un Set<Promocion> promociones
-        // return sucursal.getPromociones().stream().map(this::convertToDTO).collect(Collectors.toList());
-        // La forma más directa desde PromocionRepository es si tienes un método como findBySucursalesId
-        // Basado en PromocionRepository.findBySucursalesId(Long sucursalId);
-        List<Promocion> promociones = promocionRepository.findBySucursalesId(sucursalId);
-        return promociones.stream().map(this::convertToDTO).collect(Collectors.toList());
-    }
-
-
-    private void mapDtoToEntity(PromocionDTO dto, Promocion promocion) throws Exception {
-        promocion.setDenominacion(dto.getDenominacion());
+    private void mapDtoToEntity(PromocionCreateUpdateDTO dto, Promocion promocion) throws Exception {
+        promocion.setDenominacion(dto.getDenominacion().trim());
         promocion.setFechaDesde(dto.getFechaDesde());
         promocion.setFechaHasta(dto.getFechaHasta());
         promocion.setHoraDesde(dto.getHoraDesde());
@@ -140,55 +87,191 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
         promocion.setPrecioPromocional(dto.getPrecioPromocional());
         promocion.setTipoPromocion(dto.getTipoPromocion());
 
-        if (dto.getArticuloManufacturadoIds() != null) {
-            List<ArticuloManufacturado> articulos = articuloManufacturadoRepository.findAllById(dto.getArticuloManufacturadoIds());
-            if (articulos.size() != dto.getArticuloManufacturadoIds().size()) {
-                throw new Exception("Algunos artículos manufacturados especificados para la promoción no fueron encontrados.");
+        // Manejar Imagen
+        if (dto.getImagenId() != null) {
+            if (dto.getImagenId() == 0L) { // Convención para quitar imagen
+                promocion.setImagen(null);
+            } else {
+                Imagen imagen = imagenRepository.findById(dto.getImagenId()) // Solo activas
+                        .orElseThrow(() -> new Exception("Imagen activa no encontrada con ID: " + dto.getImagenId()));
+                promocion.setImagen(imagen);
             }
-            promocion.setArticulosManufacturados(articulos);
-        } else {
-            if (promocion.getArticulosManufacturados() != null) promocion.getArticulosManufacturados().clear();
-            else promocion.setArticulosManufacturados(new ArrayList<>());
-        }
+        } // else if (dto.getImagenDenominacion() != null ... ) para crear nueva imagen
 
-        // Manejar la relación ManyToMany con Sucursal
-        // Promocion es la dueña de la relación mappedBy en Sucursal.promociones
-        // por lo que Promocion.sucursales es la que se persiste en la tabla de unión.
-        Set<Sucursal> sucursalesNuevas = new HashSet<>();
+        // Manejar ArticulosManufacturados
+        Set<ArticuloManufacturado> articulos = new HashSet<>();
+        if (dto.getArticuloManufacturadoIds() != null && !dto.getArticuloManufacturadoIds().isEmpty()) {
+            for (Long amId : dto.getArticuloManufacturadoIds()) {
+                ArticuloManufacturado am = articuloManufacturadoRepository.findById(amId) // Solo activos
+                        .orElseThrow(() -> new Exception("Artículo Manufacturado activo no encontrado con ID: " + amId));
+                articulos.add(am);
+            }
+        }
+        promocion.setArticulosManufacturados(articulos);
+
+        // Manejar Sucursales
+        Set<Sucursal> sucursales = new HashSet<>();
         if (dto.getSucursalIds() != null && !dto.getSucursalIds().isEmpty()) {
-            List<Sucursal> sucursalesEncontradas = sucursalRepository.findAllById(dto.getSucursalIds());
-            if (sucursalesEncontradas.size() != dto.getSucursalIds().size()) {
-                throw new Exception("Algunas sucursales especificadas para la promoción no fueron encontradas.");
+            for (Long sucId : dto.getSucursalIds()) {
+                Sucursal suc = sucursalRepository.findById(sucId) // Solo activas
+                        .orElseThrow(() -> new Exception("Sucursal activa no encontrada con ID: " + sucId));
+                sucursales.add(suc);
             }
-            sucursalesNuevas.addAll(sucursalesEncontradas);
+        }
+        promocion.setSucursales(sucursales);
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromocionDTO findPromocionById(Long id) throws Exception {
+        return convertToDTO(super.findById(id).orElse(null));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionDTO> findAllPromociones() throws Exception {
+        return super.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionDTO> findActivePromocionesForDisplay(LocalDate fechaActual, LocalTime horaActual, Long sucursalId) throws Exception {
+        Sucursal sucursal = null;
+        if (sucursalId != null) {
+            sucursal = sucursalRepository.findById(sucursalId) // Solo activas
+                    .orElseThrow(() -> new Exception("Sucursal activa no encontrada con ID: " + sucursalId));
         }
 
-        // Actualizar la colección en Promocion
-        if (promocion.getSucursales() == null) {
-            promocion.setSucursales(new HashSet<>());
+        List<Promocion> promociones;
+        if (sucursal != null) {
+            // Obtener promociones de la sucursal (ya filtradas por baja=false en Promocion)
+            promociones = promocionRepository.findBySucursalesIdAndBajaFalse(sucursalId);
+        } else {
+            // Obtener todas las promociones activas (baja=false)
+            promociones = promocionRepository.findAll(); // @Where en Promocion ya filtra
         }
-        promocion.getSucursales().clear();
-        promocion.getSucursales().addAll(sucursalesNuevas);
 
-        // Sincronizar el lado inverso (Sucursal)
-        // 1. Quitar esta promoción de las sucursales que ya no la tienen
-        // Este paso es complejo si no se carga la colección completa de sucursales antiguas.
-        // Una forma más simple es confiar en que la actualización de promocion.getSucursales()
-        // maneje la tabla de unión. Para consistencia bidireccional en memoria:
-        // (Este código asume que queremos mantener la colección Sucursal.promociones actualizada)
-        // Set<Sucursal> sucursalesAntiguas = promocion.getSucursales() != null ? new HashSet<>(promocion.getSucursales()) : new HashSet<>();
-        // sucursalesAntiguas.stream()
-        //     .filter(sAntigua -> !sucursalesNuevas.contains(sAntigua))
-        //     .forEach(sAntigua -> { if (sAntigua.getPromociones() != null) sAntigua.getPromociones().remove(promocion); });
-        //
-        // // 2. Añadir esta promoción a las nuevas sucursales
-        // sucursalesNuevas.forEach(sNueva -> {
-        //     if (sNueva.getPromociones() == null) sNueva.setPromociones(new HashSet<>());
-        //     sNueva.getPromociones().add(promocion);
-        // });
-        // Dado que Promocion es la dueña de la tabla de unión (mappedBy está en Sucursal),
-        // simplemente settear promocion.setSucursales(sucursalesNuevas) y guardar promoción
-        // debería ser suficiente para que JPA actualice la tabla de unión.
+        final Sucursal finalSucursal = sucursal; // Para la lambda
+        return promociones.stream()
+                .filter(p -> !p.getFechaDesde().isAfter(fechaActual) && !p.getFechaHasta().isBefore(fechaActual)) // Dentro del rango de fechas
+                .filter(p -> { // Dentro del rango de horas (si aplica)
+                    if (p.getHoraDesde() == null && p.getHoraHasta() == null) return true; // Aplica todo el día
+                    if (p.getHoraDesde() != null && p.getHoraHasta() == null) return !horaActual.isBefore(p.getHoraDesde());
+                    if (p.getHoraDesde() == null && p.getHoraHasta() != null) return !horaActual.isAfter(p.getHoraHasta());
+                    return !horaActual.isBefore(p.getHoraDesde()) && !horaActual.isAfter(p.getHoraHasta());
+                })
+                .filter(p -> finalSucursal == null || p.getSucursales().contains(finalSucursal)) // Si se especificó sucursal, asegurar que la promo aplique
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionDTO> findPromocionesBySucursalId(Long sucursalId, boolean soloActivas) throws Exception {
+        List<Promocion> promociones;
+        if (soloActivas) {
+            promociones = promocionRepository.findBySucursalesIdAndBajaFalse(sucursalId);
+        } else {
+            promociones = promocionRepository.findBySucursalIdRaw(sucursalId);
+        }
+        return promociones.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Promocion> findByDenominacionRaw(String denominacion) throws Exception {
+        return promocionRepository.findByDenominacionRaw(denominacion);
+    }
+
+    // --- Implementación de métodos de BaseService ---
+    @Override
+    @Transactional(readOnly = true)
+    public List<Promocion> findAllIncludingDeleted() throws Exception {
+        return promocionRepository.findAllRaw();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Promocion> findByIdIncludingDeleted(Long id) throws Exception {
+        return promocionRepository.findByIdRaw(id);
+    }
+
+    @Override
+    @Transactional
+    public Promocion softDelete(Long id) throws Exception {
+        Promocion promocion = this.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new Exception("Promoción no encontrada con ID: " + id + " para dar de baja."));
+        if (promocion.isBaja()) {
+            throw new Exception("La promoción ya está dada de baja.");
+        }
+        // Lógica de negocio: ¿Se puede dar de baja una promoción si está "activa" y fue usada en pedidos?
+        // Las consignas no lo especifican, pero podría ser una restricción.
+        // Por ahora, permitimos la baja.
+        if (isPromocionInActiveUse(id)){
+            throw new Exception("La promoción no puede ser dada de baja porque está referenciada en pedidos no finalizados.");
+        }
+
+        promocion.setBaja(true);
+        return promocionRepository.save(promocion);
+    }
+
+    @Override
+    @Transactional
+    public Promocion reactivate(Long id) throws Exception {
+        Promocion promocion = this.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new Exception("Promoción no encontrada con ID: " + id + " para reactivar."));
+        if (!promocion.isBaja()) {
+            throw new Exception("La promoción no está dada de baja, no se puede reactivar.");
+        }
+        // Validar que los artículos y sucursales asociados estén activos
+        for(ArticuloManufacturado am : promocion.getArticulosManufacturados()){
+            if(am.isBaja()){
+                throw new Exception("No se puede reactivar la promoción, el artículo manufacturado '" + am.getDenominacion() + "' está dado de baja.");
+            }
+        }
+        for(Sucursal suc : promocion.getSucursales()){
+            if(suc.isBaja()){
+                throw new Exception("No se puede reactivar la promoción, la sucursal '" + suc.getNombre() + "' está dada de baja.");
+            }
+        }
+        if(promocion.getImagen() != null && promocion.getImagen().isBaja()){
+            throw new Exception("No se puede reactivar la promoción, su imagen asignada está dada de baja.");
+        }
+
+        promocion.setBaja(false);
+        return promocionRepository.save(promocion);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isPromocionInActiveUse(Long promocionId) throws Exception {
+        // Una promoción se considera "en uso" si está asociada a algún DetallePedido
+        // de un pedido que no esté en un estado final (CANCELADO, ENTREGADO, FACTURADO).
+        // Esto es complejo porque Promocion no está directamente en DetallePedido.
+        // Se aplicaría a través de los artículos que están en la promoción.
+        // Por ahora, una verificación simple: si hay pedidos que usaron artículos de esta promoción
+        // y no están finalizados. Esto requeriría una query más elaborada.
+        // Simplificación: Por ahora, asumimos que una promoción no impide su baja a menos que
+        // las consignas lo especifiquen más claramente para pedidos históricos.
+        // La restricción más fuerte es sobre los artículos que la componen.
+        System.err.println("ADVERTENCIA: isPromocionInActiveUse no está completamente implementado para verificar pedidos.");
+        return false;
+    }
+
+    // --- Implementación de métodos de PromocionService que devuelven DTO ---
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionDTO> findAllPromocionesIncludingDeleted() throws Exception {
+        return this.findAllIncludingDeleted().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromocionDTO findPromocionByIdIncludingDeleted(Long id) throws Exception {
+        return convertToDTO(this.findByIdIncludingDeleted(id).orElse(null));
     }
 
     private PromocionDTO convertToDTO(Promocion promocion) {
@@ -203,37 +286,55 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
         dto.setDescripcionDescuento(promocion.getDescripcionDescuento());
         dto.setPrecioPromocional(promocion.getPrecioPromocional());
         dto.setTipoPromocion(promocion.getTipoPromocion());
+        dto.setBaja(promocion.isBaja());
 
         if (promocion.getImagen() != null) {
-            ImagenDTO imgDto = new ImagenDTO();
-            imgDto.setId(promocion.getImagen().getId());
-            imgDto.setDenominacion(promocion.getImagen().getDenominacion());
-            dto.setImagen(imgDto);
+            dto.setImagen(convertToImagenSimpleDTO(promocion.getImagen()));
         }
 
         if (promocion.getArticulosManufacturados() != null) {
-            dto.setArticuloManufacturadoIds(promocion.getArticulosManufacturados().stream().map(ArticuloManufacturado::getId).collect(Collectors.toList()));
-            // Si se necesita el DTO completo de artículos:
-            // dto.setArticulosManufacturados(promocion.getArticulosManufacturados().stream().map(am -> {
-            //    ArticuloManufacturadoDTO amDto = new ArticuloManufacturadoDTO();
-            //    // Mapear campos de am a amDto
-            //    amDto.setId(am.getId());
-            //    amDto.setDenominacion(am.getDenominacion());
-            //    return amDto;
-            // }).collect(Collectors.toList()));
+            dto.setArticulosManufacturados(promocion.getArticulosManufacturados().stream()
+                    .filter(am -> !am.isBaja()) // Mostrar solo artículos activos en la promo
+                    .map(this::convertToArticuloManufacturadoSimpleDTO)
+                    .collect(Collectors.toSet()));
         }
 
         if (promocion.getSucursales() != null) {
-            dto.setSucursalIds(promocion.getSucursales().stream().map(Sucursal::getId).collect(Collectors.toSet()));
-            // Si se necesita el DTO completo de sucursales:
-            // dto.setSucursales(promocion.getSucursales().stream().map(s -> {
-            //    SucursalDTO sDto = new SucursalDTO();
-            //    // Mapear campos de s a sDto
-            //    sDto.setId(s.getId());
-            //    sDto.setNombre(s.getNombre());
-            //    return sDto;
-            // }).collect(Collectors.toSet()));
+            dto.setSucursales(promocion.getSucursales().stream()
+                    .filter(s -> !s.isBaja()) // Mostrar solo sucursales activas
+                    .map(this::convertToSucursalSimpleDTO)
+                    .collect(Collectors.toSet()));
         }
+        return dto;
+    }
+
+    // Helpers para DTOs simples de entidades relacionadas
+    private ImagenDTO convertToImagenSimpleDTO(Imagen imagen) {
+        if (imagen == null) return null;
+        ImagenDTO dto = new ImagenDTO();
+        dto.setId(imagen.getId());
+        dto.setDenominacion(imagen.getDenominacion());
+        dto.setBaja(imagen.isBaja());
+        return dto;
+    }
+
+    private ArticuloManufacturadoSimpleDTO convertToArticuloManufacturadoSimpleDTO(ArticuloManufacturado am) {
+        if (am == null) return null;
+        ArticuloManufacturadoSimpleDTO dto = new ArticuloManufacturadoSimpleDTO();
+        dto.setId(am.getId());
+        dto.setDenominacion(am.getDenominacion());
+        dto.setPrecioVenta(am.getPrecioVenta());
+        dto.setBaja(am.isBaja());
+        return dto;
+    }
+
+    private SucursalSimpleDTO convertToSucursalSimpleDTO(Sucursal sucursal) {
+        if (sucursal == null) return null;
+        SucursalSimpleDTO dto = new SucursalSimpleDTO();
+        dto.setId(sucursal.getId());
+        dto.setNombre(sucursal.getNombre());
+        dto.setBaja(sucursal.isBaja());
+        // Podrías añadir más campos si es necesario para la visualización de la promoción
         return dto;
     }
 }

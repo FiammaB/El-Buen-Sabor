@@ -1,18 +1,19 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClienteActualizacionDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ClienteRegistroDTO;
-import ElBuenSabor.ProyectoFinal.DTO.LoginDTO;
-import ElBuenSabor.ProyectoFinal.Entities.*; // Importa todas las entidades
-import ElBuenSabor.ProyectoFinal.Repositories.*; // Importa todos los repositorios
+import ElBuenSabor.ProyectoFinal.DTO.*;
+import ElBuenSabor.ProyectoFinal.Entities.*;
+import ElBuenSabor.ProyectoFinal.Repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern; // Para validación de regex
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implements ClienteService {
@@ -23,21 +24,17 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
     private final ProvinciaRepository provinciaRepository;
     private final PaisRepository paisRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ImagenRepository imagenRepository; // Añadido por si se gestionan imágenes de cliente
+    private final ImagenRepository imagenRepository;
+    private final PedidoRepository pedidoRepository; // Para verificar pedidos activos
 
-    // Regex para validación de contraseña y email (ajustar según sea necesario)
-    // La contraseña deberá tener un mínimo de 8 (ocho) caracteres,
-    // y tendrá que tener por lo menos una letra mayúscula, una letra minúscula y un símbolo.
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=_*\\-.])(?=\\S+$).{8,}$");
-    // El sistema tendrá que verificar que la dirección de mail haya sido escrita de forma correcta.
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$");
-
 
     @Autowired
     public ClienteServiceImpl(ClienteRepository clienteRepository, DomicilioRepository domicilioRepository,
                               LocalidadRepository localidadRepository, ProvinciaRepository provinciaRepository,
-                              PaisRepository paisRepository, PasswordEncoder passwordEncoder,//Error passwordEncoder: Could not autowire. No beans of 'PasswordEncoder' type found.(Habia que terminar de configurar SpringSecurity, por ahora hice un Bean en el main de PasswordEncoder
-                              ImagenRepository imagenRepository) { // ImagenRepository inyectado
+                              PaisRepository paisRepository, PasswordEncoder passwordEncoder,
+                              ImagenRepository imagenRepository, PedidoRepository pedidoRepository) {
         super(clienteRepository);
         this.clienteRepository = clienteRepository;
         this.domicilioRepository = domicilioRepository;
@@ -45,218 +42,328 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
         this.provinciaRepository = provinciaRepository;
         this.paisRepository = paisRepository;
         this.passwordEncoder = passwordEncoder;
-        this.imagenRepository = imagenRepository; // Asignar
+        this.imagenRepository = imagenRepository;
+        this.pedidoRepository = pedidoRepository;
     }
 
     @Override
     @Transactional
-    public Cliente registrarCliente(ClienteRegistroDTO registroDTO) throws Exception {
-        // 1. Verificar que el email no exista
-        if (clienteRepository.existsByEmail(registroDTO.getEmail())) {
+    public ClienteResponseDTO registrarCliente(ClienteRegistroDTO dto) throws Exception {
+        // HU#39: Verificar que no exista un usuario con su email (incluyendo los 'baja')
+        if (clienteRepository.existsByEmailRaw(dto.getEmail())) {
             throw new Exception("El email ya está registrado.");
         }
-
-        // 2. Verificar que las contraseñas coincidan
-        if (!registroDTO.getPassword().equals(registroDTO.getConfirmPassword())) {
+        // HU#38: Validar formato de email
+        if (!EMAIL_PATTERN.matcher(dto.getEmail()).matches()) {
+            throw new Exception("Formato de email inválido.");
+        }
+        // HU#37: Verificar que las dos contraseñas ingresadas sean exactamente iguales.
+        if (!dto.getPassword().equals(dto.getConfirmPassword())) {
             throw new Exception("Las contraseñas no coinciden.");
         }
-
-        // 3. Validar la fuerza de la contraseña
-        if (!isValidPassword(registroDTO.getPassword())) {
+        // HU#36: Validar fortaleza de la contraseña
+        if (!PASSWORD_PATTERN.matcher(dto.getPassword()).matches()) {
             throw new Exception("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo.");
         }
 
-        // 4. Validar formato de email
-        if (!isValidEmail(registroDTO.getEmail())) {
-            throw new Exception("Formato de email inválido.");
+        // Crear Domicilio (HU#35)
+        Pais pais = findOrCreatePais(dto.getNombrePais());
+        Provincia provincia = findOrCreateProvincia(dto.getNombreProvincia(), pais);
+        Localidad localidad = findOrCreateLocalidad(dto.getNombreLocalidad(), provincia);
+
+        Domicilio domicilio = Domicilio.builder()
+                .calle(dto.getCalle())
+                .numero(dto.getNumero())
+                .cp(dto.getCp())
+                .localidad(localidad)
+                .build();
+        // No guardar domicilio aquí si se va a asociar al cliente y guardar por cascada.
+
+        Cliente cliente = new Cliente();
+        cliente.setNombre(dto.getNombre());
+        cliente.setApellido(dto.getApellido());
+        cliente.setTelefono(dto.getTelefono());
+        cliente.setEmail(dto.getEmail());
+        cliente.setUsername(dto.getEmail()); // HU#5: email como username
+        cliente.setPassword(passwordEncoder.encode(dto.getPassword())); // HU#40: contraseña encriptada
+        cliente.setFechaNacimiento(dto.getFechaNacimiento());
+        cliente.setBaja(false); // HU#41: Por defecto activo
+        // Rol es implícitamente CLIENTE (HU#41)
+
+        if (dto.getImagenId() != null) {
+            Imagen img = imagenRepository.findById(dto.getImagenId())
+                    .orElseThrow(() -> new Exception("Imagen activa no encontrada con ID: " + dto.getImagenId()));
+            cliente.setImagen(img);
         }
 
-        try {
-            Pais pais = paisRepository.findByNombre(registroDTO.getNombrePais());
-            if (pais == null) {
-                pais = Pais.builder().nombre(registroDTO.getNombrePais()).build();
-                pais = paisRepository.save(pais);
-            }
+        // Asociar domicilio
+        // Si Cliente es dueño de la relación con @JoinColumn en Cliente.domicilios,
+        // la FK cliente_id estará en la tabla Domicilio.
+        // Guardar cliente primero para tener su ID, luego setear el cliente_id en domicilio.
+        // O, si la cascada está bien y Domicilio tiene ManyToOne a Cliente:
+        // cliente.getDomicilios().add(domicilio);
+        // domicilio.setCliente(cliente); // Si la relación es bidireccional y Domicilio tiene el campo.
+        // Con @JoinColumn en Cliente.domicilios, el cliente_id se setea en la tabla domicilio.
+        // Es más simple guardar el cliente primero, luego el domicilio con el cliente_id,
+        // o guardar el domicilio y luego añadirlo al cliente y guardar el cliente.
+        // Con CascadeType.ALL en Cliente.domicilios, al guardar cliente, se guarda el domicilio.
+        cliente.getDomicilios().add(domicilio); // Añadir a la colección gestionada por Cliente
 
-            Provincia provincia = provinciaRepository.findByNombre(registroDTO.getNombreProvincia());
-            if (provincia == null) {
-                provincia = Provincia.builder().nombre(registroDTO.getNombreProvincia()).pais(pais).build();
-                provincia = provinciaRepository.save(provincia);
-            }
+        Cliente savedCliente = clienteRepository.save(cliente); // Esto guardará el cliente y el domicilio por cascada
+        return convertToDTO(savedCliente);
+    }
 
-            Localidad localidad = localidadRepository.findByNombre(registroDTO.getNombreLocalidad());
-            if (localidad == null) {
-                localidad = Localidad.builder().nombre(registroDTO.getNombreLocalidad()).provincia(provincia).build();
-                localidad = localidadRepository.save(localidad);
-            }
-
-            Domicilio domicilio = Domicilio.builder()
-                    .calle(registroDTO.getCalle())
-                    .numero(registroDTO.getNumero())
-                    .cp(registroDTO.getCp())
-                    .localidad(localidad)
-                    .build();
-            domicilio = domicilioRepository.save(domicilio);
-
-            Cliente cliente = Cliente.builder()
-                    .nombre(registroDTO.getNombre())
-                    .apellido(registroDTO.getApellido())
-                    .telefono(registroDTO.getTelefono())
-                    .email(registroDTO.getEmail())
-                    .password(passwordEncoder.encode(registroDTO.getPassword())) // Encriptar contraseña
-                    .estaDadoDeBaja(false) // Por defecto no dado de baja
-                    .domicilios(new ArrayList<>()) // Inicializar la lista de domicilios
-                    .fechaNacimiento(registroDTO.getFechaNacimiento()) // Asumiendo que lo añadiste al DTO
-                    .build();
-
-            // Imagen de cliente (opcional, si se maneja en el registro)
-            if (registroDTO.getImagenId() != null) {
-                Imagen imagenCliente = imagenRepository.findById(registroDTO.getImagenId())
-                        .orElseThrow(() -> new Exception("Imagen de cliente no encontrada con ID: " + registroDTO.getImagenId()));
-                cliente.setImagen(imagenCliente);
-            }
+    private Pais findOrCreatePais(String nombre) {
+        Optional<Pais> opt = paisRepository.findByNombreRaw(nombre);
+        return opt.orElseGet(() -> paisRepository.save(Pais.builder().nombre(nombre).build()));
+    }
+    private Provincia findOrCreateProvincia(String nombre, Pais pais) {
+        // Asumiendo que ProvinciaRepository tiene findByNombreAndPaisRaw
+        // Optional<Provincia> opt = provinciaRepository.findByNombreAndPaisRaw(nombre, pais);
+        // Si no, filtrar:
+        Optional<Provincia> opt = provinciaRepository.findAllRaw().stream()
+                .filter(p -> p.getNombre().equalsIgnoreCase(nombre) && p.getPais().getId().equals(pais.getId()))
+                .findFirst();
+        return opt.orElseGet(() -> provinciaRepository.save(Provincia.builder().nombre(nombre).pais(pais).build()));
+    }
+    private Localidad findOrCreateLocalidad(String nombre, Provincia provincia) {
+        // Asumiendo que LocalidadRepository tiene findByNombreAndProvinciaRaw
+        Optional<Localidad> opt = localidadRepository.findByNombreAndProvinciaRaw(nombre, provincia);
+        return opt.orElseGet(() -> localidadRepository.save(Localidad.builder().nombre(nombre).provincia(provincia).build()));
+    }
 
 
-            cliente.getDomicilios().add(domicilio);
-            cliente.setUsername(registroDTO.getEmail()); // Usar email como username
-            // cliente.setAuth0Id(registroDTO.getEmail()); // Opcional, si usas Auth0
+    @Override
+    @Transactional(readOnly = true)
+    public ClienteResponseDTO loginCliente(LoginDTO loginDTO) throws Exception {
+        // HU#44: Usar email como username
+        Cliente cliente = clienteRepository.findByEmailRaw(loginDTO.getEmail())
+                .orElseThrow(() -> new Exception("Credenciales inválidas. Email no encontrado."));
 
-
-            return clienteRepository.save(cliente);
-        } catch (Exception e) {
-            // Es buena práctica loggear el error aquí también
-            throw new Exception("Error al registrar el cliente: " + e.getMessage(), e);
+        // HU#46: Si el cliente está dado de baja
+        if (cliente.isBaja()) {
+            throw new Exception("El cliente está dado de baja y no puede realizar pedidos.");
         }
+        // HU#44: Verificar contraseña
+        if (!passwordEncoder.matches(loginDTO.getPassword(), cliente.getPassword())) {
+            throw new Exception("Credenciales inválidas. Contraseña incorrecta.");
+        }
+        return convertToDTO(cliente);
+    }
+
+    @Override
+    @Transactional
+    public ClienteResponseDTO actualizarCliente(Long id, ClienteActualizacionDTO dto, Usuario actor) throws Exception {
+        Cliente clienteAActualizar = clienteRepository.findByIdRaw(id)
+                .orElseThrow(() -> new Exception("Cliente no encontrado con ID: " + id + " para actualizar."));
+
+        boolean esAdmin = (actor instanceof Empleado && ((Empleado) actor).getRol() == Rol.ADMINISTRADOR);
+        boolean esElMismoCliente = actor != null && actor.getId().equals(clienteAActualizar.getId()) && actor instanceof Cliente;
+
+        if (!esAdmin && !esElMismoCliente) {
+            throw new Exception("No tiene permisos para actualizar este perfil de cliente.");
+        }
+
+        // HU#50, HU#151 (Admin modifica cliente)
+        clienteAActualizar.setNombre(dto.getNombre());
+        clienteAActualizar.setApellido(dto.getApellido());
+        clienteAActualizar.setTelefono(dto.getTelefono());
+        clienteAActualizar.setFechaNacimiento(dto.getFechaNacimiento());
+
+        // HU#51: Cambio de contraseña
+        if (dto.getNewPassword() != null && !dto.getNewPassword().isEmpty()) {
+            if (esElMismoCliente) { // Cliente cambiando su propia contraseña
+                if (dto.getCurrentPassword() == null || !passwordEncoder.matches(dto.getCurrentPassword(), clienteAActualizar.getPassword())) {
+                    throw new Exception("La contraseña actual ingresada es incorrecta.");
+                }
+            } // Admin puede cambiarla sin la actual (si esa es la regla de negocio)
+
+            if (!dto.getNewPassword().equals(dto.getConfirmNewPassword())) {
+                throw new Exception("Las nuevas contraseñas no coinciden.");
+            }
+            if (!PASSWORD_PATTERN.matcher(dto.getNewPassword()).matches()) {
+                throw new Exception("La nueva contraseña debe cumplir los requisitos de fortaleza.");
+            }
+            clienteAActualizar.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        }
+
+        // Actualizar imagen
+        if (dto.getImagenId() != null) {//Operator '!=' cannot be applied to 'long', 'null'(ln 191)
+            if (dto.getImagenId() == 0L) { clienteAActualizar.setImagen(null); }
+            else {
+                Imagen img = imagenRepository.findById(dto.getImagenId())
+                        .orElseThrow(() -> new Exception("Imagen activa no encontrada con ID: " + dto.getImagenId()));
+                clienteAActualizar.setImagen(img);
+            }
+        }
+
+        // HU#50: Actualizar domicilio (asumiendo que se actualiza el primero o uno específico)
+        // La lógica actual de ClienteActualizacionDTO es para un solo domicilio.
+        if (dto.getCalle() != null && !dto.getCalle().isEmpty()) {
+            Domicilio domPrincipal = null;
+            if (clienteAActualizar.getDomicilios() != null && !clienteAActualizar.getDomicilios().isEmpty()) {
+                // Actualizar el primer domicilio activo, o el primero si todos están de baja
+                domPrincipal = clienteAActualizar.getDomicilios().stream().filter(d -> !d.isBaja()).findFirst()
+                        .orElse(clienteAActualizar.getDomicilios().get(0));
+            } else { // Si no tiene domicilios, crear uno nuevo
+                domPrincipal = new Domicilio();
+                domPrincipal.setBaja(false);
+                if (clienteAActualizar.getDomicilios() == null) clienteAActualizar.setDomicilios(new ArrayList<>());
+                clienteAActualizar.getDomicilios().add(domPrincipal);
+                // Si la FK cliente_id está en Domicilio y no se maneja por @JoinColumn en Cliente,
+                // se necesitaría setear domPrincipal.setCliente(clienteAActualizar) o similar.
+                // Con @JoinColumn en Cliente.domicilios, la asociación se maneja al guardar Cliente.
+            }
+
+            Pais pais = findOrCreatePais(dto.getNombrePais());
+            Provincia provincia = findOrCreateProvincia(dto.getNombreProvincia(), pais);
+            Localidad localidad = findOrCreateLocalidad(dto.getNombreLocalidad(), provincia);
+
+            domPrincipal.setCalle(dto.getCalle());
+            domPrincipal.setNumero(dto.getNumero());
+            domPrincipal.setCp(dto.getCp());
+            domPrincipal.setLocalidad(localidad);
+            // No es necesario guardar el domicilio por separado si CascadeType.ALL está en Cliente.domicilios
+        }
+
+        // HU#151: Admin puede dar de baja/alta
+        if (esAdmin && dto.getBaja() != null && dto.getBaja() != clienteAActualizar.isBaja()) {//Cannot resolve method 'getBaja' in 'ClienteActualizacionDTO'(ln 230)
+            if (dto.getBaja()) { // Dar de baja
+                this.softDelete(id); // Llama al softDelete que verifica pedidos activos
+            } else { // Dar de alta
+                this.reactivate(id);
+            }
+        }
+        // El save del cliente al final actualizará todo por cascada si está configurado.
+        return convertToDTO(clienteRepository.save(clienteAActualizar));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Cliente loginCliente(LoginDTO loginDTO) throws Exception {
-        Cliente cliente = clienteRepository.findByEmail(loginDTO.getEmail());
-        if (cliente == null) {
-            throw new Exception("Credenciales inválidas. Email no encontrado.");
-        }
+    public ClienteResponseDTO findClienteByIdDTO(Long id) throws Exception {
+        return convertToDTO(super.findById(id).orElse(null));
+    }
 
-        if (cliente.isEstaDadoDeBaja()) { //
-            throw new Exception("El cliente está dado de baja y no puede acceder al sistema.");
-        }
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClienteResponseDTO> findAllClientesDTO() throws Exception {
+        return super.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
 
-        if (!passwordEncoder.matches(loginDTO.getPassword(), cliente.getPassword())) { //
-            throw new Exception("Credenciales inválidas. Contraseña incorrecta.");
-        }
-        return cliente;
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Cliente> findByEmailRaw(String email) throws Exception {
+        return clienteRepository.findByEmailRaw(email);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByEmailRaw(String email) throws Exception {
+        return clienteRepository.existsByEmailRaw(email);
+    }
+
+    // --- Implementación de métodos de BaseService ---
+    @Override
+    @Transactional(readOnly = true)
+    public List<Cliente> findAllIncludingDeleted() throws Exception {
+        return clienteRepository.findAllRaw();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Cliente> findByIdIncludingDeleted(Long id) throws Exception {
+        return clienteRepository.findByIdRaw(id);
     }
 
     @Override
     @Transactional
-    public Cliente actualizarCliente(Long id, ClienteActualizacionDTO actualizacionDTO) throws Exception {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new Exception("Cliente no encontrado con ID: " + id));
-
-        // Actualizar datos personales
-        cliente.setNombre(actualizacionDTO.getNombre());
-        cliente.setApellido(actualizacionDTO.getApellido());
-        cliente.setTelefono(actualizacionDTO.getTelefono());
-        if (actualizacionDTO.getFechaNacimiento() != null) {
-            cliente.setFechaNacimiento(actualizacionDTO.getFechaNacimiento());
+    public Cliente softDelete(Long id) throws Exception {
+        Cliente cliente = this.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new Exception("Cliente no encontrado con ID: " + id + " para dar de baja."));
+        if (cliente.isBaja()) {
+            throw new Exception("El cliente ya está dado de baja.");
         }
-
-        // Actualizar imagen (opcional)
-        //if (actualizacionDTO.getImagenId() != null) {
-        if (actualizacionDTO.getImagenId() != 0) {
-            if(actualizacionDTO.getImagenId() == 0L) { // Convención para quitar la imagen
-                cliente.setImagen(null);
-            } else {
-                Imagen imagenCliente = imagenRepository.findById(actualizacionDTO.getImagenId())
-                        .orElseThrow(() -> new Exception("Imagen de cliente no encontrada con ID: " + actualizacionDTO.getImagenId()));
-                cliente.setImagen(imagenCliente);
-            }
+        // Lógica de negocio: No dar de baja si tiene pedidos activos no finalizados.
+        if (pedidoRepository.existsActivePedidoWithCliente(id)) { // Cannot resolve method 'existsActivePedidoWithCliente' in 'PedidoRepository' (ln287)
+            throw new Exception("No se puede dar de baja al cliente porque tiene pedidos activos no finalizados.");
         }
-
-
-        // Actualizar domicilio (asumiendo un solo domicilio principal por simplicidad o actualizando el primero)
-        // Una lógica más compleja podría permitir elegir cuál domicilio actualizar o añadir nuevos.
-        if (actualizacionDTO.getCalle() != null && !actualizacionDTO.getCalle().isEmpty()) {
-            Domicilio domicilio;
-            if (cliente.getDomicilios() == null || cliente.getDomicilios().isEmpty()) {
-                domicilio = new Domicilio();
-                if(cliente.getDomicilios() == null) cliente.setDomicilios(new ArrayList<>());
-                cliente.getDomicilios().add(domicilio);
-            } else {
-                domicilio = cliente.getDomicilios().get(0); // Actualiza el primer domicilio
-            }
-
-            Pais pais = paisRepository.findByNombre(actualizacionDTO.getNombrePais());
-            if (pais == null) {
-                pais = Pais.builder().nombre(actualizacionDTO.getNombrePais()).build();
-                pais = paisRepository.save(pais);
-            }
-
-            Provincia provincia = provinciaRepository.findByNombre(actualizacionDTO.getNombreProvincia());
-            if (provincia == null) {
-                provincia = Provincia.builder().nombre(actualizacionDTO.getNombreProvincia()).pais(pais).build();
-                provincia = provinciaRepository.save(provincia);
-            }
-
-            Localidad localidad = localidadRepository.findByNombre(actualizacionDTO.getNombreLocalidad());
-            if (localidad == null) {
-                localidad = Localidad.builder().nombre(actualizacionDTO.getNombreLocalidad()).provincia(provincia).build();
-                localidad = localidadRepository.save(localidad);
-            }
-
-            domicilio.setCalle(actualizacionDTO.getCalle());
-            domicilio.setNumero(actualizacionDTO.getNumero());
-            domicilio.setCp(actualizacionDTO.getCp());
-            domicilio.setLocalidad(localidad);
-            domicilioRepository.save(domicilio); // Guardar o actualizar el domicilio
-        }
-
-        // Actualizar contraseña
-        if (actualizacionDTO.getNewPassword() != null && !actualizacionDTO.getNewPassword().isEmpty()) {
-            if (actualizacionDTO.getCurrentPassword() == null || !passwordEncoder.matches(actualizacionDTO.getCurrentPassword(), cliente.getPassword())) {
-                throw new Exception("La contraseña actual ingresada es incorrecta.");
-            }
-            if (!actualizacionDTO.getNewPassword().equals(actualizacionDTO.getConfirmNewPassword())) { //
-                throw new Exception("Las nuevas contraseñas no coinciden.");
-            }
-            if (!isValidPassword(actualizacionDTO.getNewPassword())) { //
-                throw new Exception("La nueva contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo.");
-            }
-            cliente.setPassword(passwordEncoder.encode(actualizacionDTO.getNewPassword())); //
-        }
-
+        cliente.setBaja(true);
         return clienteRepository.save(cliente);
     }
 
     @Override
     @Transactional
-    public void darBajaCliente(Long id) throws Exception { //
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new Exception("Cliente no encontrado con ID: " + id));
-        cliente.setEstaDadoDeBaja(true);
-        clienteRepository.save(cliente);
+    public Cliente reactivate(Long id) throws Exception {
+        Cliente cliente = this.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new Exception("Cliente no encontrado con ID: " + id + " para reactivar."));
+        if (!cliente.isBaja()) {
+            throw new Exception("El cliente no está dado de baja, no se puede reactivar.");
+        }
+        cliente.setBaja(false);
+        return clienteRepository.save(cliente);
+    }
+
+    // --- Implementación de métodos de ClienteService que devuelven DTO ---
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClienteResponseDTO> findAllClientesIncludingDeleted() throws Exception {
+        return this.findAllIncludingDeleted().stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @Override
-    @Transactional
-    public void darAltaCliente(Long id) throws Exception {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new Exception("Cliente no encontrado con ID: " + id));
-        cliente.setEstaDadoDeBaja(false);
-        clienteRepository.save(cliente);
+    @Transactional(readOnly = true)
+    public ClienteResponseDTO findClienteByIdIncludingDeletedDTO(Long id) throws Exception {
+        return convertToDTO(this.findByIdIncludingDeleted(id).orElse(null));
     }
 
-    // Métodos de validación privados
-    private boolean isValidPassword(String password) { //
-        if (password == null) return false;
-        // Ajustado para incluir un número como comúnmente se requiere.
-        // La regex original: ".*[!@#<span class="math-inline">%^&\*\(\)\_\+\\\\\-\=\\\\\[\\\\\]\{\};'\:\\",\.<\>/?\]\.\*"\); // Al menos un símbolo
-        // La he simplificado a un conjunto común de símbolos.
-        return PASSWORD_PATTERN.matcher(password).matches();
+    private ClienteResponseDTO convertToDTO(Cliente cliente) {
+        if (cliente == null) return null;
+        ClienteResponseDTO dto = new ClienteResponseDTO();
+        dto.setId(cliente.getId());
+        dto.setNombre(cliente.getNombre());
+        dto.setApellido(cliente.getApellido());
+        dto.setTelefono(cliente.getTelefono());
+        dto.setEmail(cliente.getEmail());
+        dto.setUsername(cliente.getUsername());
+        dto.setAuth0Id(cliente.getAuth0Id()); // Heredado de Usuario
+        dto.setFechaNacimiento(cliente.getFechaNacimiento());
+        dto.setBaja(cliente.isBaja());//Cannot resolve method 'setBaja' in 'ClienteResponseDTO' (ln 330)
+
+        if (cliente.getImagen() != null) {
+            ImagenDTO imgDto = new ImagenDTO();
+            imgDto.setId(cliente.getImagen().getId());
+            imgDto.setDenominacion(cliente.getImagen().getDenominacion());
+            imgDto.setBaja(cliente.getImagen().isBaja());
+            dto.setImagen(imgDto);
+        }
+
+        if (cliente.getDomicilios() != null) {
+            dto.setDomicilios(cliente.getDomicilios().stream()
+                    .filter(dom -> !dom.isBaja()) // Mostrar solo domicilios activos
+                    .map(this::convertToSimpleDomicilioDTO) // Usar un DTO simple para domicilio
+                    .collect(Collectors.toList()));
+        } else {
+            dto.setDomicilios(new ArrayList<>());
+        }
+        return dto;
     }
 
-    private boolean isValidEmail(String email) { //
-        if (email == null) return false;
-        return EMAIL_PATTERN.matcher(email).matches();
+    private DomicilioDTO convertToSimpleDomicilioDTO(Domicilio domicilio) {
+        if (domicilio == null) return null;
+        DomicilioDTO dto = new DomicilioDTO();
+        dto.setId(domicilio.getId());
+        dto.setCalle(domicilio.getCalle());
+        dto.setNumero(domicilio.getNumero());
+        dto.setCp(domicilio.getCp());
+        dto.setBaja(domicilio.isBaja());
+        if (domicilio.getLocalidad() != null) {
+            LocalidadDTO locDto = new LocalidadDTO();
+            locDto.setId(domicilio.getLocalidad().getId());
+            locDto.setNombre(domicilio.getLocalidad().getNombre());
+            locDto.setBaja(domicilio.getLocalidad().isBaja());
+            // Para simplificar, no incluimos Provincia/Pais aquí, pero podría hacerse
+            dto.setLocalidad(locDto);
+        }
+        return dto;
     }
 }

@@ -1,6 +1,6 @@
 package ElBuenSabor.ProyectoFinal.DTO;
 
-import jakarta.validation.constraints.NotBlank; // Para validaciones futuras
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -27,20 +27,16 @@ public class DomicilioCreateUpdateDTO {
     @Positive
     private Integer cp;
 
-    // Este campo es para cuando se conoce el ID exacto de la localidad y ya existe.
-    // Si se proporcionan los nombres de país/provincia/localidad, estos podrían usarse
-    // para buscar o crear, y localidadId podría ser opcional o ignorado en ese caso.
-    // O, si localidadId está presente, podría tener precedencia.
+    // Para creación/actualización independiente, la localidad debe existir.
+    @NotNull(message = "El ID de la localidad es obligatorio")
     private Long localidadId;
 
-    // Campos añadidos para permitir la búsqueda o creación por nombre,
-    // consistentes con la lógica de ClienteServiceImpl y la actual de SucursalServiceImpl.
-    @NotBlank(message = "El nombre de la localidad es obligatorio para el domicilio")
-    private String nombreLocalidad;
-
-    @NotBlank(message = "El nombre de la provincia es obligatorio para el domicilio")
+    // Estos campos son más para cuando se crea un domicilio junto con Cliente/Sucursal
+    // y se quiere buscar/crear la jerarquía geográfica por nombre.
+    // Para un DomicilioCreateUpdateDTO usado por DomicilioController, podrían ser opcionales
+    // o eliminados si se asume que la localidad (y su jerarquía) ya existe y se referencia por localidadId.
+    // Por ahora, los mantenemos para consistencia con su uso en SucursalServiceImpl.
+    private String nombreLocalidad; // Si se usa, localidadId podría ser ignorado o usado para verificar.
     private String nombreProvincia;
-
-    @NotBlank(message = "El nombre del país es obligatorio para el domicilio")
     private String nombrePais;
 }

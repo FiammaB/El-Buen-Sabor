@@ -1,20 +1,21 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.DomicilioDTO;
+import ElBuenSabor.ProyectoFinal.DTO.EmpresaCreateUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.EmpresaDTO;
-import ElBuenSabor.ProyectoFinal.Entities.Empresa;
+import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO; // Para el endpoint de sucursales por empresa
+import ElBuenSabor.ProyectoFinal.DTO.SucursalSimpleDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Empresa; // Para el tipo de retorno de reactivate
 import ElBuenSabor.ProyectoFinal.Service.EmpresaService;
-import ElBuenSabor.ProyectoFinal.Service.SucursalService; // Para listar sucursales de una empresa
-import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO; // Para la respuesta de sucursales
+import ElBuenSabor.ProyectoFinal.Service.SucursalService; // Para obtener sucursales
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -26,13 +27,13 @@ public class EmpresaController {
     private EmpresaService empresaService;
 
     @Autowired
-    private SucursalService sucursalService; // Para el helper convertToEmpresaDTO
+    private SucursalService sucursalService; // Para listar sucursales de una empresa
 
     @PostMapping("")
-    public ResponseEntity<?> createEmpresa(@RequestBody EmpresaDTO empresaDTO) {
+    public ResponseEntity<?> createEmpresa(@Valid @RequestBody EmpresaCreateUpdateDTO empresaDTO) {
         try {
-            Empresa nuevaEmpresa = empresaService.createEmpresa(empresaDTO);
-            return new ResponseEntity<>(convertToEmpresaDTO(nuevaEmpresa), HttpStatus.CREATED);
+            EmpresaDTO nuevaEmpresa = empresaService.createEmpresa(empresaDTO);
+            return new ResponseEntity<>(nuevaEmpresa, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -41,84 +42,139 @@ public class EmpresaController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getEmpresaById(@PathVariable Long id) {
         try {
-            Optional<Empresa> empresaOptional = empresaService.findById(id);
-            if (empresaOptional.isPresent()) {
-                return ResponseEntity.ok(convertToEmpresaDTO(empresaOptional.get()));
+            EmpresaDTO dto = empresaService.findEmpresaById(id); // Devuelve activas
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
             } else {
-                return new ResponseEntity<>("Empresa no encontrada.", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Empresa activa no encontrada con ID: " + id, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener la empresa: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("")
-    public ResponseEntity<?> getAllEmpresas() {
+    public ResponseEntity<?> getAllEmpresasActivas() {
         try {
-            List<Empresa> empresas = empresaService.findAll();
-            List<EmpresaDTO> dtos = empresas.stream()
-                    .map(this::convertToEmpresaDTO)
-                    .collect(Collectors.toList());
+            List<EmpresaDTO> dtos = empresaService.findAllEmpresas(); // Devuelve DTOs de activas
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener empresas activas: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEmpresa(@PathVariable Long id, @RequestBody EmpresaDTO empresaDTO) {
+    public ResponseEntity<?> updateEmpresa(@PathVariable Long id, @Valid @RequestBody EmpresaCreateUpdateDTO empresaDTO) {
         try {
-            Empresa empresaActualizada = empresaService.updateEmpresa(id, empresaDTO);
-            return ResponseEntity.ok(convertToEmpresaDTO(empresaActualizada));
+            EmpresaDTO empresaActualizada = empresaService.updateEmpresa(id, empresaDTO);
+            return ResponseEntity.ok(empresaActualizada);
         } catch (Exception e) {
+            if (e.getMessage().contains("no encontrada")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteEmpresa(@PathVariable Long id) {
+    public ResponseEntity<?> darBajaEmpresa(@PathVariable Long id) {
         try {
-            // Considerar lógica de borrado: no permitir si tiene sucursales activas.
-            // Esta lógica debería estar en el EmpresaService.delete o un método específico.
-            boolean eliminado = empresaService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("Empresa eliminada correctamente.");
-            } else {
-                return new ResponseEntity<>("Empresa no encontrada.", HttpStatus.NOT_FOUND);
-            }
+            empresaService.softDelete(id); // El servicio ahora verifica si tiene sucursales activas
+            return ResponseEntity.ok("Empresa dada de baja correctamente (borrado lógico).");
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            if (e.getMessage().contains("no encontrada") || e.getMessage().contains("ya está dada de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            if (e.getMessage().contains("tiene sucursales activas")) { // Mensaje del servicio
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT); // 409 Conflict
+            }
+            return new ResponseEntity<>("Error al dar de baja la empresa: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
-    // Helper para convertir Empresa a EmpresaDTO, incluyendo sucursales simples si es necesario
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<?> reactivarEmpresa(@PathVariable Long id) {
+        try {
+            Empresa empresaReactivadaEntity = empresaService.reactivate(id);
+            // Necesitamos un método para convertir Empresa a EmpresaDTO si el servicio devuelve la entidad
+            return ResponseEntity.ok(convertToEmpresaDTO(empresaReactivadaEntity));
+        } catch (Exception e) {
+            if (e.getMessage().contains("no encontrada") || e.getMessage().contains("no está dada de baja")) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>("Error al reactivar la empresa: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/todos")
+    // @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllEmpresasIncludingDeletedForAdmin() {
+        try {
+            List<EmpresaDTO> dtos = empresaService.findAllEmpresasIncludingDeleted();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error al obtener todas las empresas (incluyendo bajas): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/{id}")
+    // @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getEmpresaByIdIncludingDeletedForAdmin(@PathVariable Long id) {
+        try {
+            EmpresaDTO dto = empresaService.findEmpresaByIdIncludingDeleted(id);
+            if (dto != null) {
+                return ResponseEntity.ok(dto);
+            } else {
+                return new ResponseEntity<>("Empresa (activa o inactiva) no encontrada con ID: " + id, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error al obtener la empresa (incluyendo bajas): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Endpoint para obtener las sucursales (activas) de una empresa específica
+    @GetMapping("/{empresaId}/sucursales")
+    public ResponseEntity<?> obtenerSucursalesPorEmpresa(@PathVariable Long empresaId) {
+        try {
+            EmpresaDTO empresa = empresaService.findEmpresaById(empresaId); // Verifica si la empresa activa existe
+            if (empresa == null) {
+                return new ResponseEntity<>("Empresa activa no encontrada con ID: " + empresaId, HttpStatus.NOT_FOUND);
+            }
+            // El SucursalService debería tener un método findByEmpresaId que devuelva DTOs de sucursales activas
+            // List<SucursalDTO> sucursales = sucursalService.findByEmpresaIdAndBajaFalse(empresaId);
+            // Por ahora, si EmpresaDTO ya las carga (filtradas o no):
+            if (empresa.getSucursales() != null) {
+                // Filtrar para mostrar solo sucursales activas si el convertToDTO de Empresa no lo hizo ya
+                List<SucursalSimpleDTO> sucursalesActivas = empresa.getSucursales().stream()
+                        .filter(s -> !s.isBaja())
+                        .collect(Collectors.toList());
+                return ResponseEntity.ok(sucursalesActivas);
+            }
+            return ResponseEntity.ok(List.of()); // Lista vacía si no hay sucursales
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error al obtener las sucursales de la empresa: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Helper para convertir Empresa a EmpresaDTO (si el servicio devuelve la entidad)
     private EmpresaDTO convertToEmpresaDTO(Empresa empresa) {
         if (empresa == null) return null;
+        // Esta lógica ya está en EmpresaServiceImpl. Si el servicio siempre devuelve DTOs,
+        // este helper en el controlador no es estrictamente necesario para todos los casos.
+        // Pero es útil si 'reactivate' devuelve la entidad.
         EmpresaDTO dto = new EmpresaDTO();
         dto.setId(empresa.getId());
         dto.setNombre(empresa.getNombre());
         dto.setRazonSocial(empresa.getRazonSocial());
         dto.setCuil(empresa.getCuil());
-
-        // Convertir sucursales si existen y el DTO las espera
-        if (empresa.getSucursales() != null && !empresa.getSucursales().isEmpty()) { //
-            dto.setSucursales(empresa.getSucursales().stream().map(sucursal -> { //
-                // Usar un SucursalSimpleDTO o el SucursalDTO completo si no es muy pesado
-                // Aquí uso SucursalDTO pero limitado para evitar ciclos
-                SucursalDTO sucDto = new SucursalDTO();
+        dto.setBaja(empresa.isBaja());
+        if (empresa.getSucursales() != null) {
+            dto.setSucursales(empresa.getSucursales().stream().map(sucursal -> {
+                SucursalSimpleDTO sucDto = new SucursalSimpleDTO();
                 sucDto.setId(sucursal.getId());
                 sucDto.setNombre(sucursal.getNombre());
-                sucDto.setHorarioApertura(sucursal.getHorarioApertura());
-                sucDto.setHorarioCierre(sucursal.getHorarioCierre());
-                // No incluir la empresa de nuevo aquí para evitar ciclo.
-                // Domicilio podría ser un DomicilioSimpleDTO
-                if (sucursal.getDomicilio() != null) {
-                    DomicilioDTO domDto = new DomicilioDTO();
-                    domDto.setId(sucursal.getDomicilio().getId());
-                    domDto.setCalle(sucursal.getDomicilio().getCalle());
-                    // ... más campos del domicilio si se necesitan
-                    sucDto.setDomicilio(domDto);
-                }
+                sucDto.setBaja(sucursal.isBaja());
+                // ... otros campos para SucursalSimpleDTO
                 return sucDto;
             }).collect(Collectors.toList()));
         } else {

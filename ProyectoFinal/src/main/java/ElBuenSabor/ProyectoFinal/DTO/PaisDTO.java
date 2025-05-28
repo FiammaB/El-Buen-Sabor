@@ -17,4 +17,6 @@ public class PaisDTO {
     @NotBlank(message = "El nombre del país es obligatorio")
     @Size(min = 2, max = 100, message = "El nombre del país debe tener entre 2 y 100 caracteres")
     private String nombre;
+
+    private boolean baja; // Importante para que el admin pueda ver el estado
 }

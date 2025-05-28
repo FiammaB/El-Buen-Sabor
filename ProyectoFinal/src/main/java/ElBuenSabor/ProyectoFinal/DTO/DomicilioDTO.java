@@ -14,8 +14,9 @@ public class DomicilioDTO {
     private String calle;
     private Integer numero;
     private Integer cp;
-    private Long localidadId; // For request
-    private LocalidadDTO localidad; // For response
-    // If a Domicilio can be unlinked or linked to different clients/sucursales
-    // you might need a clienteId or sucursalId here for request DTOs.
+    private LocalidadDTO localidad; // DTO de la localidad asociada
+    private boolean baja; // Para reflejar el estado de borrado lógico
+    // Opcional: IDs del cliente o sucursal si este DomicilioDTO se usa en contextos donde se conoce esa asociación
+    // private Long clienteId;
+    // private Long sucursalId;
 }

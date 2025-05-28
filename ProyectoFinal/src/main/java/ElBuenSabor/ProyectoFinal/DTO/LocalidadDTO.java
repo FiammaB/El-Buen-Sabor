@@ -12,6 +12,6 @@ import lombok.Setter;
 public class LocalidadDTO {
     private Long id;
     private String nombre;
-    private Long provinciaId; // For request
-    private ProvinciaDTO provincia; // For response
+    private ProvinciaDTO provincia; // DTO de la provincia asociada
+    private boolean baja; // Para reflejar el estado de borrado lógico
 }

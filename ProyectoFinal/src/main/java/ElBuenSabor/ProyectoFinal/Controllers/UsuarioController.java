@@ -1,27 +1,22 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClienteResponseDTO; // Usaremos este para clientes
-import ElBuenSabor.ProyectoFinal.DTO.DomicilioDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
-import ElBuenSabor.ProyectoFinal.DTO.LocalidadDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PaisDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ProvinciaDTO;
-// Considerar un UsuarioBaseResponseDTO para información muy genérica si hay muchos tipos de usuario
-// import ElBuenSabor.ProyectoFinal.DTO.UsuarioBaseResponseDTO;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
-import ElBuenSabor.ProyectoFinal.Entities.Usuario;
+import ElBuenSabor.ProyectoFinal.DTO.*; // Importar todos los DTOs necesarios
+import ElBuenSabor.ProyectoFinal.Entities.*;
+import ElBuenSabor.ProyectoFinal.Service.ClienteService; // Para convertir a ClienteResponseDTO
+import ElBuenSabor.ProyectoFinal.Service.EmpleadoService; // Para convertir a EmpleadoResponseDTO
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
-import ElBuenSabor.ProyectoFinal.Service.ClienteService; // Para obtener detalles del cliente
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+// import org.springframework.security.access.prepost.PreAuthorize; // Para seguridad
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api/v1/usuarios") // Ruta para gestión general de usuarios (admin)
@@ -32,92 +27,63 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @Autowired
-    private ClienteService clienteService; // Inyectar para convertir Cliente a ClienteResponseDTO
+    private ClienteService clienteService; // Para la conversión DTO
 
-    // Endpoint para listar todos los usuarios (clientes, y futuros empleados, etc.)
+    @Autowired
+    private EmpleadoService empleadoService; // Para la conversión DTO y lógica específica
+
+    // Endpoint para listar todos los usuarios (clientes, empleados) incluyendo los dados de baja
     // Generalmente para un rol de Administrador
-    @GetMapping("")
-    public ResponseEntity<?> listarTodosLosUsuarios() {
+    @GetMapping("/admin/todos")
+    // @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> listarTodosLosUsuariosIncludingDeletedAdmin() {
         try {
-            List<Usuario> usuarios = usuarioService.findAll();
+            List<Usuario> usuarios = usuarioService.findAllIncludingDeleted();
             List<Object> dtos = usuarios.stream().map(this::convertToAppropriateUserDTO).collect(Collectors.toList());
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al listar todos los usuarios (admin): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Endpoint para obtener un usuario por su ID genérico
+    // Endpoint para obtener un usuario por su ID genérico, incluyendo los dados de baja
     // Generalmente para un rol de Administrador
-    @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerUsuarioPorId(@PathVariable Long id) {
+    @GetMapping("/admin/{id}")
+    // @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> obtenerUsuarioPorIdIncludingDeletedAdmin(@PathVariable Long id) {
         try {
-            Optional<Usuario> usuarioOptional = usuarioService.findById(id);
+            Optional<Usuario> usuarioOptional = usuarioService.findByIdIncludingDeleted(id);
             if (usuarioOptional.isPresent()) {
                 return ResponseEntity.ok(convertToAppropriateUserDTO(usuarioOptional.get()));
             } else {
-                return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Usuario no encontrado (activo o inactivo) con ID: " + id, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener usuario por ID (admin): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Endpoint para obtener un usuario por su username
-    // Generalmente para un rol de Administrador o sistema interno
-    @GetMapping("/username/{username}")
-    public ResponseEntity<?> obtenerUsuarioPorUsername(@PathVariable String username) {
+    // Endpoint para obtener un usuario por su username, incluyendo los dados de baja
+    // Generalmente para un rol de Administrador
+    @GetMapping("/admin/username/{username}")
+    // @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> obtenerUsuarioPorUsernameIncludingDeletedAdmin(@PathVariable String username) {
         try {
-            Optional<Usuario> usuarioOptional = usuarioService.findByUsername(username);
+            Optional<Usuario> usuarioOptional = usuarioService.findByUsernameRaw(username);
             if (usuarioOptional.isPresent()) {
                 return ResponseEntity.ok(convertToAppropriateUserDTO(usuarioOptional.get()));
             } else {
-                return new ResponseEntity<>("Usuario no encontrado con username: " + username, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Usuario no encontrado (activo o inactivo) con username: " + username, HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error al obtener usuario por username (admin): " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Endpoint para eliminar un usuario (cualquier tipo)
-    // ¡OPERACIÓN DELICADA! Generalmente para un rol de Administrador.
-    // Considerar borrado lógico a nivel de subtipo (ej. Cliente.estaDadoDeBaja)
-    // en lugar de un borrado físico aquí, o que el servicio maneje la lógica
-    // de qué hacer si es un Cliente (marcarlo como dado de baja).
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarUsuario(@PathVariable Long id) {
-        try {
-            // Aquí es donde la lógica se complica. Si es un Cliente, ¿debería llamar a clienteService.darBajaCliente?
-            // O ¿el usuarioService.delete(id) es suficiente si las cascadas están bien configuradas?
-            // Por simplicidad, el BaseService.delete intentará borrarlo.
-            // Sería mejor que el servicio determinara el tipo y aplicara lógica de borrado específica.
-
-            // Alternativa: Si es un cliente, marcarlo como dado de baja.
-            Optional<Usuario> usuarioOpt = usuarioService.findById(id);
-            if (!usuarioOpt.isPresent()) {
-                return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
-            }
-            Usuario usuario = usuarioOpt.get();
-            if (usuario instanceof Cliente) {
-                clienteService.darBajaCliente(id); // Usar el método de soft delete de ClienteService
-                return ResponseEntity.ok("Cliente marcado como dado de baja.");
-            } else {
-                // Para otros tipos de usuario, podrías implementar un borrado físico o lógico diferente.
-                // O si el objetivo es borrado físico general:
-                // boolean eliminado = usuarioService.delete(id);
-                // if (eliminado) {
-                //    return ResponseEntity.ok("Usuario eliminado físicamente.");
-                // } else {
-                //    return new ResponseEntity<>("No se pudo eliminar el usuario o no fue encontrado.", HttpStatus.NOT_FOUND);
-                // }
-                return new ResponseEntity<>("Tipo de usuario no soportado para esta operación de 'eliminación' genérica o es un cliente que debería ser 'dado de baja'.", HttpStatus.BAD_REQUEST);
-            }
-
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
+    // El borrado lógico (dar de baja) y reactivación (dar de alta)
+    // se manejan mejor a través de los controladores específicos (ClienteController, EmpleadoController)
+    // ya que la lógica de "quién puede hacer qué" y las validaciones de "en uso" son específicas del tipo de usuario.
+    // Por ejemplo, un admin da de baja un Cliente o un Empleado.
 
     // --- Helper para convertir Entidad Usuario a un DTO apropiado ---
     private Object convertToAppropriateUserDTO(Usuario usuario) {
@@ -125,80 +91,96 @@ public class UsuarioController {
             return null;
         }
         if (usuario instanceof Cliente) {
+            // Usar el helper de conversión de ClienteServiceImpl o uno local si es necesario
             return convertToClienteResponseDTO((Cliente) usuario);
+        } else if (usuario instanceof Empleado) {
+            // Usar el helper de conversión de EmpleadoServiceImpl o uno local
+            return convertToEmpleadoResponseDTO((Empleado) usuario);
         }
-        // } else if (usuario instanceof Empleado) { // Si tuvieras Empleado
-        // return convertToEmpleadoResponseDTO((Empleado) usuario);
-        // }
-
-        // Fallback a un DTO muy básico si no es un tipo conocido con DTO específico
-        // Esto es opcional y depende de cómo quieras manejar otros tipos de usuarios.
-        // Podrías crear un UsuarioBaseResponseDTO.
-        // Por ahora, si no es Cliente, devolvemos un objeto simple (no ideal para producción).
-        // Lo ideal sería tener un DTO base o lanzar error si el tipo no es manejado.
-        // Para este ejemplo, si no es cliente, devolvemos la info básica.
-        // Esto NO se recomienda para producción sin un DTO definido.
+        // Fallback a un DTO muy básico si no es un tipo conocido
+        // (esto no debería pasar si solo tienes Cliente y Empleado como hijos de Usuario)
         var baseInfo = new java.util.HashMap<String, Object>();
         baseInfo.put("id", usuario.getId());
         baseInfo.put("username", usuario.getUsername());
         baseInfo.put("auth0Id", usuario.getAuth0Id());
-        baseInfo.put("tipo", usuario.getClass().getSimpleName()); // Indica el tipo de entidad
+        baseInfo.put("baja", usuario.isBaja());
+        baseInfo.put("tipo", usuario.getClass().getSimpleName());
         return baseInfo;
     }
 
-    // Copiado de ClienteController para convertir Cliente a ClienteResponseDTO
-    // Idealmente, este tipo de mappers estarían en una clase dedicada o el servicio devolvería el DTO.
+    // Estos helpers de conversión se replican aquí para el UsuarioController.
+    // Idealmente, estarían en una clase Mapper o los servicios específicos devolverían DTOs.
     private ClienteResponseDTO convertToClienteResponseDTO(Cliente cliente) {
-        if (cliente == null) {
-            return null;
-        }
+        if (cliente == null) return null;
         ClienteResponseDTO dto = new ClienteResponseDTO();
         dto.setId(cliente.getId());
         dto.setNombre(cliente.getNombre());
         dto.setApellido(cliente.getApellido());
         dto.setTelefono(cliente.getTelefono());
         dto.setEmail(cliente.getEmail());
-        dto.setUsername(cliente.getUsername()); // Heredado de Usuario
-        dto.setAuth0Id(cliente.getAuth0Id());   // Heredado de Usuario
+        dto.setUsername(cliente.getUsername());
+        dto.setAuth0Id(cliente.getAuth0Id());
         dto.setFechaNacimiento(cliente.getFechaNacimiento());
-        dto.setEstaDadoDeBaja(cliente.isEstaDadoDeBaja());
-
+        dto.setBaja(cliente.isBaja()); // Cannot resolve method 'setBaja' in 'ClienteResponseDTO'
         if (cliente.getImagen() != null) {
-            ImagenDTO imagenDTO = new ImagenDTO();
-            imagenDTO.setId(cliente.getImagen().getId());
-            imagenDTO.setDenominacion(cliente.getImagen().getDenominacion());
-            dto.setImagen(imagenDTO);
+            dto.setImagen(convertToImagenDTO(cliente.getImagen()));
         }
-
-        if (cliente.getDomicilios() != null) { //
-            dto.setDomicilios(cliente.getDomicilios().stream().map(dom -> { //
-                DomicilioDTO domDto = new DomicilioDTO();
-                domDto.setId(dom.getId());
-                domDto.setCalle(dom.getCalle());
-                domDto.setNumero(dom.getNumero());
-                domDto.setCp(dom.getCp());
-                if (dom.getLocalidad() != null) {
-                    LocalidadDTO locDto = new LocalidadDTO();
-                    locDto.setId(dom.getLocalidad().getId());
-                    locDto.setNombre(dom.getLocalidad().getNombre());
-                    if (dom.getLocalidad().getProvincia() != null) {
-                        ProvinciaDTO provDto = new ProvinciaDTO();
-                        provDto.setId(dom.getLocalidad().getProvincia().getId());
-                        provDto.setNombre(dom.getLocalidad().getProvincia().getNombre());
-                        if (dom.getLocalidad().getProvincia().getPais() != null) {
-                            PaisDTO paisDto = new PaisDTO();
-                            paisDto.setId(dom.getLocalidad().getProvincia().getPais().getId());
-                            paisDto.setNombre(dom.getLocalidad().getProvincia().getPais().getNombre());
-                            provDto.setPais(paisDto);
-                        }
-                        locDto.setProvincia(provDto);
-                    }
-                    domDto.setLocalidad(locDto);
-                }
-                return domDto;
-            }).collect(Collectors.toList()));
+        if (cliente.getDomicilios() != null) {
+            dto.setDomicilios(cliente.getDomicilios().stream()
+                    .map(this::convertToDomicilioDTO).collect(Collectors.toList()));
         } else {
             dto.setDomicilios(new ArrayList<>());
+        }
+        return dto;
+    }
+
+    private EmpleadoResponseDTO convertToEmpleadoResponseDTO(Empleado empleado) {
+        if (empleado == null) return null;
+        EmpleadoResponseDTO dto = new EmpleadoResponseDTO();
+        dto.setId(empleado.getId());
+        dto.setNombre(empleado.getNombre());
+        dto.setApellido(empleado.getApellido());
+        dto.setTelefono(empleado.getTelefono());
+        dto.setEmail(empleado.getEmail());
+        dto.setUsername(empleado.getUsername());
+        dto.setRol(empleado.getRol());
+        dto.setFechaNacimiento(empleado.getFechaNacimiento());
+        dto.setFechaAlta(empleado.getFechaAlta());
+        dto.setBaja(empleado.isBaja());
+        if (empleado.getImagen() != null) {
+            dto.setImagen(convertToImagenDTO(empleado.getImagen()));
+        }
+        if (empleado.getDomicilios() != null) {
+            dto.setDomicilios(empleado.getDomicilios().stream()
+                    .map(this::convertToDomicilioDTO).collect(Collectors.toList()));
+        } else {
+            dto.setDomicilios(new ArrayList<>());
+        }
+        return dto;
+    }
+
+    // Helpers para DTOs anidados (simplificados)
+    private ImagenDTO convertToImagenDTO(Imagen imagen) {
+        if (imagen == null) return null;
+        ImagenDTO dto = new ImagenDTO();
+        dto.setId(imagen.getId());
+        dto.setDenominacion(imagen.getDenominacion());
+        dto.setBaja(imagen.isBaja());
+        return dto;
+    }
+    private DomicilioDTO convertToDomicilioDTO(Domicilio dom) {
+        if (dom == null) return null;
+        DomicilioDTO dto = new DomicilioDTO();
+        dto.setId(dom.getId());
+        dto.setCalle(dom.getCalle());
+        // ... otros campos necesarios para la vista de usuario ...
+        dto.setBaja(dom.isBaja());
+        if (dom.getLocalidad() != null) {
+            LocalidadDTO locDto = new LocalidadDTO();
+            locDto.setId(dom.getLocalidad().getId());
+            locDto.setNombre(dom.getLocalidad().getNombre());
+            // ... anidar provincia y país si es necesario ...
+            dto.setLocalidad(locDto);
         }
         return dto;
     }

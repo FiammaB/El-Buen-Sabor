@@ -16,6 +16,7 @@ public class ClienteActualizacionDTO {
     private String nombre;
     private String apellido;
     private String telefono;
+    private Boolean baja;
 
     // Datos de domicilio (opcionales, solo si se actualizan)
     private String calle;
@@ -31,7 +32,7 @@ public class ClienteActualizacionDTO {
     private String confirmNewPassword;
 
     private LocalDate fechaNacimiento;
-    private long ImagenId;
+    private Long ImagenId;
 
     // Consider adding fechaNacimiento if it's updatable
     //private java.time.LocalDate fechaNacimiento;

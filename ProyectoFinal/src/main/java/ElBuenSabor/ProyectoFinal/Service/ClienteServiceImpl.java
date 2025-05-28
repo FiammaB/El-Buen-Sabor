@@ -188,7 +188,7 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
         }
 
         // Actualizar imagen
-        if (dto.getImagenId() != null) {//Operator '!=' cannot be applied to 'long', 'null'(ln 191)
+        if (dto.getImagenId() != null) {//Operator '!=' cannot be applied to 'long', 'null'(ln 191)*//
             if (dto.getImagenId() == 0L) { clienteAActualizar.setImagen(null); }
             else {
                 Imagen img = imagenRepository.findById(dto.getImagenId())
@@ -227,7 +227,7 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
         }
 
         // HU#151: Admin puede dar de baja/alta
-        if (esAdmin && dto.getBaja() != null && dto.getBaja() != clienteAActualizar.isBaja()) {//Cannot resolve method 'getBaja' in 'ClienteActualizacionDTO'(ln 230)
+        if (esAdmin && dto.getBaja() != null && dto.getBaja() != clienteAActualizar.isBaja()) {//Cannot resolve method 'getBaja' in 'ClienteActualizacionDTO'(ln 230)*//
             if (dto.getBaja()) { // Dar de baja
                 this.softDelete(id); // Llama al softDelete que verifica pedidos activos
             } else { // Dar de alta
@@ -284,7 +284,7 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
             throw new Exception("El cliente ya está dado de baja.");
         }
         // Lógica de negocio: No dar de baja si tiene pedidos activos no finalizados.
-        if (pedidoRepository.existsActivePedidoWithCliente(id)) { // Cannot resolve method 'existsActivePedidoWithCliente' in 'PedidoRepository' (ln287)
+        if (pedidoRepository.existsActivePedidoWithCliente(id)) { // Cannot resolve method 'existsActivePedidoWithCliente' in 'PedidoRepository' (ln287)*//
             throw new Exception("No se puede dar de baja al cliente porque tiene pedidos activos no finalizados.");
         }
         cliente.setBaja(true);
@@ -327,7 +327,7 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
         dto.setUsername(cliente.getUsername());
         dto.setAuth0Id(cliente.getAuth0Id()); // Heredado de Usuario
         dto.setFechaNacimiento(cliente.getFechaNacimiento());
-        dto.setBaja(cliente.isBaja());//Cannot resolve method 'setBaja' in 'ClienteResponseDTO' (ln 330)
+        dto.setBaja(cliente.isBaja());//Cannot resolve method 'setBaja' in 'ClienteResponseDTO' (ln 330)*//
 
         if (cliente.getImagen() != null) {
             ImagenDTO imgDto = new ImagenDTO();

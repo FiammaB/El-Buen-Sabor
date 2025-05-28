@@ -19,6 +19,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByEstado(Estado estado);
     List<Pedido> findBySucursalIdAndEstado(Long sucursalId, Estado estado); // Para cajero/cocinero
     List<Pedido> findByFechaPedidoBetween(LocalDate fechaDesde, LocalDate fechaHasta);
+    boolean existsActivePedidoWithCliente(Long id);
 
 
     // Para buscar incluyendo los 'baja = true' (anulados/borrados lógicamente)
@@ -46,4 +47,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     // Para verificar si un domicilio está en uso en pedidos activos (no finales)
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Pedido p WHERE p.domicilioEntrega.id = :domicilioId AND p.baja = false AND p.estado NOT IN (ElBuenSabor.ProyectoFinal.Entities.Estado.ENTREGADO, ElBuenSabor.ProyectoFinal.Entities.Estado.CANCELADO, ElBuenSabor.ProyectoFinal.Entities.Estado.FACTURADO)")
     boolean existsActivePedidoWithDomicilio(@Param("domicilioId") Long domicilioId);
+
+
 }

@@ -19,7 +19,7 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
 
     private final ArticuloRepository articuloRepository;
     private final ArticuloInsumoRepository articuloInsumoRepository;
-    private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
+    private final ArticuloManufacturadoRepository articuloManufacturadoRepository; // Inyectado
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final ImagenRepository imagenRepository;
@@ -50,52 +50,15 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
         this.promocionRepository = promocionRepository;
     }
 
-    private void mapDtoToArticuloBase(ArticuloBaseDTO dto, Articulo articulo, Long categoriaId, Long unidadMedidaId, Long imagenId, String imagenDenominacion) throws Exception {
-        articulo.setDenominacion(dto.getDenominacion().trim());
-        articulo.setPrecioVenta(dto.getPrecioVenta());
+    // ... (mapDtoToArticuloBase y todos los métodos CRUD para ArticuloInsumo y ArticuloManufacturado) ...
+    // (createArticuloInsumo, updateArticuloInsumo, etc.)
+    // (createArticuloManufacturado, updateArticuloManufacturado, etc.)
+    // (calcularMaximoProducible, etc.)
+    // (findArticulosByDenominacion, findArticulosByCategoriaId)
+    // (findAllIncludingDeleted (entidad), findByIdIncludingDeleted (entidad))
+    // (findAllArticulosRawDTOs, findArticuloByIdRawDTO)
+    // (todos los helpers de conversión DTO)
 
-        if (categoriaId != null) {
-            Categoria categoria = categoriaRepository.findById(categoriaId)
-                    .orElseThrow(() -> new Exception("Categoría activa no encontrada con ID: " + categoriaId));
-            articulo.setCategoria(categoria);
-        } else {
-            throw new Exception("El ID de la categoría es obligatorio para el artículo.");
-        }
-
-        if (unidadMedidaId != null) {
-            UnidadMedida unidadMedida = unidadMedidaRepository.findById(unidadMedidaId)
-                    .orElseThrow(() -> new Exception("Unidad de Medida activa no encontrada con ID: " + unidadMedidaId));
-            articulo.setUnidadMedida(unidadMedida);
-        } else {
-            if (articulo instanceof ArticuloInsumo) {
-                throw new Exception("El ID de la unidad de medida es obligatorio para el artículo insumo.");
-            } else {
-                UnidadMedida unidadPorDefecto = unidadMedidaRepository.findByDenominacion("Unidad");
-                if (unidadPorDefecto == null) {
-                    unidadPorDefecto = unidadMedidaRepository.save(UnidadMedida.builder().denominacion("Unidad").baja(false).build());
-                } else if (unidadPorDefecto.isBaja()){
-                    throw new Exception("La unidad de medida por defecto 'Unidad' está dada de baja.");
-                }
-                articulo.setUnidadMedida(unidadPorDefecto);
-            }
-        }
-
-        Imagen imagenParaAsignar = null;
-        if (imagenId != null) {
-            if (imagenId == 0L) {
-                imagenParaAsignar = null;
-            } else {
-                imagenParaAsignar = imagenRepository.findById(imagenId)
-                        .orElseThrow(() -> new Exception("Imagen activa no encontrada con ID: " + imagenId));
-            }
-        } else if (imagenDenominacion != null && !imagenDenominacion.trim().isEmpty()) {
-            Imagen nuevaImagen = Imagen.builder().denominacion(imagenDenominacion.trim()).baja(false).build();
-            imagenParaAsignar = imagenRepository.save(nuevaImagen);
-        }
-        articulo.setImagen(imagenParaAsignar);
-    }
-
-    // --- Métodos para ArticuloInsumo ---
     @Override
     @Transactional
     public ArticuloInsumoDTO createArticuloInsumo(ArticuloInsumoDTO dto) throws Exception {
@@ -113,6 +76,89 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
         insumo.setEsParaElaborar(dto.getEsParaElaborar());
         insumo.setBaja(false);
         return convertToArticuloInsumoDTO(articuloInsumoRepository.save(insumo));
+    }
+
+    private void mapDtoToArticuloBase(ArticuloBaseDTO dto, Articulo articulo, Long categoriaId, Long unidadMedidaId, Long imagenId, String imagenDenominacion) throws Exception {
+        if (dto.getDenominacion() == null || dto.getDenominacion().trim().isEmpty()) {
+            throw new Exception("La denominación del artículo no puede estar vacía.");
+        }
+        if (dto.getPrecioVenta() == null || dto.getPrecioVenta() < 0) {
+            throw new Exception("El precio de venta del artículo no puede ser nulo o negativo.");
+        }
+        if (categoriaId == null) {
+            throw new Exception("El ID de la categoría es obligatorio para el artículo.");
+        }
+
+        articulo.setDenominacion(dto.getDenominacion().trim());
+        articulo.setPrecioVenta(dto.getPrecioVenta());
+
+        Categoria categoria = categoriaRepository.findById(categoriaId)
+                .orElseThrow(() -> new Exception("Categoría activa no encontrada con ID: " + categoriaId));
+        if (categoria.isBaja()) {
+            throw new Exception("La categoría '" + categoria.getDenominacion() + "' está dada de baja y no se puede asignar al artículo.");
+        }
+        articulo.setCategoria(categoria);
+
+        if (unidadMedidaId != null) {
+            UnidadMedida unidadMedida = unidadMedidaRepository.findById(unidadMedidaId)
+                    .orElseThrow(() -> new Exception("Unidad de Medida activa no encontrada con ID: " + unidadMedidaId));
+            if (unidadMedida.isBaja()) {
+                throw new Exception("La unidad de medida '" + unidadMedida.getDenominacion() + "' está dada de baja y no se puede asignar al artículo.");
+            }
+            articulo.setUnidadMedida(unidadMedida);
+        } else {
+            // Si es un ArticuloInsumo, la unidad de medida es obligatoria.
+            // Para ArticuloManufacturado, puede tener una por defecto si no se especifica.
+            if (articulo instanceof ArticuloInsumo) {
+                throw new Exception("El ID de la unidad de medida es obligatorio para el artículo insumo.");
+            } else if (articulo instanceof ArticuloManufacturado) {
+                // Asignar "Unidad" por defecto para manufacturados si no se provee unidadMedidaId
+                UnidadMedida unidadPorDefecto = unidadMedidaRepository.findByDenominacion("Unidad");
+                if (unidadPorDefecto == null) {
+                    // Crear "Unidad" si no existe en la base de datos
+                    unidadPorDefecto = unidadMedidaRepository.save(UnidadMedida.builder().denominacion("Unidad").build());
+                } else if (unidadPorDefecto.isBaja()){
+                    throw new Exception("La unidad de medida por defecto 'Unidad' está dada de baja y no puede ser usada.");
+                }
+                articulo.setUnidadMedida(unidadPorDefecto);
+            } else {
+                // Tipo de artículo desconocido o no manejado para la unidad de medida por defecto
+                throw new Exception("No se pudo determinar la unidad de medida para el tipo de artículo.");
+            }
+        }
+
+        Imagen imagenParaAsignar = null;
+        if (imagenId != null) {
+            if (imagenId == 0L) { // Convención para indicar que no se quiere/se quita la imagen
+                imagenParaAsignar = null;
+            } else {
+                imagenParaAsignar = imagenRepository.findById(imagenId)
+                        .orElseThrow(() -> new Exception("Imagen activa no encontrada con ID: " + imagenId));
+                if (imagenParaAsignar.isBaja()) {
+                    throw new Exception("La imagen seleccionada con ID: " + imagenId + " está dada de baja.");
+                }
+            }
+        } else if (imagenDenominacion != null && !imagenDenominacion.trim().isEmpty()) {
+            // Crear nueva imagen si se proporciona la denominación (URL/path) y no hay ID
+            // Opcional: buscar si ya existe una imagen con esa denominación para reutilizarla
+            // Optional<Imagen> imgExistenteDenom = imagenRepository.findByDenominacionRaw(imagenDenominacion.trim());
+            // if(imgExistenteDenom.isPresent()){
+            //     imagenParaAsignar = imgExistenteDenom.get();
+            //     if(imagenParaAsignar.isBaja()) throw new Exception("Se encontró una imagen con la misma denominación pero está dada de baja.");
+            // } else {
+            //     Imagen nuevaImagen = Imagen.builder().denominacion(imagenDenominacion.trim()).baja(false).build();
+            //     imagenParaAsignar = imagenRepository.save(nuevaImagen);
+            // }
+            Imagen nuevaImagen = Imagen.builder().denominacion(imagenDenominacion.trim()).build();
+            imagenParaAsignar = imagenRepository.save(nuevaImagen);
+
+        }
+        articulo.setImagen(imagenParaAsignar);
+
+        // El campo 'baja' se maneja en los métodos create/update específicos,
+        // usualmente inicializándose a false en la creación y
+        // permitiendo su modificación en la actualización a través del DTO si corresponde.
+        // articulo.setBaja(dto.isBaja()); // Esto se haría en el método de update del servicio concreto.
     }
 
     @Override
@@ -358,20 +404,20 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
     // --- Implementación de métodos de BaseService ---
     @Override
     @Transactional(readOnly = true)
-    public List<Articulo> findAllIncludingDeleted() throws Exception { // Este es el que hereda de BaseService
+    public List<Articulo> findAllIncludingDeleted() throws Exception {
         return articuloRepository.findAllRaw();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Articulo> findByIdIncludingDeleted(Long id) throws Exception { // Este es el que hereda de BaseService
+    public Optional<Articulo> findByIdIncludingDeleted(Long id) throws Exception {
         return articuloRepository.findByIdRaw(id);
     }
 
     @Override
     @Transactional
     public Articulo softDelete(Long id) throws Exception {
-        Articulo articulo = this.findByIdIncludingDeleted(id) // Llama al método local de ArticuloServiceImpl
+        Articulo articulo = this.findByIdIncludingDeleted(id)
                 .orElseThrow(() -> new Exception("Artículo no encontrado con ID: " + id + " para dar de baja."));
         if (articulo.isBaja()) {
             throw new Exception("El artículo ya está dado de baja.");
@@ -387,7 +433,7 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
     @Override
     @Transactional
     public Articulo reactivate(Long id) throws Exception {
-        Articulo articulo = this.findByIdIncludingDeleted(id) // Llama al método local de ArticuloServiceImpl
+        Articulo articulo = this.findByIdIncludingDeleted(id)
                 .orElseThrow(() -> new Exception("Artículo no encontrado con ID: " + id + " para reactivar."));
         if (!articulo.isBaja()) {
             throw new Exception("El artículo no está dado de baja, no se puede reactivar.");
@@ -423,29 +469,31 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
                 detallePedidoRepository.existsByArticuloManufacturadoIdAndPedidoActivo(articuloId)) {
             return true;
         }
+        // Verificar si está en Promociones activas (solo aplica a manufacturados)
         if (promocionRepository.existsByArticulosManufacturadosIdAndActiva(articuloId)) {
             return true;
         }
-        if (articuloManufacturadoDetalleRepository.existsByArticuloInsumoIdAndArticuloManufacturado_BajaFalse(articuloId)) {
+        // Verificar si un insumo es parte de un ArticuloManufacturado ACTIVO
+        // CORRECCIÓN: Usar el método del ArticuloManufacturadoRepository
+        if (articuloManufacturadoRepository.existsActiveWithInsumoId(articuloId)) {
             return true;
         }
         return false;
     }
 
     // --- Implementación de métodos de ArticuloService que devuelven DTOs genéricos/Object ---
-    // Estos implementan los métodos de la interfaz ArticuloService
     @Override
     @Transactional(readOnly = true)
-    public List<Object> findAllArticulosRawDTOs() throws Exception { // Nombre coincide con interfaz
-        return this.findAllIncludingDeleted().stream() // Llama al método local que devuelve List<Articulo>
+    public List<Object> findAllArticulosRawDTOs() throws Exception {
+        return this.findAllIncludingDeleted().stream()
                 .map(this::convertToGenericArticuloDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Object findArticuloByIdRawDTO(Long id) throws Exception { // Nombre coincide con interfaz
-        return convertToGenericArticuloDTO(this.findByIdIncludingDeleted(id).orElse(null)); // Llama al método local
+    public Object findArticuloByIdRawDTO(Long id) throws Exception {
+        return convertToGenericArticuloDTO(this.findByIdIncludingDeleted(id).orElse(null));
     }
 
     // --- Helpers de Conversión ---
@@ -551,6 +599,9 @@ public class ArticuloServiceImpl extends BaseServiceImpl<Articulo, Long> impleme
         dto.setId(categoria.getId());
         dto.setDenominacion(categoria.getDenominacion());
         dto.setBaja(categoria.isBaja());
+        if (categoria.getTipoRubro() != null) { // Asegurar que se mapee el tipo de rubro
+            dto.setTipoRubro(categoria.getTipoRubro());
+        }
         return dto;
     }
 

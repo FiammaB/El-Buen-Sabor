@@ -18,7 +18,7 @@ public interface PromocionRepository extends JpaRepository<Promocion, Long> {
     List<Promocion> findByFechaDesdeLessThanEqualAndFechaHastaGreaterThanEqualAndHoraDesdeLessThanEqualAndHoraHastaGreaterThanEqualAndBajaFalse(
             LocalDate fechaActual1, LocalDate fechaActual2, LocalTime horaActual1, LocalTime horaActual2
     );
-
+    long countByImagenIdAndBajaFalse(Long imagenId);
     // Versión más simple para promociones activas hoy (considerando que horaDesde/Hasta pueden ser null)
     // Esta query es más compleja de escribir en JPQL por los nulls en hora. Se maneja mejor en el servicio.
     // List<Promocion> findActivasEnFecha(@Param("fecha") LocalDate fecha);
@@ -47,4 +47,6 @@ public interface PromocionRepository extends JpaRepository<Promocion, Long> {
     // Para buscar promociones por ID de sucursal incluyendo las dadas de baja
     @Query("SELECT p FROM Promocion p JOIN p.sucursales s WHERE s.id = :sucursalId")
     List<Promocion> findBySucursalIdRaw(@Param("sucursalId") Long sucursalId);
+
+
 }

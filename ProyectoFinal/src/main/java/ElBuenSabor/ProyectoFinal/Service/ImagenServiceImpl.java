@@ -144,9 +144,9 @@ public class ImagenServiceImpl extends BaseServiceImpl<Imagen, Long> implements 
         // Esta query puede ser costosa si no hay índices en las columnas de imagen_id de las otras tablas.
         // Considera añadir métodos existsByImagenId en los repositorios correspondientes.
         // Ejemplo simplificado:
-        long countArticulos = articuloRepository.countByImagenIdAndBajaFalse(imagenId); // Necesitas este método en ArticuloRepository
-        long countClientes = clienteRepository.countByImagenIdAndBajaFalse(imagenId);   // Necesitas este método en ClienteRepository
-        long countPromociones = promocionRepository.countByImagenIdAndBajaFalse(imagenId); // Necesitas este método en PromocionRepository
+        long countArticulos = articuloRepository.countByImagenIdAndBajaFalse(imagenId); //
+        long countClientes = clienteRepository.countByImagenIdAndBajaFalse(imagenId);   //
+        long countPromociones = promocionRepository.countByImagenIdAndBajaFalse(imagenId); //
 
         return countArticulos > 0 || countClientes > 0 || countPromociones > 0;
     }

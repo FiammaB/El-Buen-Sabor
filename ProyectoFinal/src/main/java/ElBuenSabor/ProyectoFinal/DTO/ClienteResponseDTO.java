@@ -23,5 +23,6 @@ public class ClienteResponseDTO {
     private ImagenDTO imagen;
     private List<DomicilioDTO> domicilios;
     private boolean estaDadoDeBaja;
+    private boolean baja;
     // Potentially roles or other user-specific info if not client-specific
 }

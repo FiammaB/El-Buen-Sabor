@@ -1,11 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
-import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoFullDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoShortDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 public interface ArticuloInsumoMapper {
 

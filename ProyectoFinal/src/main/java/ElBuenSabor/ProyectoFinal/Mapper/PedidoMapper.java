@@ -1,7 +1,5 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
-import ElBuenSabor.ProyectoFinal.DTO.PedidoFullDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PedidoShortDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

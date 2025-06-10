@@ -1,6 +1,5 @@
 package ElBuenSabor.ProyectoFinal.DTO;
 
-import ElBuenSabor.ProyectoFinal.Entities.Localidad;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,11 +9,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DomicilioDTO extends BaseDTO{
+public class PaisDTO extends BaseDTO{
 
-    private String calle;
-    private Integer numero;
-    private Integer cp;
-    private Localidad localidad;
+    private String nombre;
 
 }

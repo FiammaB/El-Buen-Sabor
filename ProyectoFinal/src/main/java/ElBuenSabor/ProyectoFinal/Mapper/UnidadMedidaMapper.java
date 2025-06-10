@@ -1,4 +1,5 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
+import ElBuenSabor.ProyectoFinal.DTO.UnidadMedidaDTO;
 import ElBuenSabor.ProyectoFinal.Entities.UnidadMedida;
 import org.mapstruct.Mapper;
 

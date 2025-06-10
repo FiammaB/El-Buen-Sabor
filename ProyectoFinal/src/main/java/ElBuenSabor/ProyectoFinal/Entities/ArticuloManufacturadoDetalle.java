@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @Builder
 public class ArticuloManufacturadoDetalle extends BaseEntity {
 
-    private Double cantidad; // Cantidad de insumo para este producto
+    private Double cantidad;
 
     @ManyToOne
     @JoinColumn(name = "articulo_insumo_id")
@@ -23,4 +23,5 @@ public class ArticuloManufacturadoDetalle extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "articulo_manufacturado_id",nullable = false) // Esta columna almacenará el ID del ArticuloManufacturado
     private ArticuloManufacturado articuloManufacturado;
+
 }

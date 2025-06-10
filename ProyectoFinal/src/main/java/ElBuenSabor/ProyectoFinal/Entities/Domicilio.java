@@ -19,12 +19,10 @@ public class Domicilio extends BaseEntity {
 
     private String calle;
     private Integer numero;
-    private Integer cp; // Código Postal
+    private Integer cp; // Codigo Postal
 
     @ManyToOne
     @JoinColumn(name = "localidad_id")
     private Localidad localidad;
 
-    @OneToMany(mappedBy = "domicilioEntrega", cascade = CascadeType.ALL, orphanRemoval = true) // <--- ¡Aquí está el error!
-    private Set<Pedido> pedidos = new HashSet<>();
 }

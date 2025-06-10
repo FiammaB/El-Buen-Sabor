@@ -2,6 +2,8 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.time.LocalTime;
 import java.util.List;
@@ -23,9 +25,9 @@ public class Sucursal extends BaseEntity {
     @JoinColumn(name = "domicilio_id", referencedColumnName = "id")
     private Domicilio domicilio; // Cada sucursal tiene un domicilio
 
-    @ManyToOne
-    @JoinColumn(name = "empresa_id")
-    private Empresa empresa;
+//    @ManyToOne
+//    @JoinColumn(name = "empresa_id")
+//    private Empresa empresa;
 
     @ManyToMany
     @JoinTable(
@@ -33,10 +35,7 @@ public class Sucursal extends BaseEntity {
             joinColumns = @JoinColumn(name = "sucursal_id"),
             inverseJoinColumns = @JoinColumn(name = "categoria_id")
     )
-    private List<Categoria> categorias;
-
-    @OneToMany(mappedBy = "sucursal")
-    private List<Pedido>pedidos;
+    private List<Categoria> categorias = new ArrayList<>();;
 
     @ManyToMany
     @JoinTable(

@@ -1,12 +1,11 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
+import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
 
 public interface ArticuloInsumoMapper {
 
-    ArticuloInsumoFullDTO articuloInsumoToArticuloInsumoFullDTO(ArticuloInsumo articuloInsumo);
-    ArticuloInsumo articuloInsumoFullDtoToArticuloInsumo(ArticuloInsumo articuloInsumo);
-
-    ArticuloInsumoShortDTO articuloInsumoToArticuloInsumoShortDTO(ArticuloInsumo articuloInsumo);
+    ArticuloInsumoDTO articuloInsumoToArticuloInsumoFullDTO(ArticuloInsumo articuloInsumo);
+    ArticuloInsumo articuloInsumoFullDtoToArticuloInsumo(ArticuloInsumoDTO articuloInsumo);
 
 }

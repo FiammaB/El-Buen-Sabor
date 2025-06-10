@@ -17,22 +17,14 @@ import java.util.Set;
 @Builder
 public class Pedido extends BaseEntity {
 
-    private LocalTime horaEstimadaFinalizacion;
+    private LocalTime horaPedido;
     private Double total;
     private Double totalCosto;
-
-    @Enumerated(EnumType.STRING)
     private Estado estado;
-
-    @Enumerated(EnumType.STRING)
     private TipoEnvio tipoEnvio;
-
-    @Enumerated(EnumType.STRING)
     private FormaPago formaPago;
-
     private LocalDate fechaPedido;
 
-    // Relaciones
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
@@ -48,12 +40,8 @@ public class Pedido extends BaseEntity {
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<DetallePedido> detallesPedidos = new HashSet<>();
 
-    // ¡ESTA ES LA ADICIÓN!
     @ManyToOne
     @JoinColumn(name = "sucursal_id")
-    private Sucursal sucursal; // Un pedido se realiza en una sucursal
+    private Sucursal sucursal;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id")
-    private Usuario usuario;
 }

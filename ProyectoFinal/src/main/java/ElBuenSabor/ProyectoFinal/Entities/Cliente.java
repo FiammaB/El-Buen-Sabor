@@ -21,11 +21,9 @@ public class Cliente extends Usuario {
     private String apellido;
     private String telefono;
 
-    @Column(unique = true) // El email del cliente debe ser único [cite: 19]
+    @Column(unique = true)
     private String email;
-
-    private String password; // La contraseña encriptada [cite: 20]
-    private LocalDate fechaNacimiento; // Según tu diagrama [cite: 251]
+    private LocalDate fechaNacimiento;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "cliente_id")
@@ -37,9 +35,6 @@ public class Cliente extends Usuario {
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
     private List<Pedido> pedidos = new ArrayList<>();
-
-    // Puedes agregar un campo para manejar el estado de baja del cliente [cite: 33]
-    private boolean estaDadoDeBaja = false; // Por defecto, no está dado de baja
 
     @OneToOne
     @JoinColumn(name ="imagen_id")

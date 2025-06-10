@@ -24,25 +24,21 @@ public class Promocion extends BaseEntity {
     private LocalTime horaDesde;
     private LocalTime horaHasta;
     private String descripcionDescuento;
-    private Double precioPromocional;
-
-    @Enumerated(EnumType.STRING)
-    private TipoPromocion tipoPromocion; // happyHour, promocionGeneral [cite: 249]
+    private Double precioPromocion;
+    private TipoPromocion tipoPromocion;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "imagen_id") // Una promoción puede tener una imagen
+    @JoinColumn(name = "imagen_id")
     private Imagen imagen;
 
-
     @ManyToMany
-    @JoinTable(
-            name = "promocion_articulo_manufacturado",
+    @JoinTable(name = "promocion_articulo",
             joinColumns = @JoinColumn(name = "promocion_id"),
-            inverseJoinColumns = @JoinColumn(name = "articulo_manufacturado_id")
-    )
-    private List<ArticuloManufacturado> articulosManufacturados;
+            inverseJoinColumns = @JoinColumn(name = "articulo_id"))
+    @Builder.Default
+    private Set<Articulo> articulos = new HashSet<>();
 
-    // También las promociones pueden estar relacionadas con sucursales
-    @ManyToMany(mappedBy = "promociones") // Mapeado por el campo 'promociones' en la entidad Sucursal
+    @ManyToMany(mappedBy = "promociones")
     private Set<Sucursal> sucursales = new HashSet<>();
+
 }

@@ -9,8 +9,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArticuloInsumoDTO {
+public class ArticuloInsumoDTO extends ArticuloDTO {
 
-
+    private Double precioCompra;
+    private Double stockActual;
+    private Double stockMinimo;
+    private Boolean esParaElaborar;
 
 }

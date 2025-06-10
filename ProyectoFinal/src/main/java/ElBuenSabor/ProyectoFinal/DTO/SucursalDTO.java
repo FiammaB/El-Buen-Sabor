@@ -23,6 +23,7 @@ public class SucursalDTO extends BaseDTO{
     private LocalTime horarioApertura;
     private LocalTime horarioCierre;
     private DomicilioDTO domicilio;
+    private SucursalDTO sucursal;
     private List<CategoriaDTO> categorias = new ArrayList<>();;
     private Set<PromocionDTO> promociones = new HashSet<>();
 

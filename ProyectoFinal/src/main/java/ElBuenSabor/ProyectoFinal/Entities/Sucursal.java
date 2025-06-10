@@ -23,11 +23,11 @@ public class Sucursal extends BaseEntity {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "domicilio_id", referencedColumnName = "id")
-    private Domicilio domicilio; // Cada sucursal tiene un domicilio
+    private Domicilio domicilio;
 
-//    @ManyToOne
-//    @JoinColumn(name = "empresa_id")
-//    private Empresa empresa;
+    @ManyToOne
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     @ManyToMany
     @JoinTable(
@@ -39,7 +39,7 @@ public class Sucursal extends BaseEntity {
 
     @ManyToMany
     @JoinTable(
-            name = "sucursal_promocion", // Nombre de la tabla de unión
+            name = "sucursal_promocion",
             joinColumns = @JoinColumn(name = "sucursal_id"),
             inverseJoinColumns = @JoinColumn(name = "promocion_id")
     )

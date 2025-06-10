@@ -23,7 +23,6 @@ public class ArticuloManufacturado extends Articulo {
     private String preparacion; // Receta
 
     @OneToMany(mappedBy = "articuloManufacturado", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "articuloManufacturado_id")
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 
 }

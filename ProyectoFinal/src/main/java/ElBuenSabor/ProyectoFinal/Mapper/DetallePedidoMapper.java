@@ -1,14 +1,18 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
+import ElBuenSabor.ProyectoFinal.DTO.DetallePedidoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.DetallePedido;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
-public interface DetallePedidoMapper {
+public interface DetallePedidoMapper extends BaseMapper <DetallePedido, DetallePedidoDTO>{
 
-    DetallePedidoFullDTO detallePedidoToDetallePedidoFullDTO(DetallePedido detallePedido);
-    DetallePedido detallePedidoFullDTOToDetallePedido(DetallePedidoFullDTO detallePedidoFullDTO);
+    DetallePedidoDTO detallePedidoToDetallePedidoFullDTO(DetallePedido detallePedido);
+    DetallePedido detallePedidoFullDTOToDetallePedido(DetallePedidoDTO detallePedidoFullDTO);
 
-    DetallePedidoShortDTO detallePedidoToDetallePedidoShortDTO(DetallePedido detallePedido);
+    List<DetallePedidoDTO> detallePedidoFullDTOToDetallePedidoList(List<DetallePedidoDTO> detallePedidoDTOList);
+    List<DetallePedido> detallePedidoDTOToDetallePedidoList(List<DetallePedido> detallePedidoList);
 
 }

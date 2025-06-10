@@ -1,14 +1,18 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
+import ElBuenSabor.ProyectoFinal.DTO.CategoriaDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Categoria;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
-public interface CategoriaMapper {
+public interface CategoriaMapper extends BaseMapper <Categoria, CategoriaDTO>{
 
-    CategoriaFullDTO categoriaToCategoriaFullDto(Categoria categoria);
-    Categoria categoriaFullDtoToCategoria(CategoriaFullDTO categoriaFullDto);
+    CategoriaDTO categoriaToCategoriaFullDto(Categoria categoria);
+    Categoria categoriaFullDtoToCategoria(CategoriaDTO categoriaFullDto);
 
-    CategoriaShortDTO categoriaToCategoriaShortDto(Categoria categoria);
+    List<CategoriaDTO> categoriaToCategoriaDtoList(List<Categoria> categorias);
+    List<Categoria> categoriaDtoListToCategoriaList(List<CategoriaDTO> categoriasDTO);
 
 }

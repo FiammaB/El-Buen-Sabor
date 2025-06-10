@@ -1,21 +1,18 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
+import ElBuenSabor.ProyectoFinal.DTO.PedidoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface PedidoMapper {
+public interface PedidoMapper extends BaseMapper <Pedido, PedidoDTO>{
 
-    PedidoFullDTO pedidoToPedidoFullDTO(Pedido pedido);
-    Pedido pedidoFullDTOToPedido(PedidoFullDTO pedidoFullDTO);
+    PedidoDTO pedidoToPedidoFullDTO(Pedido pedido);
+    Pedido pedidoFullDTOToPedido(PedidoDTO pedidoFullDTO);
 
-    @Mappings({
-            @Mapping(source = "cliente.id", target = "clienteId"),
-            @Mapping(source = "domicilioEntrega.id", target = "domicilioEntregaId"),
-            @Mapping(source = "sucursal.id", target = "sucursalId")
-    })
-    PedidoShortDTO PedidoToPedidoShortDTO(Pedido pedido);
+    List<PedidoDTO> pedidoFullDTOToPedidoDTO(List<Pedido> pedidoFullDTO);
+    List<Pedido> pedidoDTOToPedidoFullDTO(List<PedidoDTO> pedidoDTO);
 
 }

@@ -15,7 +15,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PromocionDTO {
+public class PromocionDTO extends BaseDTO {
 
     private String denominacion;
     private LocalDate fechaDesde;

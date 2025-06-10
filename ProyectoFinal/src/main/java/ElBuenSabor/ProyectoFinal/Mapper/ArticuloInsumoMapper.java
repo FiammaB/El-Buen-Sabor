@@ -2,10 +2,16 @@ package ElBuenSabor.ProyectoFinal.Mapper;
 
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
+import org.mapstruct.Mapper;
 
-public interface ArticuloInsumoMapper {
+import java.util.List;
 
-    ArticuloInsumoDTO articuloInsumoToArticuloInsumoFullDTO(ArticuloInsumo articuloInsumo);
-    ArticuloInsumo articuloInsumoFullDtoToArticuloInsumo(ArticuloInsumoDTO articuloInsumo);
+@Mapper(componentModel = "spring")
+public interface ArticuloInsumoMapper extends BaseMapper <ArticuloInsumo, ArticuloInsumoDTO> {
 
+    ArticuloInsumoDTO articuloInsumoToArticuloInsumoDto(ArticuloInsumo articuloInsumo);
+    ArticuloInsumo articuloInsumoDtoToArticuloInsumo(ArticuloInsumoDTO articuloInsumoDTO);
+
+    List<ArticuloInsumoDTO> articuloInsumotoToArticuloInsumoDtoList(List<ArticuloInsumo> articulos);
+    List<ArticuloInsumo> articuloInsumoDtoToArticuloInsumoList(List<ArticuloInsumoDTO> articulosDTO);
 }

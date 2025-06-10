@@ -1,15 +1,18 @@
 package ElBuenSabor.ProyectoFinal.Mapper;
 
-import ElBuenSabor.ProyectoFinal.Entities.Articulo;
+import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
-public interface ArticuloManufacturadoMapper {
+public interface ArticuloManufacturadoMapper extends BaseMapper <ArticuloManufacturado, ArticuloManufacturadoDTO>{
 
-    ArticuloManufacturadoFullDTO articuloManufacturadoToArticuloManufacturadoFullDTO(Articulo articulo);
-    ArticuloManufacturado articuloManufacturadoFullDtoToArticuloManufacturado(ArticuloManufacturado articuloManufacturado);
+    ArticuloManufacturadoDTO articuloManufacturadoToArticuloManufacturadoDto(ArticuloManufacturado articuloManufacturado);
+    ArticuloManufacturado articuloManufacturadoDtoToArticuloManufacturado(ArticuloManufacturadoDTO articuloManufacturadoDTO);
 
-    ArticuloManufacturadoShortDTO articuloManufacturadoToArticuloManufacturadoShortDTO(ArticuloManufacturado articuloManufacturado);
+    List<ArticuloManufacturadoDTO> amToAmDto(List<ArticuloManufacturado> articulosManufacturados);
+    List<ArticuloManufacturado> amDtoToAm(List<ArticuloManufacturadoDTO> articulosManufacturadosDTO);
 
 }

@@ -18,5 +18,6 @@ public abstract class Usuario extends BaseEntity {
     private String auth0Id; // ID de autenticación, por si usas Auth0 o similar
     @Column(unique = true)
     private String username;
+    private Rol rol;
 
 }

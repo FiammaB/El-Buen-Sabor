@@ -1,5 +1,6 @@
 package ElBuenSabor.ProyectoFinal.DTO;
 
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,5 +14,6 @@ public class UsuarioDTO extends BaseDTO{
 
     private String auth0Id;
     private String username;
+    private Rol rol;
 
 }

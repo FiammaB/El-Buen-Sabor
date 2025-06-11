@@ -14,4 +14,5 @@ public interface ArticuloInsumoMapper extends BaseMapper <ArticuloInsumo, Articu
 
     List<ArticuloInsumoDTO> articuloInsumotoToArticuloInsumoDtoList(List<ArticuloInsumo> articulos);
     List<ArticuloInsumo> articuloInsumoDtoToArticuloInsumoList(List<ArticuloInsumoDTO> articulosDTO);
+
 }

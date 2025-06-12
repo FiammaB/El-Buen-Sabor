@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Security.JwtUtil;
 import ElBuenSabor.ProyectoFinal.Service.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,10 +17,24 @@ public class AuthController {
     @Autowired
     private ClienteService clienteService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @PostMapping("/login")
-    public ClienteResponseDTO login(@RequestBody LoginDTO loginDTO) throws Exception {
+    public JwtResponseDTO login(@RequestBody LoginDTO loginDTO) throws Exception {
         Cliente cliente = clienteService.loginCliente(loginDTO);
-        return mapToDTO(cliente);
+
+        if (cliente == null) {
+            throw new Exception("Credenciales inválidas");
+        }
+
+        // Generar token JWT con el username y rol
+        String token = jwtUtil.generateToken(cliente.getUsername(), cliente.getRol().name());
+
+        // Mapear cliente a DTO
+        ClienteResponseDTO clienteDTO = mapToDTO(cliente);
+
+        return new JwtResponseDTO(token, clienteDTO);
     }
 
     @PostMapping("/register")

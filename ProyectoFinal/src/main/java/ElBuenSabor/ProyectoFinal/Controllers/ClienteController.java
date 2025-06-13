@@ -24,7 +24,6 @@ import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/v1/clientes") // Versión de API en la URL es una buena práctica
-@CrossOrigin(origins = "*") // Permite peticiones de cualquier origen. Ajusta según tus necesidades de seguridad.
 public class ClienteController {
 
     @Autowired

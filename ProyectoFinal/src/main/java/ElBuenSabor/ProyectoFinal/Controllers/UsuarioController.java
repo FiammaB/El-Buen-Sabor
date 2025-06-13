@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/usuarios") // Ruta para gestión general de usuarios (admin)
-@CrossOrigin(origins = "*")
 public class UsuarioController {
 
     @Autowired

@@ -17,7 +17,6 @@ import java.util.Set; // Para el set de sucursales en el DTO
 
 @RestController
 @RequestMapping("/api/v1/categorias")
-@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad
 public class CategoriaController {
 
     @Autowired

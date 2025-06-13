@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/domicilios") // Ruta para gestión independiente de domicilios (admin)
-@CrossOrigin(origins = "*")
 public class DomicilioController {
 
     @Autowired

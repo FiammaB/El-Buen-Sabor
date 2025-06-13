@@ -3,13 +3,14 @@ package ElBuenSabor.ProyectoFinal.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
@@ -22,10 +23,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults()) // ✅ Habilita CORS en Spring Security
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(new AntPathRequestMatcher("/public/**")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/api/auth/**")).permitAll() // 🔓 Permitir login
+                        .requestMatchers(new AntPathRequestMatcher("/api/auth/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/articulos/**")).permitAll() // Ruta pública
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/categorias/**")).permitAll() // Ruta pública también
                         .requestMatchers(new AntPathRequestMatcher("/api/admin/**")).hasAuthority("rol:admin")
                         .requestMatchers(new AntPathRequestMatcher("/api/cliente/**")).hasAuthority("rol:cliente")
                         .requestMatchers(new AntPathRequestMatcher("/api/empleado/**")).hasAuthority("rol:empleado")
@@ -41,7 +45,7 @@ public class SecurityConfig {
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
         converter.setAuthoritiesClaimName("permissions");
-        converter.setAuthorityPrefix(""); // Deja los roles como "rol:admin", sin "ROLE_"
+        converter.setAuthorityPrefix(""); // Mantiene "rol:admin", etc.
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(converter);
         return jwtConverter;

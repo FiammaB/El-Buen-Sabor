@@ -24,7 +24,6 @@ import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO;
 
 @RestController
 @RequestMapping("/api/v1/promociones")
-@CrossOrigin(origins = "*") // Ajustar según necesidades
 public class PromocionController {
 
     @Autowired

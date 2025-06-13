@@ -20,7 +20,6 @@ import java.time.LocalTime; // Para promociones activas
 
 @RestController
 @RequestMapping("/api/v1/sucursales")
-@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad
 public class SucursalController {
 
     @Autowired

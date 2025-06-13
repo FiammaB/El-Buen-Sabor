@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/paises")
-@CrossOrigin(origins = "*") // Ajusta según tus necesidades de seguridad en producción
 public class PaisController {
 
     @Autowired

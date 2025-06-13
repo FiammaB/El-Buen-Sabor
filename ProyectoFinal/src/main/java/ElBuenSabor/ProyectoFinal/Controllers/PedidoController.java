@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/pedidos")
-@CrossOrigin(origins = "*") // Ajustar según necesidades
 public class PedidoController {
 
     @Autowired

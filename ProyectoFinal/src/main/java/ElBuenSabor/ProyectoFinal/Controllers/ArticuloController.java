@@ -28,7 +28,6 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/articulos")
-@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad
 public class ArticuloController {
 
     @Autowired

@@ -19,6 +19,7 @@ public abstract class BaseEntity implements Serializable {
     private Long id;
 
     @Column(name = "baja")
+    @Builder.Default
     private Boolean baja = false;
 
 }

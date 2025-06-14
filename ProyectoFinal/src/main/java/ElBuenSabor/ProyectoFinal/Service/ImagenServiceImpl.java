@@ -5,6 +5,7 @@ import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,5 +51,18 @@ public class ImagenServiceImpl implements ImagenService {
     public Imagen findById(Long id) {
         return imagenRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada con id: " + id));
+    }
+
+    @PostConstruct
+    public void testCloudinary() {
+        System.out.println("⏳ Testeando conexión Cloudinary...");
+        System.out.println(cloudinary.config); // debería imprimir las claves y cloud_name
+
+        try {
+            Map result = cloudinary.uploader().upload("https://res.cloudinary.com/demo/image/upload/sample.jpg", ObjectUtils.emptyMap());
+            System.out.println("✅ Cloudinary conectado. URL de muestra: " + result.get("secure_url"));
+        } catch (Exception e) {
+            System.err.println("❌ Falló la conexión a Cloudinary: " + e.getMessage());
+        }
     }
 }

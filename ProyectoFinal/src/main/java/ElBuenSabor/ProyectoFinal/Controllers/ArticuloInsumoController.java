@@ -65,9 +65,27 @@ public class ArticuloInsumoController {
         return ResponseEntity.ok(articuloInsumoMapper.toDTO(updated));
     }
 
+    @PutMapping("/{id}/baja")
+    public ResponseEntity<Void> darDeBaja(@PathVariable Long id) {
+        ArticuloInsumo insumo = articuloInsumoService.findById(id);
+        insumo.setBaja(true);
+        articuloInsumoService.save(insumo);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/reinsertar")
+    public ResponseEntity<Void> reinsertar(@PathVariable Long id) {
+        ArticuloInsumo insumo = articuloInsumoService.findById(id);
+        insumo.setBaja(false);
+        articuloInsumoService.save(insumo);
+        return ResponseEntity.noContent().build();
+    }
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         articuloInsumoService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
 }

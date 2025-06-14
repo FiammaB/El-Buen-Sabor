@@ -19,7 +19,7 @@ import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/imagenes")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 @RequiredArgsConstructor
 public class ImagenController {
 

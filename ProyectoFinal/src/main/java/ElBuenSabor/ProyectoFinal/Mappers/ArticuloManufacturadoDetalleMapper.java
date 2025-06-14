@@ -8,10 +8,11 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = ArticuloInsumoMapper.class)
+@Mapper(componentModel = "spring")
 public interface ArticuloManufacturadoDetalleMapper {
 
     ArticuloManufacturadoDetalleDTO toDTO(ArticuloManufacturadoDetalle entity);
 
+    @Mapping(target = "articuloManufacturado", ignore = true)
     ArticuloManufacturadoDetalle toEntity(ArticuloManufacturadoDetalleCreateDTO dto);
 }

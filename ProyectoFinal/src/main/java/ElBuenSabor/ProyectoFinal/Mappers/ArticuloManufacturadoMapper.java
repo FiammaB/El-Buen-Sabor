@@ -4,6 +4,7 @@ import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", uses = {
         ImagenMapper.class,
@@ -17,5 +18,6 @@ public interface ArticuloManufacturadoMapper {
 
     ArticuloManufacturado toEntity(ArticuloManufacturadoDTO dto);
 
+    @Mapping(target = "detalles", source = "detalles") // <--- Agregado explícitamente
     ArticuloManufacturado toEntity(ArticuloManufacturadoCreateDTO dto);
 }

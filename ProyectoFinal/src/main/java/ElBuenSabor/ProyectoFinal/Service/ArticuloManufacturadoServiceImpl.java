@@ -27,6 +27,9 @@ public class ArticuloManufacturadoServiceImpl implements ArticuloManufacturadoSe
 
     @Override
     public ArticuloManufacturado save(ArticuloManufacturado articulo) {
+        if (articulo.getDetalles() != null) {
+            articulo.getDetalles().forEach(detalle -> detalle.setArticuloManufacturado(articulo));
+        }
         return repository.save(articulo);
     }
 

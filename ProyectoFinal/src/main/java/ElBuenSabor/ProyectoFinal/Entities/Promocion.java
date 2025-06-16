@@ -2,9 +2,11 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +35,6 @@ public class Promocion extends BaseEntity {
     @JoinColumn(name = "imagen_id") // Una promoción puede tener una imagen
     private Imagen imagen;
 
-
     @ManyToMany
     @JoinTable(
             name = "promocion_articulo_manufacturado",
@@ -41,7 +42,7 @@ public class Promocion extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "articulo_manufacturado_id")
     )
     private List<ArticuloManufacturado> articulosManufacturados;
-    // También las promociones pueden estar relacionadas con sucursales
+
     @ManyToMany(mappedBy = "promociones") // Mapeado por el campo 'promociones' en la entidad Sucursal
-    private Set<Sucursal> sucursales = new HashSet<>();
+    private List<Sucursal> sucursales = new ArrayList<>();
 }

@@ -1,42 +1,61 @@
-package ElBuenSabor.ProyectoFinal.Controllers; // Asegúrate que este sea el paquete correcto de tus controladores
+package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO; // Importa tu DTO de entrada
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
-import ElBuenSabor.ProyectoFinal.Entities.DetallePedido;
-import ElBuenSabor.ProyectoFinal.Entities.Pedido;
-import ElBuenSabor.ProyectoFinal.Service.PedidoService; // Importa la interfaz de tu servicio
 
+
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo; // Importa ArticuloInsumo
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado; // Importa ArticuloManufacturado
+import ElBuenSabor.ProyectoFinal.Entities.DetallePedido; // Importa DetallePedido
+import ElBuenSabor.ProyectoFinal.Entities.Pedido; // Importa Pedido
+import ElBuenSabor.ProyectoFinal.Entities.Estado; // Importa Estado
+import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO; // Importa PedidoCreateDTO
+import ElBuenSabor.ProyectoFinal.Service.PedidoService; // Importa PedidoService
 import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.preference.PreferenceClient;
-import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.client.preference.PreferenceItemRequest;
-import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
+import com.mercadopago.client.preference.PreferenceRequest;
+import com.mercadopago.client.preference.PreferenceBackUrlsRequest; // Importa PreferenceBackUrlsRequest
+import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
-import com.mercadopago.resources.preference.Preference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import jakarta.annotation.PostConstruct;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
+import jakarta.annotation.PostConstruct; // Importa PostConstruct
+import java.math.BigDecimal; // Importa BigDecimal
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Set; // Importa Set
 
 @RestController
-@RequestMapping("/api/mercadoPago")
+@RequestMapping("/api/mercadoPago") // Endpoint para las operaciones de Mercado Pago
 @CrossOrigin(origins = "http://localhost:5173") // Asegúrate que este es el puerto de tu frontend React
-public class MPController { // Renombrado a MPController si así lo tienes en tu proyecto
+public class MPController {
 
-    @Value("${mercadopago.access.token}") // Inyecta el token desde application.properties
+    @Value("${mercadopago.access.token}")
     private String accessToken;
 
+    @Value("${mercadopago.back-urls.success}")
+    private String successUrl;
+
+    @Value("${mercadopago.back-urls.pending}")
+    private String pendingUrl;
+
+    @Value("${mercadopago.back-urls.failure}")
+    private String failureUrl;
+
+    @Value("${mercadopago.notification.url}")
+    private String notificationUrl;
+
     @Autowired
-    private PedidoService pedidoService; // Inyecta tu servicio de pedido
+    private PedidoService pedidoService;
 
     @PostConstruct
     public void init() {
@@ -47,21 +66,18 @@ public class MPController { // Renombrado a MPController si así lo tienes en tu
     @PostMapping("/crear-preferencia")
     public ResponseEntity<?> crearPreferencia(@RequestBody PedidoCreateDTO pedidoDTO) {
         try {
-            // 1. Guardar el pedido en la base de datos usando el servicio
-            // *** CORRECCIÓN CLAVE AQUÍ: Llamar a crearPedidoEntidad() ***
-            // Este método devuelve la entidad Pedido, no el DTO de respuesta.
-            Pedido pedidoPersistido = pedidoService.crearPedidoEntidad(pedidoDTO);
+            // 1. Guardar el pedido en la base de datos con un estado inicial (ej. A_CONFIRMAR)
+            // La lógica para mapear DTO a entidad y resolver relaciones está en el servicio.
+            // Creamos un nuevo método en PedidoService para esto, ya que este pedido es
+            // "pre-pago" y puede tener un estado diferente al de un pedido normal guardado por el controller.
+            Pedido pedidoPersistido = pedidoService.crearPedidoPreferenciaMP(pedidoDTO);
 
-            // Validar que el pedido se haya guardado correctamente y tenga un ID
             if (pedidoPersistido == null || pedidoPersistido.getId() == null || pedidoPersistido.getId() == 0L) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al persistir el pedido en la base de datos, ID no generado.");
             }
 
-            // 2. Configurar el Access Token de Mercado Pago (ya hecho en @PostConstruct)
-
-            // 3. Crear la lista de ítems para la preferencia de Mercado Pago
+            // 2. Crear la lista de ítems para la preferencia de Mercado Pago
             List<PreferenceItemRequest> items = new ArrayList<>();
-            // Usamos los detalles de la entidad Pedido persistida, que ya tienen los objetos Articulo relacionados
             Set<DetallePedido> detalles = pedidoPersistido.getDetallesPedidos();
 
             if (detalles == null || detalles.isEmpty()) {
@@ -73,8 +89,6 @@ public class MPController { // Renombrado a MPController si así lo tienes en tu
                 String itemTitle = null;
                 BigDecimal itemPrice = null;
 
-                // Determinar si el detalle es de un ArticuloManufacturado o un ArticuloInsumo
-                // Aquí usamos los objetos ya cargados en la entidad Pedido persistida
                 if (detalle.getArticuloManufacturado() != null) {
                     ArticuloManufacturado am = detalle.getArticuloManufacturado();
                     if (am.getId() != null && am.getDenominacion() != null && am.getPrecioVenta() != null && detalle.getCantidad() != null) {
@@ -87,10 +101,11 @@ public class MPController { // Renombrado a MPController si así lo tienes en tu
                     }
                 } else if (detalle.getArticuloInsumo() != null) {
                     ArticuloInsumo ai = detalle.getArticuloInsumo();
-                    if (ai.getId() != null && ai.getDenominacion() != null && ai.getPrecioCompra() != null && detalle.getCantidad() != null) {
+                    // *** CORRECCIÓN: Usar getPrecioVenta() para ArticuloInsumo si se vende ***
+                    if (ai.getId() != null && ai.getDenominacion() != null && ai.getPrecioVenta() != null && detalle.getCantidad() != null) {
                         itemId = String.valueOf(ai.getId());
                         itemTitle = ai.getDenominacion();
-                        itemPrice = BigDecimal.valueOf(ai.getPrecioCompra());
+                        itemPrice = BigDecimal.valueOf(ai.getPrecioVenta()); // Usar precioVenta del insumo
                     } else {
                         System.err.println("Advertencia: Datos incompletos para ArticuloInsumo en detalle de pedido ID: " + detalle.getId());
                         continue;
@@ -119,27 +134,28 @@ public class MPController { // Renombrado a MPController si así lo tienes en tu
                 return ResponseEntity.badRequest().body("Ningún item válido encontrado en los detalles del pedido para crear la preferencia. Verifica los datos de los artículos en el pedido.");
             }
 
-            // 4. Configurar las URLs de redirección después del pago
+            // 3. Configurar las URLs de redirección y el webhook
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success("http://localhost:5173/pago-exitoso")
-                    .pending("http://localhost:5173/pago-pendiente")
-                    .failure("http://localhost:5173/pago-fallido")
+                    .success(successUrl)
+                    .pending(pendingUrl)
+                    .failure(failureUrl)
                     .build();
 
-            // 5. Construir la solicitud de preferencia
+            // 4. Construir la solicitud de preferencia
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(items)
                     .backUrls(backUrls)
-                    .notificationUrl("https://tu-dominio.com/webhook/mercadopago") // ¡REEMPLAZA CON TU WEBHOOK REAL!
-                    .externalReference(String.valueOf(pedidoPersistido.getId())) // <--- Usa el ID del pedido PERSISTIDO
+                    .notificationUrl(notificationUrl) // Usamos la URL del webhook de properties
+                    .externalReference(String.valueOf(pedidoPersistido.getId())) // Usa el ID del pedido PERSISTIDO
                     .build();
 
-            // 6. Crear la preferencia utilizando el cliente de Mercado Pago
+            // 5. Crear la preferencia utilizando el cliente de Mercado Pago
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
 
-            // 7. Devolver el ID de la preferencia al frontend
-            return ResponseEntity.ok(preference.getId());
+            // 6. Devolver el ID de la preferencia y el init_point al frontend
+            // El frontend usará el init_point para redirigir al usuario
+            return ResponseEntity.ok(Map.of("preferenceId", preference.getId(), "initPoint", preference.getInitPoint()));
 
         } catch (MPException | MPApiException e) {
             System.err.println("Error de Mercado Pago al generar preferencia: " + e.getMessage());

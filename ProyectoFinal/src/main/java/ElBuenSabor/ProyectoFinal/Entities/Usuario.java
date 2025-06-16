@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
@@ -12,14 +13,12 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
-public abstract class Usuario extends BaseEntity {
+@Builder
+public class Usuario extends BaseEntity {
 
     @Column(unique = true)
-    private String auth0Id; // ID de autenticación, por si usas Auth0 o similar
+    private String auth0Id;
     @Column(unique = true)
-    private String username; // Podría ser el email
+    private String username;
 
-    // Para el Módulo I, el email será clave, y la contraseña encriptada.
-    // auth0Id y username pueden ser útiles para integraciones futuras
-    // Pero para el registro y login inicial, nos enfocaremos en email y password.
 }

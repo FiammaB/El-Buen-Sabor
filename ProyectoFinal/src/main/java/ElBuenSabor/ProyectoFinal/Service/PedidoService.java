@@ -1,33 +1,26 @@
-// src/main/java/ElBuenSabor/ProyectoFinal/Service/PedidoService.java
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PedidoResponseDTO;
-import ElBuenSabor.ProyectoFinal.Entities.Estado;
-import ElBuenSabor.ProyectoFinal.Entities.Pedido; // ¡Importa Pedido aquí!
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import ElBuenSabor.ProyectoFinal.Entities.Pedido;
+
+
 
 public interface PedidoService extends BaseService<Pedido, Long> {
-
-    // Método original para crear y devolver DTO al frontend
-    PedidoResponseDTO crearPedido(PedidoCreateDTO pedidoDTO) throws Exception;
-
-    // *** NUEVO MÉTODO: Para crear el pedido y devolver la ENTIDAD PERSISTIDA ***
-    Pedido crearPedidoEntidad(PedidoCreateDTO pedidoDTO) throws Exception;
+    Pedido crearPedidoPreferenciaMP(PedidoCreateDTO dto) throws Exception;
 
 
-    // Métodos para buscar pedidos y devolver DTOs
-    PedidoResponseDTO findPedidoById(Long id) throws Exception;
-    List<PedidoResponseDTO> findAllPedidos() throws Exception;
-    List<PedidoResponseDTO> findPedidosByClienteId(Long clienteId) throws Exception;
-    List<PedidoResponseDTO> findPedidosByEstado(Estado estado) throws Exception;
+    void procesarNotificacionPagoMercadoPago(String paymentId) throws Exception;
 
-    // Método para actualizar el estado del pedido
-    PedidoResponseDTO actualizarEstadoPedido(Long pedidoId, Estado nuevoEstado) throws Exception;
-
-    // Método para marcar pedido como pagado (ej. efectivo)
-    PedidoResponseDTO marcarPedidoComoPagado(Long pedidoId) throws Exception;
+    // Métodos para las nuevas consultas (si ya los habías añadido, no hace falta repetirlos)
+    //List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception;
+    //List<Pedido> findPedidosByEstado(Estado estado) throws Exception;
+    //List<Pedido> findPedidosBetweenFechas(LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
+   // List<Pedido> findPedidosByClienteIdAndEstado(Long clienteId, Estado estado) throws Exception;
+    //List<Pedido> findPedidosByFechaAndEstado(LocalDate fechaInicio, LocalDate fechaFin, Estado estado) throws Exception;
+    //List<Pedido> findPedidosByEstadoOrderByFechaPedidoDesc(Estado estado) throws Exception;
+   // List<Pedido> findPedidosByClienteExcludingEstado(Long clienteId, Estado estadoExcluido) throws Exception;
+    //long countPedidosByEstado(Estado estado) throws Exception;
+    //List<Pedido> findPedidosBySucursalIdAndFechaBetween(Long sucursalId, LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
+   // List<Pedido> findPedidosByArticuloManufacturadoId(Long articuloManufacturadoId) throws Exception;
 }

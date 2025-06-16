@@ -1,230 +1,158 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.*;
+import ElBuenSabor.ProyectoFinal.DTO.SucursalCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Categoria;
+import ElBuenSabor.ProyectoFinal.Entities.Promocion;
 import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
-import ElBuenSabor.ProyectoFinal.Service.SucursalService;
-import ElBuenSabor.ProyectoFinal.Service.CategoriaService; // Para obtener categorías
-import ElBuenSabor.ProyectoFinal.Service.PromocionService; // Para obtener promociones
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
+import ElBuenSabor.ProyectoFinal.Mappers.SucursalMapper;
+import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.DomicilioRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.EmpresaRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.PromocionRepository;
+import ElBuenSabor.ProyectoFinal.Service.SucursalService; // Usar la interfaz específica
+// Ya no es necesario si se inyecta por constructor explícito al padre
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.time.LocalDate; // Para promociones activas
-import java.time.LocalTime; // Para promociones activas
+import java.time.LocalDate; // Si aún se usan en alguna lógica específica aquí
+import java.time.LocalTime; // Si aún se usan en alguna lógica específica aquí
 
 
 @RestController
-@RequestMapping("/api/v1/sucursales")
-@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad
-public class SucursalController {
+@RequestMapping("/api/sucursales") // Define la URL base para este controlador
+// SucursalController ahora extiende BaseController
+public class SucursalController extends BaseController<Sucursal, Long> {
 
-    @Autowired
-    private SucursalService sucursalService;
+    private final SucursalMapper sucursalMapper;
 
-    @Autowired
-    private CategoriaService categoriaService; // Para obtener categorías por sucursal
+    // Repositorios necesarios para resolver relaciones en el controlador
+    private final DomicilioRepository domicilioRepository;
+    private final EmpresaRepository empresaRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final PromocionRepository promocionRepository;
 
-    @Autowired
-    private PromocionService promocionService; // Para obtener promociones por sucursal
-
-    // Endpoint para crear una nueva sucursal
-    // Usualmente restringido a Administradores
-    @PostMapping("")
-    public ResponseEntity<?> crearSucursal(@RequestBody SucursalCreateUpdateDTO sucursalCreateUpdateDTO) {
-        try {
-            SucursalDTO nuevaSucursal = sucursalService.createSucursal(sucursalCreateUpdateDTO);
-            return new ResponseEntity<>(nuevaSucursal, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    // El constructor inyecta el servicio específico de Sucursal y todas las dependencias adicionales
+    public SucursalController(
+            SucursalService sucursalService, // Servicio específico
+            SucursalMapper sucursalMapper,
+            DomicilioRepository domicilioRepository,
+            EmpresaRepository empresaRepository,
+            CategoriaRepository categoriaRepository,
+            PromocionRepository promocionRepository) {
+        super(sucursalService); // Pasa el servicio al constructor del BaseController
+        this.sucursalMapper = sucursalMapper;
+        this.domicilioRepository = domicilioRepository;
+        this.empresaRepository = empresaRepository;
+        this.categoriaRepository = categoriaRepository;
+        this.promocionRepository = promocionRepository;
     }
 
-    // Endpoint para obtener una sucursal por su ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerSucursalPorId(@PathVariable Long id) {
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override // Sobrescribe el getAll del BaseController
+    public ResponseEntity<?> getAll() {
         try {
-            // El SucursalService.findById debería devolver la entidad, luego la convertimos a DTO.
-            // O podríamos tener un método en SucursalService que ya devuelva el DTO.
-            Optional<Sucursal> sucursalOptional = sucursalService.findById(id);
-            if (sucursalOptional.isPresent()) {
-                // Aquí usamos el convertToDTO del propio servicio de sucursal si lo tiene
-                // o un helper local si el servicio devuelve la entidad.
-                // Asumiendo que SucursalServiceImpl tiene un convertToDTO o lo implementamos aquí.
-                return ResponseEntity.ok(convertToSucursalDTO(sucursalOptional.get()));
-            } else {
-                return new ResponseEntity<>("Sucursal no encontrada.", HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // Endpoint para actualizar una sucursal
-    // Usualmente restringido a Administradores
-    @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarSucursal(@PathVariable Long id, @RequestBody SucursalCreateUpdateDTO sucursalCreateUpdateDTO) {
-        try {
-            SucursalDTO sucursalActualizada = sucursalService.updateSucursal(id, sucursalCreateUpdateDTO);
-            return ResponseEntity.ok(sucursalActualizada);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    // Endpoint para listar todas las sucursales
-    @GetMapping("")
-    public ResponseEntity<?> listarSucursales() {
-        try {
-            List<Sucursal> sucursales = sucursalService.findAll();
+            List<Sucursal> sucursales = baseService.findAll(); // Llama al findAll del padre
             List<SucursalDTO> dtos = sucursales.stream()
-                    .map(this::convertToSucursalDTO) // Usar helper
-                    .collect(Collectors.toList());
+                    .map(sucursalMapper::toDTO)
+                    .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Endpoint para obtener las categorías de una sucursal específica
-    @GetMapping("/{id}/categorias")
-    public ResponseEntity<?> obtenerCategoriasPorSucursal(@PathVariable Long id) {
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    @GetMapping("/{id}")
+    @Override // Sobrescribe el getOne del BaseController
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            // Verificar si la sucursal existe
-            if (!sucursalService.existsById(id)) {
-                return new ResponseEntity<>("Sucursal no encontrada.", HttpStatus.NOT_FOUND);
-            }
-            List<Categoria> categorias = categoriaService.findBySucursalesId(id);
-            List<CategoriaDTO> dtos = categorias.stream()
-                    // Usar el convertToDTO (o simple) de CategoriaController o uno local
-                    .map(this::convertToCategoriaDTOSimpleForSucursal)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(dtos);
+            Sucursal sucursal = baseService.findById(id); // Llama al findById del padre
+            return ResponseEntity.ok(sucursalMapper.toDTO(sucursal));
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Endpoint para obtener las promociones activas de una sucursal específica
-    @GetMapping("/{id}/promociones/activas")
-    public ResponseEntity<?> obtenerPromocionesActivasPorSucursal(@PathVariable Long id) {
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
+    public ResponseEntity<?> create(@RequestBody SucursalCreateDTO dto) {
         try {
-            if (!sucursalService.existsById(id)) {
-                return new ResponseEntity<>("Sucursal no encontrada.", HttpStatus.NOT_FOUND);
+            Sucursal sucursal = sucursalMapper.toEntity(dto); // Mapea el DTO a la entidad Sucursal
+
+            // Asignar relaciones por ID
+            sucursal.setDomicilio(domicilioRepository.findById(dto.getDomicilioId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
+
+            sucursal.setEmpresa(empresaRepository.findById(dto.getEmpresaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada")));
+
+            // Asignar colecciones (Categorias, Promociones)
+            if (dto.getCategoriaIds() != null) {
+                List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriaIds());
+                sucursal.setCategorias(categorias);
             }
-            // Primero obtenemos todas las promociones de la sucursal
-            List<PromocionDTO> promocionesDeLaSucursal = promocionService.findPromocionesBySucursalId(id);
 
-            // Luego filtramos las que están activas por fecha y hora
-            LocalDate hoy = LocalDate.now();
-            LocalTime ahora = LocalTime.now();
+            if (dto.getPromocionIds() != null) {
+                List<Promocion> promociones = promocionRepository.findAllById(dto.getPromocionIds());
+                sucursal.setPromociones(promociones);
+            }
+            sucursal.setBaja(false); // Por defecto, una nueva sucursal no está dada de baja
 
-            List<PromocionDTO> activas = promocionesDeLaSucursal.stream()
-                    .filter(p -> !hoy.isBefore(p.getFechaDesde()) && !hoy.isAfter(p.getFechaHasta())) // Dentro del rango de fechas
-                    .filter(p -> {
-                        if (p.getHoraDesde() == null && p.getHoraHasta() == null) return true; // Si no hay hora, es activa todo el día
-                        if (p.getHoraDesde() != null && p.getHoraHasta() == null) return !ahora.isBefore(p.getHoraDesde());
-                        if (p.getHoraDesde() == null && p.getHoraHasta() != null) return !ahora.isAfter(p.getHoraHasta());
-                        return !ahora.isBefore(p.getHoraDesde()) && !ahora.isAfter(p.getHoraHasta()); // Dentro del rango de horas
-                    })
-                    .collect(Collectors.toList());
-
-            return ResponseEntity.ok(activas);
+            Sucursal saved = baseService.save(sucursal); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(sucursalMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-
-    // Endpoint para eliminar una sucursal
-    // Usualmente restringido a Administradores
-    // Considerar restricciones: no eliminar si tiene pedidos asociados, empleados, etc.
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarSucursal(@PathVariable Long id) {
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SucursalCreateDTO dto) {
         try {
-            // Añadir lógica en el servicio para verificar dependencias antes de eliminar
-            // (ej. pedidos no finalizados, empleados asignados, etc.)
-            boolean eliminado = sucursalService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("Sucursal eliminada correctamente.");
+            // Obtener la entidad existente
+            Sucursal existingSucursal = baseService.findById(id);
+
+            // Mapear las propiedades del DTO a la entidad existente
+            existingSucursal.setNombre(dto.getNombre());
+            existingSucursal.setHorarioApertura(dto.getHorarioApertura());
+            existingSucursal.setHorarioCierre(dto.getHorarioCierre());
+
+            // Actualizar relaciones OneToOne y ManyToOne
+            existingSucursal.setDomicilio(domicilioRepository.findById(dto.getDomicilioId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
+
+            existingSucursal.setEmpresa(empresaRepository.findById(dto.getEmpresaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada")));
+
+            // Sincronizar colecciones (Categorias, Promociones)
+            if (dto.getCategoriaIds() != null) {
+                List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriaIds());
+                existingSucursal.getCategorias().clear();
+                existingSucursal.getCategorias().addAll(categorias);
             } else {
-                return new ResponseEntity<>("Sucursal no encontrada para eliminar.", HttpStatus.NOT_FOUND);
+                existingSucursal.getCategorias().clear(); // Si no se envían IDs, limpiar la colección
             }
+
+            if (dto.getPromocionIds() != null) {
+                List<Promocion> promociones = promocionRepository.findAllById(dto.getPromocionIds());
+                existingSucursal.getPromociones().clear();
+                existingSucursal.getPromociones().addAll(promociones);
+            } else {
+                existingSucursal.getPromociones().clear(); // Si no se envían IDs, limpiar la colección
+            }
+
+            Sucursal updated = baseService.update(id, existingSucursal); // Llama al update del padre con la entidad EXISTENTE
+            return ResponseEntity.ok(sucursalMapper.toDTO(updated)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            // Podría ser DataIntegrityViolationException si hay FKs
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // --- Helpers para convertir a DTOs de Respuesta ---
-    // (Estos métodos podrían estar en los respectivos servicios o en una clase Mapper dedicada)
-
-    private SucursalDTO convertToSucursalDTO(Sucursal sucursal) {
-        if (sucursal == null) return null;
-        // Este método fue implementado en SucursalServiceImpl,
-        // Idealmente, el servicio devolvería el DTO directamente o tendríamos un mapper.
-        // Por ahora, replicamos una conversión simple aquí o llamamos a la del servicio si es accesible.
-        // Para este ejemplo, asumiré que el SucursalService no tiene el convertToDTO público
-        // o que preferimos hacerlo aquí.
-        SucursalDTO dto = new SucursalDTO();
-        dto.setId(sucursal.getId());
-        dto.setNombre(sucursal.getNombre());
-        dto.setHorarioApertura(sucursal.getHorarioApertura());
-        dto.setHorarioCierre(sucursal.getHorarioCierre());
-
-        if (sucursal.getEmpresa() != null) {
-            dto.setEmpresaId(sucursal.getEmpresa().getId());
-            // Podrías añadir un EmpresaSimpleDTO aquí si es necesario en la respuesta
-        }
-        if (sucursal.getDomicilio() != null) {
-            // Convertir Domicilio a DomicilioDTO (similar a como se hizo en ClienteController)
-            DomicilioDTO domDto = new DomicilioDTO(); // Necesitarías el DTO y su lógica de conversión
-            domDto.setId(sucursal.getDomicilio().getId());
-            domDto.setCalle(sucursal.getDomicilio().getCalle());
-            domDto.setNumero(sucursal.getDomicilio().getNumero());
-            domDto.setCp(sucursal.getDomicilio().getCp());
-            if (sucursal.getDomicilio().getLocalidad() != null) {
-                // Llenar localidad y su jerarquía
-                LocalidadDTO locDto = new LocalidadDTO();
-                locDto.setId(sucursal.getDomicilio().getLocalidad().getId());
-                locDto.setNombre(sucursal.getDomicilio().getLocalidad().getNombre());
-                if (sucursal.getDomicilio().getLocalidad().getProvincia() != null) {
-                    ProvinciaDTO provDto = new ProvinciaDTO();
-                    provDto.setId(sucursal.getDomicilio().getLocalidad().getProvincia().getId());
-                    provDto.setNombre(sucursal.getDomicilio().getLocalidad().getProvincia().getNombre());
-                    if (sucursal.getDomicilio().getLocalidad().getProvincia().getPais() != null) {
-                        PaisDTO paisDto = new PaisDTO();
-                        paisDto.setId(sucursal.getDomicilio().getLocalidad().getProvincia().getPais().getId());
-                        paisDto.setNombre(sucursal.getDomicilio().getLocalidad().getProvincia().getPais().getNombre());
-                        provDto.setPais(paisDto);
-                    }
-                    locDto.setProvincia(provDto);
-                }
-                domDto.setLocalidad(locDto);
-            }
-            dto.setDomicilio(domDto);
-        }
-        if (sucursal.getCategorias() != null) { //
-            dto.setCategoriaIds(sucursal.getCategorias().stream().map(Categoria::getId).collect(Collectors.toList())); //
-            // Para incluir los DTOs completos de categoría:
-            dto.setCategorias(sucursal.getCategorias().stream() //
-                    .map(this::convertToCategoriaDTOSimpleForSucursal)
-                    .collect(Collectors.toList()));
-        }
-        // Podrías añadir una lista de PromocionSimpleDTO si fuera necesario.
-        return dto;
-    }
-
-    private CategoriaDTO convertToCategoriaDTOSimpleForSucursal(Categoria categoria) {
-        if (categoria == null) return null;
-        CategoriaDTO dto = new CategoriaDTO();
-        dto.setId(categoria.getId());
-        dto.setDenominacion(categoria.getDenominacion());
-        // No incluir padre, subcategorías o sucursales aquí para evitar ciclos y mantenerlo simple
-        return dto;
-    }
 }

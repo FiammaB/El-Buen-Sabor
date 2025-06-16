@@ -2,6 +2,10 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "articulo_insumo")
@@ -9,16 +13,14 @@ import lombok.*;
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 public class ArticuloInsumo extends Articulo {
 
     private Double precioCompra;
-    private Double stockActual; // Usamos Double para permitir cantidades no enteras (ej. 1.5 kg)
-    private Double stockMinimo; // Usamos Double para permitir cantidades no enteras
-    private Boolean esParaElaborar; // Indica si es un ingrediente para preparar otros productos
+    private Double stockActual;
+    private Double stockMinimo;
+    private Boolean esParaElaborar;
 
-    @ManyToOne
-    @JoinColumn(name = "unidad_medida_id")
-    private UnidadMedida unidadMedida;
-
+    @OneToMany(mappedBy = "articuloInsumo", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+    private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 }

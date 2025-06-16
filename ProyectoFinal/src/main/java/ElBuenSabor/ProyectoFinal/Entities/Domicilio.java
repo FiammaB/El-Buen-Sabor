@@ -1,7 +1,9 @@
+// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Entities/Domicilio.java
 package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -25,6 +27,16 @@ public class Domicilio extends BaseEntity {
     @JoinColumn(name = "localidad_id")
     private Localidad localidad;
 
-    @OneToMany(mappedBy = "domicilioEntrega", cascade = CascadeType.ALL, orphanRemoval = true) // <--- ¡Aquí está el error!
-    private Set<Pedido> pedidos = new HashSet<>();
+    // ELIMINA ESTO:
+    // @ManyToOne
+    // @JoinColumn(name = "cliente_id")
+    // private Cliente cliente;
+
+    // AÑADE ESTO:
+    @ManyToMany(mappedBy = "domicilios") // Mapeado por el campo 'domicilios' en la entidad Cliente
+    private Set<Cliente> clientes = new HashSet<>(); // Un domicilio puede pertenecer a muchos clientes
+
+    @OneToMany(mappedBy = "domicilioEntrega")
+    private List<Pedido> pedidos;
+
 }

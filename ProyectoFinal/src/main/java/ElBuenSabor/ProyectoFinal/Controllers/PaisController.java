@@ -1,149 +1,98 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.PaisDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ProvinciaDTO; // Para la respuesta de provincias
 import ElBuenSabor.ProyectoFinal.Entities.Pais;
-import ElBuenSabor.ProyectoFinal.Service.PaisService;
-import ElBuenSabor.ProyectoFinal.Service.ProvinciaService;
-import jakarta.validation.Valid; // Para la validación de DTOs
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Mappers.PaisMapper;
+import ElBuenSabor.ProyectoFinal.Service.PaisService; // Usar la interfaz específica
+// Ya no es necesario si se inyecta por constructor explícito al padre
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/paises")
-@CrossOrigin(origins = "*") // Ajusta según tus necesidades de seguridad en producción
-public class PaisController {
+@RequestMapping("/api/paises") // Define la URL base para este controlador
+// PaisController ahora extiende BaseController
+public class PaisController extends BaseController<Pais, Long> {
 
-    @Autowired
-    private PaisService paisService;
+    private final PaisMapper paisMapper;
 
-    @Autowired
-    private ProvinciaService provinciaService; // Para el endpoint de provincias por país
-
-    // POST /api/v1/paises - Crear un nuevo país
-    @PostMapping("")
-    public ResponseEntity<?> createPais(@Valid @RequestBody PaisDTO paisDTO) {
-        try {
-            Pais nuevoPais = paisService.createPais(paisDTO);
-            return new ResponseEntity<>(convertToPaisDTO(nuevoPais), HttpStatus.CREATED);
-        } catch (Exception e) {
-            // Si la validación del DTO falla, GlobalExceptionHandler manejará MethodArgumentNotValidException.
-            // Otras excepciones del servicio (ej. "nombre ya existe") se capturan aquí.
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    // El constructor inyecta el servicio específico de Pais y el mapper
+    public PaisController(
+            PaisService paisService, // Servicio específico
+            PaisMapper paisMapper) {
+        super(paisService); // Pasa el servicio al constructor del BaseController
+        this.paisMapper = paisMapper;
     }
 
-    // GET /api/v1/paises/{id} - Obtener un país por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getPaisById(@PathVariable Long id) {
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override // Sobrescribe el getAll del BaseController
+    public ResponseEntity<?> getAll() {
         try {
-            Optional<Pais> paisOptional = paisService.findById(id);
-            if (paisOptional.isPresent()) {
-                return ResponseEntity.ok(convertToPaisDTO(paisOptional.get()));
-            } else {
-                return new ResponseEntity<>("País no encontrado con ID: " + id, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error al obtener el país: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // GET /api/v1/paises - Obtener todos los países
-    @GetMapping("")
-    public ResponseEntity<?> getAllPaises() {
-        try {
-            List<Pais> paises = paisService.findAll();
+            List<Pais> paises = baseService.findAll(); // Llama al findAll del padre
             List<PaisDTO> dtos = paises.stream()
-                    .map(this::convertToPaisDTO)
-                    .collect(Collectors.toList());
+                    .map(paisMapper::toDTO)
+                    .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>("Error al obtener la lista de países: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // GET /api/v1/paises/buscar?nombre=Argentina - Obtener un país por nombre
-    @GetMapping("/buscar")
-    public ResponseEntity<?> getPaisByNombre(@RequestParam String nombre) {
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    @GetMapping("/{id}")
+    @Override // Sobrescribe el getOne del BaseController
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            Pais pais = paisService.findByNombre(nombre);
-            if (pais != null) {
-                return ResponseEntity.ok(convertToPaisDTO(pais));
-            } else {
-                return new ResponseEntity<>("País no encontrado con el nombre: " + nombre, HttpStatus.NOT_FOUND);
-            }
+            Pais pais = baseService.findById(id); // Llama al findById del padre
+            return ResponseEntity.ok(paisMapper.toDTO(pais));
         } catch (Exception e) {
-            return new ResponseEntity<>("Error al buscar el país por nombre: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // PUT /api/v1/paises/{id} - Actualizar un país existente
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updatePais(@PathVariable Long id, @Valid @RequestBody PaisDTO paisDTO) {
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
+    public ResponseEntity<?> create(@RequestBody PaisDTO dto) {
         try {
-            Pais paisActualizado = paisService.updatePais(id, paisDTO);
-            return ResponseEntity.ok(convertToPaisDTO(paisActualizado));
+            Pais pais = paisMapper.toEntity(dto);
+            pais.setBaja(false); // Por defecto, un nuevo país está activo
+
+            Pais saved = baseService.save(pais); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(paisMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            if (e.getMessage().contains("no encontrado")) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // DELETE /api/v1/paises/{id} - Eliminar un país
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePais(@PathVariable Long id) {
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PaisDTO dto) {
         try {
-            // El PaisService.delete(id) debería idealmente verificar si el país tiene provincias asociadas
-            // y, de ser así, impedir el borrado o manejarlo según las reglas de negocio.
-            // Por ahora, asumimos que el servicio lo intenta borrar.
-            boolean eliminado = paisService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("País eliminado correctamente.");
-            } else {
-                // Esto podría ocurrir si el servicio findById no encuentra nada antes de intentar borrar.
-                return new ResponseEntity<>("País no encontrado con ID: " + id + " para eliminar.", HttpStatus.NOT_FOUND);
-            }
-        } catch (org.springframework.dao.DataIntegrityViolationException dive) {
-            // Captura específica para errores de integridad referencial (ej. si tiene provincias)
-            return new ResponseEntity<>("No se puede eliminar el país. Puede que tenga provincias asociadas.", HttpStatus.CONFLICT);
-        }
-        catch (Exception e) {
-            if (e.getMessage().contains("no encontrado")) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>("Error al eliminar el país: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
+            // Obtener la entidad existente y actualizar sus propiedades
+            Pais existingPais = baseService.findById(id);
 
-    // GET /api/v1/paises/{id}/provincias - Obtener las provincias de un país específico
-    @GetMapping("/{id}/provincias")
-    public ResponseEntity<?> obtenerProvinciasPorPais(@PathVariable Long id) {
-        try {
-            // Verificar si el país existe primero
-            if (!paisService.existsById(id)) { // Añadir existsById a BaseService y PaisService si no existe
-                return new ResponseEntity<>("País no encontrado con ID: " + id, HttpStatus.NOT_FOUND);
-            }
-            List<ProvinciaDTO> dtos = provinciaService.findByPaisId(id);
-            return ResponseEntity.ok(dtos);
+            existingPais.setNombre(dto.getNombre());
+            // Si País tiene colecciones (ej. provincias),
+            // necesitarías lógica adicional aquí para sincronizarlas.
+            // La propiedad 'baja' se mantendrá o actualizará según la lógica de BaseServiceImpl.update
+            // o puedes establecerla explícitamente si tu DTO lo soporta.
+
+            Pais updated = baseService.update(id, existingPais); // Llama al update del padre con la entidad EXISTENTE
+            return ResponseEntity.ok(paisMapper.toDTO(updated)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>("Error al obtener las provincias del país: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // --- Helper para convertir Entidad a DTO ---
-    private PaisDTO convertToPaisDTO(Pais pais) {
-        if (pais == null) return null;
-        PaisDTO dto = new PaisDTO();
-        dto.setId(pais.getId());
-        dto.setNombre(pais.getNombre());
-        return dto;
-    }
+    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
+    // si la lógica de borrado/activación/desactivación ya implementada en BaseController
+    // es suficiente y no necesitas una respuesta con DTOs específicos.
+    // @DeleteMapping("/{id}") ya está cubierto por BaseController
+    // @PatchMapping("/{id}/activate") ya está cubierto por BaseController
+    // @PatchMapping("/{id}/deactivate") ya está cubierto por BaseController
 }

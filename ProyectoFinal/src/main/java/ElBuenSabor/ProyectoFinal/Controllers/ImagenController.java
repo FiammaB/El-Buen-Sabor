@@ -1,43 +1,68 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Imagen;
+import ElBuenSabor.ProyectoFinal.Mappers.ImagenMapper;
+import ElBuenSabor.ProyectoFinal.Service.ImagenService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.HashMap; // Importar HashMap
+import java.util.List;
+import java.util.Map;   // Importar Map
 
 @RestController
+@RequestMapping("/api/imagenes")
 @CrossOrigin(origins = "http://localhost:5173")
-public class ImagenController {
+public class ImagenController extends BaseController<Imagen, Long> {
 
-    @GetMapping("/uploads/{filename:.+}")
-    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
+    private final ImagenMapper imagenMapper;
+
+    public ImagenController(
+            ImagenService imagenService,
+            ImagenMapper imagenMapper) {
+        super(imagenService);
+        this.imagenMapper = imagenMapper;
+    }
+
+    @GetMapping
+    @Override
+    public ResponseEntity<?> getAll() {
         try {
-            // Buscar el archivo en la carpeta uploads
-            Path filePath = Paths.get("uploads").resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = "image/png";
-                if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
-                    contentType = "image/jpeg";
-                }
-
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .header(HttpHeaders.CACHE_CONTROL, "no-cache")
-                        .body(resource);
-            } else {
-                System.out.println("Archivo no encontrado: " + filePath.toAbsolutePath());
-                return ResponseEntity.notFound().build();
-            }
+            List<Imagen> imagenes = baseService.findAll();
+            List<ImagenDTO> dtos = imagenes.stream()
+                    .map(imagenMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            System.out.println("Error al servir imagen: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @GetMapping("/{id}")
+    @Override
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
+        try {
+            Imagen imagen = baseService.findById(id);
+            return ResponseEntity.ok(imagenMapper.toDTO(imagen));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PostMapping("/upload")
+    // <<--- CAMBIAR EL TIPO DE RETORNO A ResponseEntity<?>
+    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
+        try {
+            Imagen imagen = ((ImagenService) baseService).upload(file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(imagenMapper.toDTO(imagen));
+        } catch (Exception e) {
+            // <<--- DEVOLVER UN Map<String, String> COMO CUERPO DEL ERROR
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al subir la imagen: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 }

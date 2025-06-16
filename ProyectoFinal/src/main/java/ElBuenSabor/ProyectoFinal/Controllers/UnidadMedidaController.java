@@ -2,105 +2,92 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.UnidadMedidaDTO;
 import ElBuenSabor.ProyectoFinal.Entities.UnidadMedida;
-import ElBuenSabor.ProyectoFinal.Service.UnidadMedidaService;
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Mappers.UnidadMedidaMapper;
+import ElBuenSabor.ProyectoFinal.Service.UnidadMedidaService; // Usar la interfaz específica
+// Ya no es necesario si se inyecta por constructor explícito al padre
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/unidades-medida")
-@CrossOrigin(origins = "*")
-public class UnidadMedidaController {
+@RequestMapping("/api/unidades-medida") // Define la URL base para este controlador
+// UnidadMedidaController ahora extiende BaseController
+public class UnidadMedidaController extends BaseController<UnidadMedida, Long> {
 
-    @Autowired
-    private UnidadMedidaService unidadMedidaService;
+    private final UnidadMedidaMapper unidadMapper;
 
-    @PostMapping("")
-    public ResponseEntity<?> createUnidadMedida(@RequestBody UnidadMedidaDTO unidadMedidaDTO) {
-        try {
-            UnidadMedida nuevaUnidad = unidadMedidaService.createUnidadMedida(unidadMedidaDTO);
-            return new ResponseEntity<>(convertToUnidadMedidaDTO(nuevaUnidad), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    // El constructor inyecta el servicio específico de UnidadMedida y el mapper
+    public UnidadMedidaController(
+            UnidadMedidaService unidadMedidaService, // Servicio específico
+            UnidadMedidaMapper unidadMapper) {
+        super(unidadMedidaService); // Pasa el servicio al constructor del BaseController
+        this.unidadMapper = unidadMapper;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getUnidadMedidaById(@PathVariable Long id) {
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override // Sobrescribe el getAll del BaseController
+    public ResponseEntity<?> getAll() {
         try {
-            Optional<UnidadMedida> unidadOptional = unidadMedidaService.findById(id);
-            if (unidadOptional.isPresent()) {
-                return ResponseEntity.ok(convertToUnidadMedidaDTO(unidadOptional.get()));
-            } else {
-                return new ResponseEntity<>("Unidad de Medida no encontrada.", HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("/buscar")
-    public ResponseEntity<?> getUnidadMedidaByDenominacion(@RequestParam String denominacion) {
-        try {
-            UnidadMedida unidad = unidadMedidaService.findByDenominacion(denominacion);
-            if (unidad != null) {
-                return ResponseEntity.ok(convertToUnidadMedidaDTO(unidad));
-            } else {
-                return new ResponseEntity<>("Unidad de Medida no encontrada: " + denominacion, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("")
-    public ResponseEntity<?> getAllUnidadesMedida() {
-        try {
-            List<UnidadMedida> unidades = unidadMedidaService.findAll();
+            List<UnidadMedida> unidades = baseService.findAll(); // Llama al findAll del padre
             List<UnidadMedidaDTO> dtos = unidades.stream()
-                    .map(this::convertToUnidadMedidaDTO)
-                    .collect(Collectors.toList());
+                    .map(unidadMapper::toDTO)
+                    .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUnidadMedida(@PathVariable Long id, @RequestBody UnidadMedidaDTO unidadMedidaDTO) {
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    @GetMapping("/{id}")
+    @Override // Sobrescribe el getOne del BaseController
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            UnidadMedida unidadActualizada = unidadMedidaService.updateUnidadMedida(id, unidadMedidaDTO);
-            return ResponseEntity.ok(convertToUnidadMedidaDTO(unidadActualizada));
+            UnidadMedida unidad = baseService.findById(id); // Llama al findById del padre
+            return ResponseEntity.ok(unidadMapper.toDTO(unidad));
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUnidadMedida(@PathVariable Long id) {
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
+    public ResponseEntity<?> create(@RequestBody UnidadMedidaDTO dto) {
         try {
-            // Considerar no eliminar si está en uso por algún artículo.
-            boolean eliminado = unidadMedidaService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("Unidad de Medida eliminada correctamente.");
-            } else {
-                return new ResponseEntity<>("Unidad de Medida no encontrada.", HttpStatus.NOT_FOUND);
-            }
+            UnidadMedida unidad = unidadMapper.toEntity(dto);
+            unidad.setBaja(false); // Por defecto, una nueva unidad de medida está activa
+
+            UnidadMedida saved = baseService.save(unidad); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(unidadMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    private UnidadMedidaDTO convertToUnidadMedidaDTO(UnidadMedida unidad) {
-        if (unidad == null) return null;
-        UnidadMedidaDTO dto = new UnidadMedidaDTO();
-        dto.setId(unidad.getId());
-        dto.setDenominacion(unidad.getDenominacion());
-        return dto;
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UnidadMedidaDTO dto) {
+        try {
+            // Obtener la entidad existente y actualizar sus propiedades
+            UnidadMedida existingUnidad = baseService.findById(id);
+
+            existingUnidad.setDenominacion(dto.getDenominacion());
+            // Si UnidadMedida tiene colecciones (ej. articulos),
+            // necesitarías lógica adicional aquí para sincronizarlas.
+            // La propiedad 'baja' se mantendrá o actualizará según la lógica de BaseServiceImpl.update
+            // o puedes establecerla explícitamente si tu DTO lo soporta.
+
+            UnidadMedida updated = baseService.update(id, existingUnidad); // Llama al update del padre con la entidad EXISTENTE
+            return ResponseEntity.ok(unidadMapper.toDTO(updated)); // Convierte a DTO para la respuesta
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
+
+
 }

@@ -13,4 +13,5 @@ public class LocalidadCreateUpdateDTO {
     //Request DTO
     private String nombre;
     private Long provinciaId;
+    private boolean estaDadoDeBaja;
 }

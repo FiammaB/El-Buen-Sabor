@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
-    List<Categoria> findBySucursalesId(Long sucursalId); // Para obtener categorías de una sucursal específica
-    List<Categoria> findByCategoriaPadreIsNull(); // Para obtener categorías de nivel superior
+    List<Categoria> findByCategoriaPadreIsNull(); // Para obtener solo las raíces
 }

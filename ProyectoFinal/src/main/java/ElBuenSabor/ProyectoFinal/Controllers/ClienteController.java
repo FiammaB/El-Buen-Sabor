@@ -1,194 +1,163 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClienteActualizacionDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ClienteRegistroDTO;
-import ElBuenSabor.ProyectoFinal.DTO.LoginDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ClienteResponseDTO; // Asumiendo que creamos este DTO
+import ElBuenSabor.ProyectoFinal.DTO.ClienteCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.ClienteDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Entities.Domicilio; // Importa Domicilio
+import ElBuenSabor.ProyectoFinal.Entities.Imagen;   // Importa Imagen si ClienteCreateDTO tiene imagenId
+import ElBuenSabor.ProyectoFinal.Entities.Usuario;  // Importa Usuario si ClienteCreateDTO tiene usuarioId
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Para manejar si no encuentra el ID
+import ElBuenSabor.ProyectoFinal.Mappers.ClienteMapper;
 import ElBuenSabor.ProyectoFinal.Service.ClienteService;
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Service.DomicilioService; // <-- ¡Necesitamos este servicio!
+import ElBuenSabor.ProyectoFinal.Service.ImagenService;   // <-- ¡Necesitamos este servicio si mapeamos imagenId!
+import ElBuenSabor.ProyectoFinal.Service.UsuarioService;  // <-- ¡Necesitamos este servicio si mapeamos usuarioId!
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet; // Importa HashSet
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import ElBuenSabor.ProyectoFinal.DTO.DomicilioDTO; // Para mapear domicilios
-import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO; // Para mapear imagen
-import ElBuenSabor.ProyectoFinal.DTO.LocalidadDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ProvinciaDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PaisDTO;
-import java.util.ArrayList;
-
+import java.util.Set;     // Importa Set
 
 @RestController
-@RequestMapping("/api/v1/clientes") // Versión de API en la URL es una buena práctica
-@CrossOrigin(origins = "*") // Permite peticiones de cualquier origen***
-public class ClienteController {
+@RequestMapping("/api/clientes") // Define la URL base para este controlador
+public class ClienteController extends BaseController<Cliente, Long> {
 
-    @Autowired
-    private ClienteService clienteService;
+    private final ClienteMapper clienteMapper;
+    private final DomicilioService domicilioService; // <-- Inyectamos DomicilioService
+    private final ImagenService imagenService;       // <-- Inyectamos ImagenService
+    private final UsuarioService usuarioService;      // <-- Inyectamos UsuarioService
 
-    // Endpoint para registrar un nuevo cliente
-    @PostMapping("/registrar")
-    public ResponseEntity<?> registrarCliente(@RequestBody ClienteRegistroDTO registroDTO) {
+    // El constructor inyecta el servicio específico de Cliente, el mapper y los nuevos servicios
+    public ClienteController(
+            ClienteService clienteService,
+            ClienteMapper clienteMapper,
+            DomicilioService domicilioService, // <-- Añadir inyección
+            ImagenService imagenService,       // <-- Añadir inyección
+            UsuarioService usuarioService) {   // <-- Añadir inyección
+        super(clienteService);
+        this.clienteMapper = clienteMapper;
+        this.domicilioService = domicilioService; // Asignar
+        this.imagenService = imagenService;       // Asignar
+        this.usuarioService = usuarioService;     // Asignar
+    }
+
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override
+    public ResponseEntity<?> getAll() {
         try {
-            Cliente nuevoCliente = clienteService.registrarCliente(registroDTO); //
-            return new ResponseEntity<>(convertToClienteResponseDTO(nuevoCliente), HttpStatus.CREATED);
+            List<Cliente> clientes = baseService.findAll();
+            List<ClienteDTO> dtos = clientes.stream()
+                    .map(clienteMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Endpoint para login de cliente
-    @PostMapping("/login")
-    public ResponseEntity<?> loginCliente(@RequestBody LoginDTO loginDTO) {
-        try {
-            Cliente cliente = clienteService.loginCliente(loginDTO); //
-            // En una aplicación real, aquí se generaría un token JWT (JSON Web Token)
-            // y se devolvería al cliente para autenticar las siguientes peticiones.
-            return ResponseEntity.ok(convertToClienteResponseDTO(cliente));
-        } catch (Exception e) {
-            // Es mejor ser genérico en mensajes de error de login por seguridad
-            return new ResponseEntity<>("Credenciales inválidas.", HttpStatus.UNAUTHORIZED);
-        }
-    }
-
-    // Endpoint para obtener un cliente por su ID
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerClientePorId(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            Optional<Cliente> clienteOptional = clienteService.findById(id); //
-            if (clienteOptional.isPresent()) {
-                return ResponseEntity.ok(convertToClienteResponseDTO(clienteOptional.get()));
-            } else {
-                return new ResponseEntity<>("Cliente no encontrado.", HttpStatus.NOT_FOUND);
+            Cliente cliente = baseService.findById(id);
+            return ResponseEntity.ok(clienteMapper.toDTO(cliente));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<?> create(@RequestBody ClienteCreateDTO createDTO) {
+        try {
+            Cliente cliente = clienteMapper.toEntity(createDTO);
+            cliente.setBaja(false); // Por defecto, un nuevo cliente está activo
+
+            // Establecer relaciones ManyToOne (Usuario, Imagen)
+            if (createDTO.getUsuarioId() != null) {
+                Usuario usuario = usuarioService.findById(createDTO.getUsuarioId());
+                cliente.setUsuario(usuario);
             }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+            if (createDTO.getImagenId() != null) {
+                Imagen imagen = imagenService.findById(createDTO.getImagenId());
+                cliente.setImagen(imagen);
+            }
 
-    // Endpoint para actualizar la información de un cliente
-    @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarCliente(@PathVariable Long id, @RequestBody ClienteActualizacionDTO actualizacionDTO) {
-        try {
-            Cliente clienteActualizado = clienteService.actualizarCliente(id, actualizacionDTO); //
-            return ResponseEntity.ok(convertToClienteResponseDTO(clienteActualizado));
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    // Endpoint para dar de baja un cliente (lógica de soft delete)
-    // Este endpoint podría requerir un rol de ADMIN
-    @PatchMapping("/{id}/dar-baja")
-    public ResponseEntity<?> darBajaCliente(@PathVariable Long id) {
-        try {
-            clienteService.darBajaCliente(id); //
-            return ResponseEntity.ok("Cliente dado de baja correctamente.");
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    // Endpoint para dar de alta un cliente (revertir soft delete)
-    // Este endpoint podría requerir un rol de ADMIN
-    @PatchMapping("/{id}/dar-alta")
-    public ResponseEntity<?> darAltaCliente(@PathVariable Long id) {
-        try {
-            clienteService.darAltaCliente(id); //
-            return ResponseEntity.ok("Cliente dado de alta correctamente.");
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    // Endpoint para listar todos los clientes (podría ser solo para ADMIN)
-    @GetMapping("")
-    public ResponseEntity<?> listarClientes() {
-        try {
-            List<Cliente> clientes = clienteService.findAll(); //
-            List<ClienteResponseDTO> responseDTOs = clientes.stream()
-                    .map(this::convertToClienteResponseDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(responseDTOs);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // Método para eliminar un cliente (Hard Delete, usar con precaución, podría ser solo para ADMIN)
-    // @DeleteMapping("/{id}")
-    // public ResponseEntity<?> eliminarCliente(@PathVariable Long id) {
-    // try {
-    // boolean eliminado = clienteService.delete(id);
-    // if (eliminado) {
-    // return ResponseEntity.ok("Cliente eliminado permanentemente.");
-    // } else {
-    // return new ResponseEntity<>("Cliente no encontrado para eliminar.", HttpStatus.NOT_FOUND);
-    // }
-    // } catch (Exception e) {
-    // return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-    // }
-    // }
-
-    // --- Helper para convertir Entidad Cliente a ClienteResponseDTO ---
-    // Este DTO es para las respuestas, para no exponer la contraseña y formatear los datos.
-    private ClienteResponseDTO convertToClienteResponseDTO(Cliente cliente) {
-        if (cliente == null) {
-            return null;
-        }
-        ClienteResponseDTO dto = new ClienteResponseDTO();
-        dto.setId(cliente.getId());
-        dto.setNombre(cliente.getNombre());
-        dto.setApellido(cliente.getApellido());
-        dto.setTelefono(cliente.getTelefono());
-        dto.setEmail(cliente.getEmail());
-        dto.setUsername(cliente.getUsername());
-        dto.setAuth0Id(cliente.getAuth0Id());
-        dto.setFechaNacimiento(cliente.getFechaNacimiento());
-        dto.setEstaDadoDeBaja(cliente.isEstaDadoDeBaja());
-
-        if (cliente.getImagen() != null) {
-            ImagenDTO imagenDTO = new ImagenDTO();
-            imagenDTO.setId(cliente.getImagen().getId());
-            imagenDTO.setDenominacion(cliente.getImagen().getDenominacion());
-            dto.setImagen(imagenDTO);
-        }
-
-        if (cliente.getDomicilios() != null) {
-            dto.setDomicilios(cliente.getDomicilios().stream().map(dom -> {
-                DomicilioDTO domDto = new DomicilioDTO();
-                domDto.setId(dom.getId());
-                domDto.setCalle(dom.getCalle());
-                domDto.setNumero(dom.getNumero());
-                domDto.setCp(dom.getCp());
-                if (dom.getLocalidad() != null) {
-                    LocalidadDTO locDto = new LocalidadDTO();
-                    locDto.setId(dom.getLocalidad().getId());
-                    locDto.setNombre(dom.getLocalidad().getNombre());
-                    if (dom.getLocalidad().getProvincia() != null) {
-                        ProvinciaDTO provDto = new ProvinciaDTO();
-                        provDto.setId(dom.getLocalidad().getProvincia().getId());
-                        provDto.setNombre(dom.getLocalidad().getProvincia().getNombre());
-                        if (dom.getLocalidad().getProvincia().getPais() != null) {
-                            PaisDTO paisDto = new PaisDTO();
-                            paisDto.setId(dom.getLocalidad().getProvincia().getPais().getId());
-                            paisDto.setNombre(dom.getLocalidad().getProvincia().getPais().getNombre());
-                            provDto.setPais(paisDto);
-                        }
-                        locDto.setProvincia(provDto);
-                    }
-                    domDto.setLocalidad(locDto);
+            // Establecer relaciones ManyToMany para Domicilios
+            if (createDTO.getDomicilioIds() != null && !createDTO.getDomicilioIds().isEmpty()) {
+                Set<Domicilio> domicilios = new HashSet<>();
+                for (Long domicilioId : createDTO.getDomicilioIds()) {
+                    Domicilio domicilio = domicilioService.findById(domicilioId);
+                    domicilios.add(domicilio);
                 }
-                return domDto;
-            }).collect(Collectors.toList()));
-        } else {
-            dto.setDomicilios(new ArrayList<>());
+                cliente.setDomicilios(domicilios);
+            }
+
+            Cliente saved = baseService.save(cliente);
+            return ResponseEntity.status(HttpStatus.CREATED).body(clienteMapper.toDTO(saved));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
-        // No incluir cliente.getPassword() en el DTO de respuesta.
-        return dto;
     }
+
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
+
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ClienteCreateDTO updateDTO) {
+        try {
+            // Es mejor obtener la entidad existente y actualizar sus propiedades
+            Cliente existing = baseService.findById(id); // Obtiene el cliente existente
+
+            // Actualizar propiedades básicas
+            existing.setNombre(updateDTO.getNombre());
+            existing.setApellido(updateDTO.getApellido());
+            existing.setTelefono(updateDTO.getTelefono());
+            existing.setEmail(updateDTO.getEmail());
+            // Cuidado: la password no suele actualizarse así. Solo actualiza si tu lógica lo requiere.
+            // existing.setPassword(updateDTO.getPassword());
+            existing.setFechaNacimiento(updateDTO.getFechaNacimiento());
+            // La baja se maneja con toggleBaja o si tu ClienteService.update lo permite a través del DTO.
+            // Si el DTO de actualización no debe cambiar la 'baja', omite esta línea:
+            // existing.setBaja(updateDTO.getBaja());
+
+            // Actualizar relaciones ManyToOne (Usuario, Imagen)
+            if (updateDTO.getUsuarioId() != null) {
+                Usuario usuario = usuarioService.findById(updateDTO.getUsuarioId());
+                existing.setUsuario(usuario);
+            } else {
+                existing.setUsuario(null); // Si el ID es null, remover la relación
+            }
+            if (updateDTO.getImagenId() != null) {
+                Imagen imagen = imagenService.findById(updateDTO.getImagenId());
+                existing.setImagen(imagen);
+            } else {
+                existing.setImagen(null); // Si el ID es null, remover la relación
+            }
+
+            // Sincronizar relaciones ManyToMany para Domicilios
+            if (updateDTO.getDomicilioIds() != null) {
+                existing.getDomicilios().clear(); // Limpia la colección existente
+                for (Long domicilioId : updateDTO.getDomicilioIds()) {
+                    Domicilio domicilio = domicilioService.findById(domicilioId);
+                    existing.getDomicilios().add(domicilio);
+                    // IMPORTANTE: Asegúrate de que la relación inversa Domicilio.clientes se actualice también
+                    // si es manejada manualmente o si Cascade no es suficiente (común en ManyToMany)
+                    domicilio.getClientes().add(existing); // <-- Añadir la inversa si es bidireccional y no por Cascade
+                }
+            } else {
+                existing.getDomicilios().clear(); // Si no se envían IDs, limpiar la colección
+            }
+
+            Cliente updated = baseService.update(id, existing);
+            return ResponseEntity.ok(clienteMapper.toDTO(updated));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
 }

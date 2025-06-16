@@ -6,8 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ArticuloManufacturadoDetalleRepository extends JpaRepository<ArticuloManufacturadoDetalle, Long> {
-    // Puedes añadir métodos personalizados aquí si necesitas buscar detalles específicos
-    // por ArticuloManufacturado o ArticuloInsumo, por ejemplo:
-    // List<ArticuloManufacturadoDetalle> findByArticuloManufacturadoId(Long articuloManufacturadoId);
-    // List<ArticuloManufacturadoDetalle> findByArticuloInsumoId(Long articuloInsumoId);
 }

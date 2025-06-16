@@ -4,6 +4,7 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
@@ -25,6 +26,7 @@ public class Factura extends BaseEntity {
     private FormaPago formaPago;        // Forma de pago registrada en la factura [cite: 251]
     private Double totalVenta;          // Total de la venta en la factura [cite: 251]
 
-    // La relación OneToOne con Pedido se mapea desde Pedido para evitar ciclos y duplicidad
-    // No necesitamos @OneToOne aquí porque ya está en Pedido.
+    @OneToOne(mappedBy = "factura")
+    private Pedido pedido;
+
 }

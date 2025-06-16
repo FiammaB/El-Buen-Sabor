@@ -1,50 +1,45 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Posiblemente ya no sea necesaria
 import ElBuenSabor.ProyectoFinal.Repositories.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // Importar Transactional
 
-import java.util.List;
-import java.util.Optional;
+import java.util.List; // Importar List si no se usara el findAll del padre
 
 @Service
+// UsuarioServiceImpl ahora extiende BaseServiceImpl
+// y la interfaz UsuarioService (que debe extender BaseService)
 public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implements UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
-
-    @Autowired
+    // El repositorio se inyecta y se pasa al constructor del padre.
+    // Ya no necesitas 'private final UsuarioRepository usuarioRepository;' aquí
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
-        // Asegúrate de que UsuarioRepository sea JpaRepository<Usuario, Long>
-        super(usuarioRepository);
-        this.usuarioRepository = usuarioRepository;
+        super(usuarioRepository); // Llama al constructor de la clase base
     }
 
+    // Los métodos findAll(), findById(), save(), deleteById(), toggleBaja()
+    // ya están implementados en BaseServiceImpl y se heredan automáticamente.
+
     @Override
-    @Transactional(readOnly = true)
-    public Optional<Usuario> findByUsername(String username) throws Exception {
+    @Transactional // Asegúrate de que los métodos de modificación sean transaccionales
+    // La firma debe ser consistente con BaseService: update(ID id, E entity)
+    public Usuario update(Long id, Usuario updatedUsuario) throws Exception { // <<-- Añadir throws Exception
         try {
-            // Necesitarías añadir este método a tu UsuarioRepository:
-            // Usuario findByUsername(String username);
-            // Por ahora, si no existe, lo simulamos buscando todos y filtrando (no eficiente):
-            return usuarioRepository.findAll().stream()
-                    .filter(u -> u.getUsername() != null && u.getUsername().equals(username))
-                    .findFirst();
-            // Lo ideal es: return Optional.ofNullable(usuarioRepository.findByUsername(username));
+            // Usamos findById del padre (BaseServiceImpl) para obtener la entidad actual
+            Usuario existing = findById(id);
+
+            existing.setAuth0Id(updatedUsuario.getAuth0Id());
+            existing.setUsername(updatedUsuario.getUsername());
+            // Si Usuario tiene colecciones o otras relaciones,
+            // necesitarías lógica adicional aquí para sincronizarlas.
+
+            // Llamamos a save del baseRepository (heredado del padre) para persistir los cambios
+            return baseRepository.save(existing);
         } catch (Exception e) {
-            throw new Exception("Error al buscar usuario por username: " + e.getMessage(), e);
+            // Re-lanzamos cualquier excepción, manteniendo la consistencia con BaseService.
+            throw new Exception("Error al actualizar el usuario: " + e.getMessage());
         }
-    }
-
-
-    @Override
-    public List<Usuario> findAll() throws Exception {
-        return List.of();
-    }
-
-    @Override
-    public Optional<Usuario> findById(Long aLong) throws Exception {
-        return Optional.empty();
     }
 }

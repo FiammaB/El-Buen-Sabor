@@ -1,129 +1,98 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.DomicilioDTO;
 import ElBuenSabor.ProyectoFinal.DTO.EmpresaDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Empresa;
-import ElBuenSabor.ProyectoFinal.Service.EmpresaService;
-import ElBuenSabor.ProyectoFinal.Service.SucursalService; // Para listar sucursales de una empresa
-import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO; // Para la respuesta de sucursales
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Mappers.EmpresaMapper;
+import ElBuenSabor.ProyectoFinal.Service.EmpresaService; // Usar la interfaz específica
+// Ya no es necesario si se inyecta por constructor explícito al padre
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.ArrayList;
-
 
 @RestController
-@RequestMapping("/api/v1/empresas")
-@CrossOrigin(origins = "*")
-public class EmpresaController {
+@RequestMapping("/api/empresas") // Define la URL base para este controlador
+// EmpresaController ahora extiende BaseController
+public class EmpresaController extends BaseController<Empresa, Long> {
 
-    @Autowired
-    private EmpresaService empresaService;
+    private final EmpresaMapper empresaMapper;
 
-    @Autowired
-    private SucursalService sucursalService; // Para el helper convertToEmpresaDTO
-
-    @PostMapping("")
-    public ResponseEntity<?> createEmpresa(@RequestBody EmpresaDTO empresaDTO) {
-        try {
-            Empresa nuevaEmpresa = empresaService.createEmpresa(empresaDTO);
-            return new ResponseEntity<>(convertToEmpresaDTO(nuevaEmpresa), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    // El constructor inyecta el servicio específico de Empresa y el mapper
+    public EmpresaController(
+            EmpresaService empresaService, // Servicio específico
+            EmpresaMapper empresaMapper) {
+        super(empresaService); // Pasa el servicio al constructor del BaseController
+        this.empresaMapper = empresaMapper;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getEmpresaById(@PathVariable Long id) {
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override // Sobrescribe el getAll del BaseController
+    public ResponseEntity<?> getAll() {
         try {
-            Optional<Empresa> empresaOptional = empresaService.findById(id);
-            if (empresaOptional.isPresent()) {
-                return ResponseEntity.ok(convertToEmpresaDTO(empresaOptional.get()));
-            } else {
-                return new ResponseEntity<>("Empresa no encontrada.", HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("")
-    public ResponseEntity<?> getAllEmpresas() {
-        try {
-            List<Empresa> empresas = empresaService.findAll();
+            List<Empresa> empresas = baseService.findAll(); // Llama al findAll del padre
             List<EmpresaDTO> dtos = empresas.stream()
-                    .map(this::convertToEmpresaDTO)
-                    .collect(Collectors.toList());
+                    .map(empresaMapper::toDTO)
+                    .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateEmpresa(@PathVariable Long id, @RequestBody EmpresaDTO empresaDTO) {
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    @GetMapping("/{id}")
+    @Override // Sobrescribe el getOne del BaseController
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            Empresa empresaActualizada = empresaService.updateEmpresa(id, empresaDTO);
-            return ResponseEntity.ok(convertToEmpresaDTO(empresaActualizada));
+            Empresa empresa = baseService.findById(id); // Llama al findById del padre
+            return ResponseEntity.ok(empresaMapper.toDTO(empresa));
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteEmpresa(@PathVariable Long id) {
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
+    public ResponseEntity<?> create(@RequestBody EmpresaDTO dto) {
         try {
-            // Considerar lógica de borrado: no permitir si tiene sucursales activas.
-            // Esta lógica debería estar en el EmpresaService.delete o un método específico.
-            boolean eliminado = empresaService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("Empresa eliminada correctamente.");
-            } else {
-                return new ResponseEntity<>("Empresa no encontrada.", HttpStatus.NOT_FOUND);
-            }
+            Empresa empresa = empresaMapper.toEntity(dto);
+            empresa.setBaja(false); // Por defecto, una nueva empresa está activa
+
+            Empresa saved = baseService.save(empresa); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(empresaMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Helper para convertir Empresa a EmpresaDTO, incluyendo sucursales simples si es necesario
-    private EmpresaDTO convertToEmpresaDTO(Empresa empresa) {
-        if (empresa == null) return null;
-        EmpresaDTO dto = new EmpresaDTO();
-        dto.setId(empresa.getId());
-        dto.setNombre(empresa.getNombre());
-        dto.setRazonSocial(empresa.getRazonSocial());
-        dto.setCuil(empresa.getCuil());
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody EmpresaDTO dto) {
+        try {
+            // Obtener la entidad existente y actualizar sus propiedades
+            Empresa existingEmpresa = baseService.findById(id);
 
-        // Convertir sucursales si existen y el DTO las espera
-        if (empresa.getSucursales() != null && !empresa.getSucursales().isEmpty()) { //
-            dto.setSucursales(empresa.getSucursales().stream().map(sucursal -> { //
-                // Usar un SucursalSimpleDTO o el SucursalDTO completo si no es muy pesado
-                // Aquí uso SucursalDTO pero limitado para evitar ciclos
-                SucursalDTO sucDto = new SucursalDTO();
-                sucDto.setId(sucursal.getId());
-                sucDto.setNombre(sucursal.getNombre());
-                sucDto.setHorarioApertura(sucursal.getHorarioApertura());
-                sucDto.setHorarioCierre(sucursal.getHorarioCierre());
-                // No incluir la empresa de nuevo aquí para evitar ciclo.
-                // Domicilio podría ser un DomicilioSimpleDTO
-                if (sucursal.getDomicilio() != null) {
-                    DomicilioDTO domDto = new DomicilioDTO();
-                    domDto.setId(sucursal.getDomicilio().getId());
-                    domDto.setCalle(sucursal.getDomicilio().getCalle());
-                    // ... más campos del domicilio si se necesitan
-                    sucDto.setDomicilio(domDto);
-                }
-                return sucDto;
-            }).collect(Collectors.toList()));
-        } else {
-            dto.setSucursales(new ArrayList<>());
+            existingEmpresa.setNombre(dto.getNombre());
+            existingEmpresa.setRazonSocial(dto.getRazonSocial());
+            existingEmpresa.setCuil(dto.getCuil());
+            // La propiedad 'baja' se mantendrá o actualizará según la lógica de BaseServiceImpl.update
+            // o puedes establecerla explícitamente si tu DTO lo soporta.
+
+            Empresa updated = baseService.update(id, existingEmpresa); // Llama al update del padre con la entidad EXISTENTE
+            return ResponseEntity.ok(empresaMapper.toDTO(updated)); // Convierte a DTO para la respuesta
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
-        return dto;
     }
+
+    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
+    // si la lógica de borrado/activación/desactivación ya implementada en BaseController
+    // es suficiente y no necesitas una respuesta con DTOs específicos.
+    // @DeleteMapping("/{id}") ya está cubierto por BaseController
+    // @PatchMapping("/{id}/activate") ya está cubierto por BaseController
+    // @PatchMapping("/{id}/deactivate") ya está cubierto por BaseController
 }

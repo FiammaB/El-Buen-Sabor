@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,4 +22,5 @@ public class Empresa extends BaseEntity {
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
     private List<Sucursal> sucursales = new ArrayList<>();
+
 }

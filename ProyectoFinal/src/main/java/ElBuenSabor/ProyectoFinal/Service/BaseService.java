@@ -2,18 +2,14 @@ package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.Entities.BaseEntity;
 
-import java.io.Serializable;
 import java.util.List;
-import java.util.Optional;
 
-public interface BaseService<E extends BaseEntity, ID extends Serializable> {
-  ;
-  List<E> findAll() throws Exception; // Obtener todos los registros
-  Optional<E> findById(ID id) throws Exception; // Obtener un registro por ID
-  E save(E entity) throws Exception; // Guardar un nuevo registro o actualizar uno existente
-  E update(ID id, E entity) throws Exception; // Actualizar un registro por ID
-  boolean delete(ID id) throws Exception; // Eliminar un registro por ID (borrado físico o lógico)
-
-  // Método para verificar la existencia por ID (útil, aunque JpaRepository ya lo tiene)
-  boolean existsById(ID id) throws Exception;
+public interface BaseService<E extends BaseEntity, ID> { // E es el tipo de Entidad, ID el tipo de ID
+    List<E> findAll() throws Exception;
+    E findById(ID id) throws Exception;
+    E save(E entity) throws Exception;
+    E update(ID id, E entity) throws Exception;
+    void deleteById(ID id) throws Exception;
+    // Nuevo método para manejar el borrado lógico (cambiar estado 'baja')
+    E toggleBaja(ID id, boolean estaDadoDeBaja) throws Exception;
 }

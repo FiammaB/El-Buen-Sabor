@@ -1,231 +1,53 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.*;
-import ElBuenSabor.ProyectoFinal.Entities.*;
-import ElBuenSabor.ProyectoFinal.Repositories.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
+import ElBuenSabor.ProyectoFinal.Entities.Categoria; // Importar Categoria
+import ElBuenSabor.ProyectoFinal.Entities.Promocion; // Importar Promocion
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Posiblemente ya no sea necesaria
+import ElBuenSabor.ProyectoFinal.Repositories.SucursalRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // Importar Transactional
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.time.LocalTime; // Importar LocalTime
+import java.util.List; // Importar List
+import java.util.Optional; // Importar Optional
 
 @Service
+
 public class SucursalServiceImpl extends BaseServiceImpl<Sucursal, Long> implements SucursalService {
-
-    private final SucursalRepository sucursalRepository;
-    private final EmpresaRepository empresaRepository;
-    private final DomicilioRepository domicilioRepository;
-    private final LocalidadRepository localidadRepository;
-    private final ProvinciaRepository provinciaRepository;
-    private final PaisRepository paisRepository;
-    private final CategoriaRepository categoriaRepository;
-
-    @Autowired
-    public SucursalServiceImpl(SucursalRepository sucursalRepository,
-                               EmpresaRepository empresaRepository,
-                               DomicilioRepository domicilioRepository,
-                               LocalidadRepository localidadRepository,
-                               ProvinciaRepository provinciaRepository,
-                               PaisRepository paisRepository,
-                               CategoriaRepository categoriaRepository) {
-        super(sucursalRepository);
-        this.sucursalRepository = sucursalRepository;
-        this.empresaRepository = empresaRepository;
-        this.domicilioRepository = domicilioRepository;
-        this.localidadRepository = localidadRepository;
-        this.provinciaRepository = provinciaRepository;
-        this.paisRepository = paisRepository;
-        this.categoriaRepository = categoriaRepository;
+    public SucursalServiceImpl(SucursalRepository sucursalRepository) {
+        super(sucursalRepository); // Llama al constructor de la clase base
     }
 
     @Override
     @Transactional
-    public SucursalDTO createSucursal(SucursalCreateUpdateDTO dto) throws Exception {
+    public Sucursal update(Long id, Sucursal updatedSucursal) throws Exception { // <<-- Añadir throws Exception
         try {
-            Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                    .orElseThrow(() -> new Exception("Empresa no encontrada con ID: " + dto.getEmpresaId()));
 
-            // Crear o encontrar Pais, Provincia, Localidad para el Domicilio
-            DomicilioCreateUpdateDTO domicilioDTO = dto.getDomicilio();
-            Pais pais = paisRepository.findByNombre(domicilioDTO.getNombrePais()); // Asumiendo que DomicilioCreateUpdateDTO tiene estos campos
-            if (pais == null) {
-                pais = Pais.builder().nombre(domicilioDTO.getNombrePais()).build();
-                pais = paisRepository.save(pais);
-            }
-            Provincia provincia = provinciaRepository.findByNombre(domicilioDTO.getNombreProvincia());
-            if (provincia == null) {
-                provincia = Provincia.builder().nombre(domicilioDTO.getNombreProvincia()).pais(pais).build();
-                provincia = provinciaRepository.save(provincia);
-            }
-            Localidad localidad = localidadRepository.findByNombre(domicilioDTO.getNombreLocalidad());
-            if (localidad == null) {
-                localidad = Localidad.builder().nombre(domicilioDTO.getNombreLocalidad()).provincia(provincia).build();
-                localidad = localidadRepository.save(localidad);
-            }
+            Sucursal actual = findById(id);
 
-            Domicilio domicilio = Domicilio.builder()
-                    .calle(domicilioDTO.getCalle())
-                    .numero(domicilioDTO.getNumero())
-                    .cp(domicilioDTO.getCp())
-                    .localidad(localidad)
-                    .build();
-            domicilio = domicilioRepository.save(domicilio);
-
-            Sucursal sucursal = Sucursal.builder()
-                    .nombre(dto.getNombre())
-                    .horarioApertura(dto.getHorarioApertura())
-                    .horarioCierre(dto.getHorarioCierre())
-                    .empresa(empresa)
-                    .domicilio(domicilio)
-                    .build();
-
-            if (dto.getCategoriaIds() != null && !dto.getCategoriaIds().isEmpty()) {
-                List<Categoria> categorias = categoriaRepository.findAllById(dto.getCategoriaIds());
-                if (categorias.size() != dto.getCategoriaIds().size()) {
-                    throw new Exception("Algunas categorías especificadas para la sucursal no fueron encontradas.");
-                }
-                sucursal.setCategorias(categorias); // Asumiendo que Sucursal.categorias es List
-                // Actualizar el lado inverso si es necesario para la tabla de unión
-                for (Categoria cat : categorias) {
-                    if (cat.getSucursales() == null) cat.setSucursales(new HashSet<>());
-                    cat.getSucursales().add(sucursal);
-                }
-            }
-
-            Sucursal savedSucursal = sucursalRepository.save(sucursal);
-            return convertToDTO(savedSucursal);
-        } catch (Exception e) {
-            throw new Exception("Error al crear la sucursal: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    @Transactional
-    public SucursalDTO updateSucursal(Long id, SucursalCreateUpdateDTO dto) throws Exception {
-        try {
-            Sucursal sucursal = sucursalRepository.findById(id)
-                    .orElseThrow(() -> new Exception("Sucursal no encontrada con ID: " + id));
-
-            Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                    .orElseThrow(() -> new Exception("Empresa no encontrada con ID: " + dto.getEmpresaId()));
-
-            // Actualizar Domicilio
-            Domicilio domicilio = sucursal.getDomicilio();
-            if (domicilio == null) { // Debería existir si la sucursal existe
-                throw new Exception("El domicilio de la sucursal no puede ser nulo para la actualización.");
-            }
-            DomicilioCreateUpdateDTO domicilioDTO = dto.getDomicilio();
-            Pais pais = paisRepository.findByNombre(domicilioDTO.getNombrePais());
-            if (pais == null) {
-                pais = Pais.builder().nombre(domicilioDTO.getNombrePais()).build();
-                pais = paisRepository.save(pais);
-            }
-            Provincia provincia = provinciaRepository.findByNombre(domicilioDTO.getNombreProvincia());
-            if (provincia == null) {
-                provincia = Provincia.builder().nombre(domicilioDTO.getNombreProvincia()).pais(pais).build();
-                provincia = provinciaRepository.save(provincia);
-            }
-            Localidad localidad = localidadRepository.findByNombre(domicilioDTO.getNombreLocalidad());
-            if (localidad == null) {
-                localidad = Localidad.builder().nombre(domicilioDTO.getNombreLocalidad()).provincia(provincia).build();
-                localidad = localidadRepository.save(localidad);
-            }
-            domicilio.setCalle(domicilioDTO.getCalle());
-            domicilio.setNumero(domicilioDTO.getNumero());
-            domicilio.setCp(domicilioDTO.getCp());
-            domicilio.setLocalidad(localidad);
-            domicilioRepository.save(domicilio);
-
-            sucursal.setNombre(dto.getNombre());
-            sucursal.setHorarioApertura(dto.getHorarioApertura());
-            sucursal.setHorarioCierre(dto.getHorarioCierre());
-            sucursal.setEmpresa(empresa);
-            // sucursal.setDomicilio(domicilio); // Ya está asociado
-
-            // Actualizar categorías
-            // Desvincular categorías antiguas
-            if (sucursal.getCategorias() != null) {
-                for (Categoria catActual : new HashSet<>(sucursal.getCategorias())) { // Iterar sobre una copia
-                    if (dto.getCategoriaIds() == null || !dto.getCategoriaIds().contains(catActual.getId())) {
-                        sucursal.getCategorias().remove(catActual);
-                        catActual.getSucursales().remove(sucursal); // Mantener consistencia bidireccional
-                    }
-                }
+            actual.setNombre(updatedSucursal.getNombre());
+            actual.setHorarioApertura(updatedSucursal.getHorarioApertura());
+            actual.setHorarioCierre(updatedSucursal.getHorarioCierre());
+            actual.setDomicilio(updatedSucursal.getDomicilio());
+            actual.setEmpresa(updatedSucursal.getEmpresa());
+            if (updatedSucursal.getCategorias() != null) {
+                actual.getCategorias().clear(); // Limpia las categorías existentes
+                actual.getCategorias().addAll(updatedSucursal.getCategorias()); // Agrega las nuevas
             } else {
-                sucursal.setCategorias(new ArrayList<>());
+                actual.getCategorias().clear(); // Si no se envían categorías, limpiar las existentes
             }
 
-            // Vincular nuevas categorías
-            if (dto.getCategoriaIds() != null && !dto.getCategoriaIds().isEmpty()) {
-                List<Long> idsActuales = sucursal.getCategorias().stream().map(BaseEntity::getId).collect(Collectors.toList());
-                for (Long catIdNuevo : dto.getCategoriaIds()) {
-                    if (!idsActuales.contains(catIdNuevo)) {
-                        Categoria catNueva = categoriaRepository.findById(catIdNuevo)
-                                .orElseThrow(() -> new Exception("Categoría con ID " + catIdNuevo + " no encontrada."));
-                        sucursal.getCategorias().add(catNueva);
-                        if (catNueva.getSucursales() == null) catNueva.setSucursales(new HashSet<>());
-                        catNueva.getSucursales().add(sucursal); // Mantener consistencia bidireccional
-                    }
-                }
+            if (updatedSucursal.getPromociones() != null) {
+                actual.getPromociones().clear(); // Limpia las promociones existentes
+                actual.getPromociones().addAll(updatedSucursal.getPromociones()); // Agrega las nuevas
+            } else {
+                actual.getPromociones().clear(); // Si no se envían promociones, limpiar las existentes
             }
-
-
-            Sucursal updatedSucursal = sucursalRepository.save(sucursal);
-            return convertToDTO(updatedSucursal);
+            return baseRepository.save(actual);
         } catch (Exception e) {
-            throw new Exception("Error al actualizar la sucursal: " + e.getMessage(), e);
+            // Re-lanzamos cualquier excepción, manteniendo la consistencia con BaseService.
+            throw new Exception("Error al actualizar la sucursal: " + e.getMessage());
         }
-    }
-
-    private SucursalDTO convertToDTO(Sucursal sucursal) {
-        if (sucursal == null) return null;
-        SucursalDTO dto = new SucursalDTO();
-        dto.setId(sucursal.getId());
-        dto.setNombre(sucursal.getNombre());
-        dto.setHorarioApertura(sucursal.getHorarioApertura());
-        dto.setHorarioCierre(sucursal.getHorarioCierre());
-        if (sucursal.getEmpresa() != null) {
-            dto.setEmpresaId(sucursal.getEmpresa().getId());
-            // Podrías añadir un EmpresaSimpleDTO aquí si es necesario en la respuesta
-        }
-        if (sucursal.getDomicilio() != null) {
-            // Convertir Domicilio a DomicilioDTO
-            Domicilio domicilioEnt = sucursal.getDomicilio();
-            DomicilioDTO domDto = new DomicilioDTO();
-            domDto.setId(domicilioEnt.getId());
-            domDto.setCalle(domicilioEnt.getCalle());
-            domDto.setNumero(domicilioEnt.getNumero());
-            domDto.setCp(domicilioEnt.getCp());
-            if (domicilioEnt.getLocalidad() != null) {
-                Localidad locEnt = domicilioEnt.getLocalidad();
-                LocalidadDTO locDto = new LocalidadDTO();
-                locDto.setId(locEnt.getId());
-                locDto.setNombre(locEnt.getNombre());
-                // Mapear Provincia y Pais si el DTO lo requiere
-                domDto.setLocalidad(locDto);
-            }
-            dto.setDomicilio(domDto);
-        }
-        if (sucursal.getCategorias() != null) {
-            dto.setCategorias(sucursal.getCategorias().stream().map(cat -> {
-                CategoriaDTO catDto = new CategoriaDTO();
-                catDto.setId(cat.getId());
-                catDto.setDenominacion(cat.getDenominacion());
-                // No incluir subcategorías o padre aquí para evitar ciclos/respuestas enormes
-                return catDto;
-            }).collect(Collectors.toList()));
-        }
-        return dto;
-    }
-
-    @Override
-    public List<Sucursal> findAll() throws Exception {
-        return List.of();
-    }
-
-    @Override
-    public Optional<Sucursal> findById(Long aLong) throws Exception {
-        return Optional.empty();
     }
 }

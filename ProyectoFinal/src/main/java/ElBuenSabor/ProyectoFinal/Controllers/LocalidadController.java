@@ -2,8 +2,14 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.LocalidadCreateUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.LocalidadDTO;
-import ElBuenSabor.ProyectoFinal.Service.LocalidadService;
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Entities.Localidad;
+import ElBuenSabor.ProyectoFinal.Entities.Provincia; // Importar Provincia
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
+import ElBuenSabor.ProyectoFinal.Mappers.LocalidadMapper;
+import ElBuenSabor.ProyectoFinal.Repositories.ProvinciaRepository;
+import ElBuenSabor.ProyectoFinal.Service.LocalidadService; // Usar la interfaz específica
+// Ya no es necesario si se inyecta por constructor explícito al padre
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,87 +17,89 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/localidades")
-@CrossOrigin(origins = "*")
-public class LocalidadController {
+@RequestMapping("/api/localidades") // Define la URL base para este controlador
+// LocalidadController ahora extiende BaseController
+public class LocalidadController extends BaseController<Localidad, Long> {
 
-    @Autowired
-    private LocalidadService localidadService;
+    private final LocalidadMapper localidadMapper;
+    private final ProvinciaRepository provinciaRepository; // Se sigue necesitando para buscar Provincia
 
-    @PostMapping("")
-    public ResponseEntity<?> createLocalidad(@RequestBody LocalidadCreateUpdateDTO localidadDTO) {
+    // El constructor inyecta el servicio específico de Localidad, el mapper y el repositorio de Provincia
+    public LocalidadController(
+            LocalidadService localidadService, // Servicio específico
+            LocalidadMapper localidadMapper,
+            ProvinciaRepository provinciaRepository) {
+        super(localidadService); // Pasa el servicio al constructor del BaseController
+        this.localidadMapper = localidadMapper;
+        this.provinciaRepository = provinciaRepository;
+    }
+
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override // Sobrescribe el getAll del BaseController
+    public ResponseEntity<?> getAll() {
         try {
-            LocalidadDTO nuevaLocalidad = localidadService.createLocalidad(localidadDTO);
-            return new ResponseEntity<>(nuevaLocalidad, HttpStatus.CREATED);
+            List<Localidad> localidades = baseService.findAll(); // Llama al findAll del padre
+            List<LocalidadDTO> dtos = localidades.stream()
+                    .map(localidadMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
     @GetMapping("/{id}")
-    public ResponseEntity<?> getLocalidadById(@PathVariable Long id) {
+    @Override // Sobrescribe el getOne del BaseController
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            LocalidadDTO localidad = localidadService.findLocalidadById(id);
-            return ResponseEntity.ok(localidad);
+            Localidad localidad = baseService.findById(id); // Llama al findById del padre
+            return ResponseEntity.ok(localidadMapper.toDTO(localidad));
         } catch (Exception e) {
-            if (e.getMessage().contains("no encontrada")) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @GetMapping("/buscar")
-    public ResponseEntity<?> getLocalidadByNombre(@RequestParam String nombre) {
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
+    public ResponseEntity<?> create(@RequestBody LocalidadCreateUpdateDTO dto) {
         try {
-            LocalidadDTO localidad = localidadService.findByNombre(nombre);
-            if (localidad != null) {
-                return ResponseEntity.ok(localidad);
-            } else {
-                return new ResponseEntity<>("Localidad no encontrada con el nombre: " + nombre, HttpStatus.NOT_FOUND);
-            }
+            Provincia provincia = provinciaRepository.findById(dto.getProvinciaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Provincia no encontrada"));
+
+            Localidad localidad = new Localidad();
+            localidad.setNombre(dto.getNombre());
+            localidad.setProvincia(provincia);
+            localidad.setBaja(dto.isEstaDadoDeBaja()); // Asumo que el DTO define si está de baja o no
+
+            Localidad saved = baseService.save(localidad); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(localidadMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @GetMapping("")
-    public ResponseEntity<?> getAllLocalidades(@RequestParam(required = false) Long provinciaId) {
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody LocalidadCreateUpdateDTO dto) {
         try {
-            List<LocalidadDTO> localidades;
-            if (provinciaId != null) {
-                localidades = localidadService.findByProvinciaId(provinciaId);
-            } else {
-                localidades = localidadService.findAllLocalidades();
-            }
-            return ResponseEntity.ok(localidades);
+            // Obtener la entidad existente y actualizar sus propiedades
+            Localidad existingLocalidad = baseService.findById(id);
+
+            Provincia provincia = provinciaRepository.findById(dto.getProvinciaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Provincia no encontrada"));
+
+            existingLocalidad.setNombre(dto.getNombre());
+            existingLocalidad.setProvincia(provincia);
+            existingLocalidad.setBaja(dto.isEstaDadoDeBaja()); // Asumo que el DTO define si está de baja o no
+
+            Localidad updated = baseService.update(id, existingLocalidad); // Llama al update del padre con la entidad EXISTENTE
+            return ResponseEntity.ok(localidadMapper.toDTO(updated)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateLocalidad(@PathVariable Long id, @RequestBody LocalidadCreateUpdateDTO localidadDTO) {
-        try {
-            LocalidadDTO localidadActualizada = localidadService.updateLocalidad(id, localidadDTO);
-            return ResponseEntity.ok(localidadActualizada);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteLocalidad(@PathVariable Long id) {
-        try {
-            // Considerar no eliminar si tiene domicilios asociados.
-            boolean eliminado = localidadService.delete(id);
-            if (eliminado) {
-                return ResponseEntity.ok("Localidad eliminada correctamente.");
-            } else {
-                return new ResponseEntity<>("Localidad no encontrada.", HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
 }

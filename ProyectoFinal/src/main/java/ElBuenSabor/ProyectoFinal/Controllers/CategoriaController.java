@@ -3,186 +3,113 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.DTO.CategoriaShortDTO;
 import ElBuenSabor.ProyectoFinal.DTO.CategoriaDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Categoria;
-import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
-import ElBuenSabor.ProyectoFinal.Service.CategoriaService;
-import org.springframework.beans.factory.annotation.Autowired;
+import ElBuenSabor.ProyectoFinal.Mappers.CategoriaMapper;
+import ElBuenSabor.ProyectoFinal.Service.CategoriaService; // Usar la interfaz específica
+// Ya no es necesario si se inyecta por constructor explícito al padre
+// import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/categorias")
-@CrossOrigin(origins = "*") // Ajustar según necesidades de seguridad
-public class CategoriaController {
+@RequestMapping("/api/categorias") // Define la URL base para este controlador
+// CategoriaController ahora extiende BaseController
+public class CategoriaController extends BaseController<Categoria, Long> {
 
-    @Autowired
-    private CategoriaService categoriaService;
+    private final CategoriaMapper categoriaMapper;
+    // Necesitamos el servicio inyectado aquí directamente para poder buscar la categoría padre
+    private final CategoriaService categoriaService; // Mantenemos la referencia al servicio específico
 
-    // Endpoint para crear una nueva categoría
-    @PostMapping("")
-    public ResponseEntity<?> crearCategoria(@RequestBody CategoriaShortDTO categoriaCreateUpdateDTO) {
-        try {
-            Categoria nuevaCategoria = categoriaService.createCategoria(categoriaCreateUpdateDTO);
-            return new ResponseEntity<>(convertToCategoriaDTO(nuevaCategoria), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
+    // El constructor inyecta el servicio específico de Categoria y el mapper
+    public CategoriaController(
+            CategoriaService categoriaService, // Servicio específico
+            CategoriaMapper categoriaMapper) {
+        super(categoriaService); // Pasa el servicio al constructor del BaseController
+        this.categoriaService = categoriaService; // Asigna la referencia específica
+        this.categoriaMapper = categoriaMapper;
     }
 
-    // Endpoint para obtener una categoría por su ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerCategoriaPorId(@PathVariable Long id) {
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override // Sobrescribe el getAll del BaseController
+    public ResponseEntity<?> getAll() {
         try {
-            Optional<Categoria> categoriaOptional = categoriaService.findById(id); //
-            if (categoriaOptional.isPresent()) {
-                return ResponseEntity.ok(convertToCategoriaDTO(categoriaOptional.get()));
-            } else {
-                return new ResponseEntity<>("Categoría no encontrada.", HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // Endpoint para actualizar una categoría
-    @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarCategoria(@PathVariable Long id, @RequestBody CategoriaShortDTO categoriaCreateUpdateDTO) {
-        try {
-            Categoria categoriaActualizada = categoriaService.updateCategoria(id, categoriaCreateUpdateDTO);
-            return ResponseEntity.ok(convertToCategoriaDTO(categoriaActualizada));
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    // Endpoint para listar todas las categorías (podría devolver una estructura jerárquica)
-    @GetMapping("")
-    public ResponseEntity<?> listarCategorias(
-            @RequestParam(required = false) Long sucursalId,
-            @RequestParam(required = false, defaultValue = "false") boolean soloRaiz) {
-        try {
-            List<Categoria> categorias;
-            if (sucursalId != null) {
-                categorias = categoriaService.findBySucursalesId(sucursalId); //
-            } else if (soloRaiz) {
-                categorias = categoriaService.findByCategoriaPadreIsNull(); //
-            } else {
-                categorias = categoriaService.findAll(); //
-            }
+            List<Categoria> categorias = baseService.findAll(); // Llama al findAll del padre
             List<CategoriaDTO> dtos = categorias.stream()
-                    .map(this::convertToCategoriaDTO) // Usar el helper que incluye subcategorías
-                    .collect(Collectors.toList());
+                    .map(categoriaMapper::toDTO)
+                    .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Endpoint para obtener las categorías de nivel superior (raíz)
-    @GetMapping("/raiz")
-    public ResponseEntity<?> listarCategoriasRaiz() {
+    // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    @GetMapping("/{id}")
+    @Override // Sobrescribe el getOne del BaseController
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            List<Categoria> categoriasRaiz = categoriaService.findByCategoriaPadreIsNull(); //
-            List<CategoriaDTO> dtos = categoriasRaiz.stream()
-                    .map(this::convertToCategoriaDTO)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(dtos);
+            Categoria categoria = baseService.findById(id); // Llama al findById del padre
+            return ResponseEntity.ok(categoriaMapper.toDTO(categoria));
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Endpoint para obtener las subcategorías de una categoría padre
-    @GetMapping("/{id}/subcategorias")
-    public ResponseEntity<?> listarSubcategorias(@PathVariable Long id) {
+    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
+    public ResponseEntity<?> create(@RequestBody CategoriaShortDTO dto) {
         try {
-            Optional<Categoria> categoriaPadreOpt = categoriaService.findById(id); //
-            if (!categoriaPadreOpt.isPresent()) {
-                return new ResponseEntity<>("Categoría padre no encontrada.", HttpStatus.NOT_FOUND);
+            Categoria categoria = categoriaMapper.toEntity(dto);
+
+            // Cargar manualmente la categoría padre si tiene ID
+            if (dto.getCategoriaPadreId() != null) {
+                Categoria padre = categoriaService.findById(dto.getCategoriaPadreId()); // Usa el servicio específico
+                categoria.setCategoriaPadre(padre);
             }
-            Categoria categoriaPadre = categoriaPadreOpt.get();
-            List<CategoriaDTO> dtos = categoriaPadre.getSubCategorias().stream() //
-                    .map(this::convertToCategoriaDTOSimple) // Usar DTO simple para subcategorías
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(dtos);
+            categoria.setBaja(false); // Por defecto, una nueva categoría está activa
+
+            Categoria saved = baseService.save(categoria); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(categoriaMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
+    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    @PutMapping(value = "/{id}", consumes = "application/json")
 
-    // Endpoint para eliminar una categoría
-    // Considerar restricciones: no eliminar si tiene subcategorías o artículos asociados.
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarCategoria(@PathVariable Long id) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CategoriaShortDTO dto) {
         try {
-            // Lógica de validación en el servicio (ej. no eliminar si tiene artículos o subcategorías)
-            // Optional<Categoria> catOpt = categoriaService.findById(id);
-            // if(catOpt.isPresent()){
-            //     Categoria cat = catOpt.get();
-            //     if(cat.getArticulos() != null && !cat.getArticulos().isEmpty()){
-            //         return new ResponseEntity<>("No se puede eliminar la categoría porque tiene artículos asociados.", HttpStatus.BAD_REQUEST);
-            //     }
-            //     if(cat.getSubCategorias() != null && !cat.getSubCategorias().isEmpty()){
-            //         return new ResponseEntity<>("No se puede eliminar la categoría porque tiene subcategorías asociadas.", HttpStatus.BAD_REQUEST);
-            //     }
-            // }
+            // No crees una nueva entidad y luego la actualices, sino que busca la existente
+            // y actualiza sus propiedades.
+            Categoria existingCategory = baseService.findById(id); // Obtiene la categoría existente
 
-            boolean eliminado = categoriaService.delete(id); //
-            if (eliminado) {
-                return ResponseEntity.ok("Categoría eliminada correctamente.");
+            existingCategory.setDenominacion(dto.getDenominacion());
+
+            if (dto.getCategoriaPadreId() != null) {
+                Categoria padre = categoriaService.findById(dto.getCategoriaPadreId()); // Usa el servicio específico
+                existingCategory.setCategoriaPadre(padre);
             } else {
-                return new ResponseEntity<>("Categoría no encontrada para eliminar.", HttpStatus.NOT_FOUND);
+                existingCategory.setCategoriaPadre(null); // Si el padre es null en el DTO, remueve la relación
             }
+            // La propiedad 'baja' se mantendrá o actualizará según la lógica de BaseServiceImpl.update
+            // o puedes establecerla explícitamente si tu DTO lo soporta.
+
+            Categoria updated = baseService.update(id, existingCategory); // Llama al update del padre
+            return ResponseEntity.ok(categoriaMapper.toDTO(updated)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // --- Helper para convertir Entidad a DTO ---
-    private CategoriaDTO convertToCategoriaDTO(Categoria categoria) {
-        if (categoria == null) return null;
-        CategoriaDTO dto = new CategoriaDTO();
-        dto.setId(categoria.getId());
-        dto.setDenominacion(categoria.getDenominacion());
-
-        if (categoria.getCategoriaPadre() != null) {
-            dto.setCategoriaPadreId(categoria.getCategoriaPadre().getId());
-            // Para evitar ciclos infinitos, no convertimos el padre completo aquí,
-            // o usamos un CategoriaSimpleDTO para el padre.
-            dto.setCategoriaPadre(convertToCategoriaDTOSimple(categoria.getCategoriaPadre()));
-        }
-
-        if (categoria.getSubCategorias() != null && !categoria.getSubCategorias().isEmpty()) { //
-            dto.setSubCategorias(categoria.getSubCategorias().stream() //
-                    .map(this::convertToCategoriaDTOSimple) // Usar DTO simple para subcategorías
-                    .collect(Collectors.toSet()));
-        }
-
-        if (categoria.getSucursales() != null && !categoria.getSucursales().isEmpty()) { //
-            dto.setSucursalIds(categoria.getSucursales().stream() //
-                    .map(Sucursal::getId)
-                    .collect(Collectors.toList()));
-        }
-        // No incluimos la lista de artículos aquí para mantener el DTO de categoría más enfocado.
-        // Los artículos se obtendrían a través del ArticuloController por categoría ID.
-        return dto;
-    }
-
-    // DTO más simple para evitar recursividad infinita o DTOs muy pesados
-    private CategoriaDTO convertToCategoriaDTOSimple(Categoria categoria) {
-        if (categoria == null) return null;
-        CategoriaDTO dto = new CategoriaDTO();
-        dto.setId(categoria.getId());
-        dto.setDenominacion(categoria.getDenominacion());
-        if (categoria.getCategoriaPadre() != null) {
-            dto.setCategoriaPadreId(categoria.getCategoriaPadre().getId());
-        }
-        // No incluir subcategorías ni sucursales en la versión simple
-        return dto;
-    }
+    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
+    // si la lógica de borrado/activación/desactivación ya implementada en BaseController
+    // es suficiente y no necesitas una respuesta con DTOs específicos.
+    // @DeleteMapping("/{id}") ya está cubierto por BaseController
+    // @PatchMapping("/{id}/activate") ya está cubierto por BaseController
+    // @PatchMapping("/{id}/deactivate") ya está cubierto por BaseController
 }

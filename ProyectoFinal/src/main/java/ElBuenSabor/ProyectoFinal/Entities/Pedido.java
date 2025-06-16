@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -32,7 +33,6 @@ public class Pedido extends BaseEntity {
 
     private LocalDate fechaPedido;
 
-    // Relaciones
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
@@ -42,15 +42,18 @@ public class Pedido extends BaseEntity {
     private Domicilio domicilioEntrega;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "factura_id", referencedColumnName = "id")
+    @JoinColumn(name = "factura_id")
     private Factura factura;
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<DetallePedido> detallesPedidos = new HashSet<>();
 
-    // ¡ESTA ES LA ADICIÓN!
     @ManyToOne
     @JoinColumn(name = "sucursal_id")
-    private Sucursal sucursal; // Un pedido se realiza en una sucursal
+    private Sucursal sucursal;
+
+    @ManyToOne
+    @JoinColumn(name = "empleado_id")
+    private Usuario empleado;
 
 }

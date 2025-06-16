@@ -1,13 +1,7 @@
 package ElBuenSabor.ProyectoFinal.Entities;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
@@ -17,9 +11,15 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Getter
 @Setter
-
+@SuperBuilder
 public abstract class BaseEntity implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "baja" )
+    @Builder.Default
+    private Boolean baja = false;
+
 }

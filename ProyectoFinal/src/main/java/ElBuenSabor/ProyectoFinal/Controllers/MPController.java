@@ -1,22 +1,22 @@
+// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Controllers/MPController.java
 package ElBuenSabor.ProyectoFinal.Controllers;
-
-
-
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo; // Importa ArticuloInsumo
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado; // Importa ArticuloManufacturado
-import ElBuenSabor.ProyectoFinal.Entities.DetallePedido; // Importa DetallePedido
-import ElBuenSabor.ProyectoFinal.Entities.Pedido; // Importa Pedido
-import ElBuenSabor.ProyectoFinal.Entities.Estado; // Importa Estado
-import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO; // Importa PedidoCreateDTO
-import ElBuenSabor.ProyectoFinal.Service.PedidoService; // Importa PedidoService
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
+import ElBuenSabor.ProyectoFinal.Entities.DetallePedido;
+import ElBuenSabor.ProyectoFinal.Entities.Pedido;
+import ElBuenSabor.ProyectoFinal.Entities.Estado;
+import ElBuenSabor.ProyectoFinal.Entities.Factura; // <-- Importar Factura
+import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
+import ElBuenSabor.ProyectoFinal.Service.PedidoService;
 import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
-import com.mercadopago.client.preference.PreferenceBackUrlsRequest; // Importa PreferenceBackUrlsRequest
+import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.resources.preference.Preference;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -27,16 +27,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.PostConstruct; // Importa PostConstruct
-import java.math.BigDecimal; // Importa BigDecimal
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set; // Importa Set
+import java.util.Set;
 
 @RestController
-@RequestMapping("/api/mercadoPago") // Endpoint para las operaciones de Mercado Pago
-@CrossOrigin(origins = "http://localhost:5173") // Asegúrate que este es el puerto de tu frontend React
+@RequestMapping("/api/mercadoPago")
+@CrossOrigin(origins = "http://localhost:5173")
 public class MPController {
 
     @Value("${mercadopago.access.token}")
@@ -66,10 +65,7 @@ public class MPController {
     @PostMapping("/crear-preferencia")
     public ResponseEntity<?> crearPreferencia(@RequestBody PedidoCreateDTO pedidoDTO) {
         try {
-            // 1. Guardar el pedido en la base de datos con un estado inicial (ej. A_CONFIRMAR)
-            // La lógica para mapear DTO a entidad y resolver relaciones está en el servicio.
-            // Creamos un nuevo método en PedidoService para esto, ya que este pedido es
-            // "pre-pago" y puede tener un estado diferente al de un pedido normal guardado por el controller.
+            // 1. Guardar el pedido en la base de datos con un estado inicial
             Pedido pedidoPersistido = pedidoService.crearPedidoPreferenciaMP(pedidoDTO);
 
             if (pedidoPersistido == null || pedidoPersistido.getId() == null || pedidoPersistido.getId() == 0L) {
@@ -101,11 +97,10 @@ public class MPController {
                     }
                 } else if (detalle.getArticuloInsumo() != null) {
                     ArticuloInsumo ai = detalle.getArticuloInsumo();
-                    // *** CORRECCIÓN: Usar getPrecioVenta() para ArticuloInsumo si se vende ***
                     if (ai.getId() != null && ai.getDenominacion() != null && ai.getPrecioVenta() != null && detalle.getCantidad() != null) {
                         itemId = String.valueOf(ai.getId());
                         itemTitle = ai.getDenominacion();
-                        itemPrice = BigDecimal.valueOf(ai.getPrecioVenta()); // Usar precioVenta del insumo
+                        itemPrice = BigDecimal.valueOf(ai.getPrecioVenta());
                     } else {
                         System.err.println("Advertencia: Datos incompletos para ArticuloInsumo en detalle de pedido ID: " + detalle.getId());
                         continue;
@@ -145,16 +140,28 @@ public class MPController {
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(items)
                     .backUrls(backUrls)
-                    .notificationUrl(notificationUrl) // Usamos la URL del webhook de properties
-                    .externalReference(String.valueOf(pedidoPersistido.getId())) // Usa el ID del pedido PERSISTIDO
+                    .notificationUrl(notificationUrl)
+                    .externalReference(String.valueOf(pedidoPersistido.getId()))
                     .build();
 
-            // 5. Crear la preferencia utilizando el cliente de Mercado Pago
+            // 5. Crear la preferencia en Mercado Pago
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
 
+            // --- INICIO DE LA LÓGICA CORREGIDA: ASIGNAR preference.getId() A LA FACTURA DEL PEDIDO ---
+            Factura facturaDelPedido = pedidoPersistido.getFactura();
+            if (facturaDelPedido != null) {
+                // Asigna el ID de preferencia obtenido de Mercado Pago
+                facturaDelPedido.setMpPreferenceId(preference.getId());
+                // Vuelve a guardar el pedido para persistir el preferenceId en la factura.
+                // Esto es crucial para que el campo se actualice en la DB.
+                pedidoService.save(pedidoPersistido); // Usa el save del BaseService
+            } else {
+                System.err.println("Advertencia: Pedido " + pedidoPersistido.getId() + " no tiene factura asociada para guardar preferenceId. Asegúrate de que la factura se cree en crearPedidoPreferenciaMP.");
+            }
+            // --- FIN DE LA LÓGICA CORREGIDA ---
+
             // 6. Devolver el ID de la preferencia y el init_point al frontend
-            // El frontend usará el init_point para redirigir al usuario
             return ResponseEntity.ok(Map.of("preferenceId", preference.getId(), "initPoint", preference.getInitPoint()));
 
         } catch (MPException | MPApiException e) {

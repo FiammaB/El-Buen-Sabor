@@ -1,11 +1,7 @@
-
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.*;
-import ElBuenSabor.ProyectoFinal.Entities.Estado;
-import ElBuenSabor.ProyectoFinal.Entities.FormaPago;
-
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
 import com.mercadopago.client.payment.PaymentClient;
@@ -16,23 +12,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-
 import java.util.HashSet;
-
+import java.util.List;
 import java.util.Set;
-
 
 @Service
 public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements PedidoService {
 
-    // Necesitamos los repositorios para resolver las relaciones
+    private final PedidoRepository pedidoRepository; // Mantener esta referencia si necesitas llamar a métodos específicos no en BaseService
+
+    // Repositorios para resolver relaciones
     private final ArticuloInsumoRepository articuloInsumoRepository;
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
     private final ClienteRepository clienteRepository;
     private final DomicilioRepository domicilioRepository;
     private final SucursalRepository sucursalRepository;
     private final UsuarioRepository usuarioRepository;
-    private final ArticuloRepository articuloRepository; // No se usa en los métodos provistos, pero si es una dependencia general se mantiene
+    private final ArticuloRepository articuloRepository;
+
 
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
@@ -44,6 +41,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             UsuarioRepository usuarioRepository,
             ArticuloRepository articuloRepository) {
         super(pedidoRepository); // Llama al constructor de la clase base
+        this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
         this.clienteRepository = clienteRepository;
@@ -53,10 +51,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.articuloRepository = articuloRepository;
     }
 
-    // Los métodos findAll, findById, save, update, deleteById, toggleBaja
-    // se heredan de BaseServiceImpl.
-
-    // Nuevo método para crear un pedido antes de generar la preferencia de MP
+    // Método para crear un pedido antes de generar la preferencia de MP
     @Override
     @Transactional
     public Pedido crearPedidoPreferenciaMP(PedidoCreateDTO dto) throws Exception {
@@ -79,21 +74,29 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 pedido.setEmpleado(usuarioRepository.findById(dto.getEmpleadoId()).orElse(null));
             }
 
-            // 🧾 Factura (la factura de MP se completará después, pero se crea un placeholder)
+            // 🧾 Factura (se crea un placeholder, los IDs de MP se llenarán después de la confirmación)
+            Factura factura;
             if (dto.getFactura() != null) {
+                // Si el DTO trae datos de factura, úsalos
                 FacturaCreateDTO f = dto.getFactura();
-                Factura factura = Factura.builder()
+                factura = Factura.builder()
                         .fechaFacturacion(f.getFechaFacturacion())
-                        // Los IDs de MP se llenarán después de la confirmación
                         .mpPaymentId(null)
                         .mpMerchantOrderId(null)
-                        .mpPreferenceId(null)
+                        .mpPreferenceId(null) // Se seteará en MPController
                         .mpPaymentType(null)
-                        .formaPago(FormaPago.MERCADO_PAGO) // Asumimos que esta es la forma de pago si se usa este método
+                        .formaPago(FormaPago.MERCADO_PAGO)
                         .totalVenta(f.getTotalVenta())
                         .build();
-                pedido.setFactura(factura);
+            } else {
+                // Si el DTO no trae datos de factura, crea una instancia básica
+                factura = Factura.builder()
+                        .fechaFacturacion(LocalDate.now()) // Fecha actual por defecto
+                        .formaPago(FormaPago.MERCADO_PAGO)
+                        .totalVenta(dto.getTotal()) // O 0.0, según tu lógica de negocio
+                        .build();
             }
+            pedido.setFactura(factura);
 
             // 🧾 Detalles del pedido
             if (dto.getDetalles() != null) {
@@ -103,7 +106,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     detalle.setCantidad(detalleDTO.getCantidad());
                     detalle.setSubTotal(detalleDTO.getSubTotal());
 
-                    // Resolver el tipo de artículo
                     ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
                     if (insumo != null) {
                         detalle.setArticuloInsumo(insumo);
@@ -113,22 +115,24 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                         detalle.setArticuloManufacturado(manufacturado);
                     }
 
-                    detalle.setPedido(pedido); // Establecer la relación inversa
+                    detalle.setPedido(pedido);
                     detalles.add(detalle);
                 }
                 pedido.setDetallesPedidos(detalles);
             }
 
             // Establecer estado inicial del pedido (antes del pago)
-            pedido.setEstado(Estado.A_CONFIRMAR); // O un nuevo estado como PENDIENTE_PAGO si lo defines
-            pedido.setFechaPedido(LocalDate.now()); // Establecer la fecha actual del pedido
-            pedido.setBaja(false); // Por defecto, el pedido no está dado de baja
+            pedido.setEstado(Estado.A_CONFIRMAR);
+            pedido.setFechaPedido(LocalDate.now());
+            pedido.setBaja(false);
+            pedido.setTotal(dto.getTotal());
 
             return baseRepository.save(pedido); // Guarda el pedido en la BD
         } catch (Exception e) {
-            throw new Exception("Error al crear el pedido para Mercado Pago: " + e.getMessage());
+            throw new RuntimeException("Error al crear el pedido para Mercado Pago: " + e.getMessage(), e);
         }
     }
+
     @Override
     @Transactional
     public void procesarNotificacionPagoMercadoPago(String paymentId) throws Exception {
@@ -140,8 +144,17 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 System.err.println("Notificación: Pago no encontrado en Mercado Pago con ID: " + paymentId);
                 return;
             }
+            // --- LÍNEAS DE DEBUG ---
+            System.out.println("--- DEBUG MP NOTIFICATION ---");
             System.out.println("Payment ID (MP): " + payment.getId());
-            // El external_reference que enviamos al crear la preferencia es el ID de nuestro Pedido
+            System.out.println("Payment Status: " + payment.getStatus());
+            System.out.println("External Reference (Pedido ID): " + payment.getExternalReference());
+            System.out.println("Transaction Amount: " + payment.getTransactionAmount());
+            System.out.println("Payment Type ID: " + payment.getPaymentTypeId());
+            // Eliminamos las líneas de debug de MerchantOrder y Preference Object para evitar errores de compilación
+            System.out.println("--- FIN DEBUG ---");
+
+
             Long pedidoId = Long.valueOf(payment.getExternalReference());
             Pedido pedido = findById(pedidoId);
 
@@ -152,38 +165,17 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
             // Actualizar el estado del Pedido según el estado del pago de Mercado Pago
             switch (payment.getStatus()) {
-                case "approved":
-                    pedido.setEstado(Estado.PAGADO);
-                    break;
-                case "pending":
-                    pedido.setEstado(Estado.A_CONFIRMAR);
-                    break;
-                case "in_process":
-                    pedido.setEstado(Estado.EN_COCINA);
-                    break;
-                case "rejected":
-                    pedido.setEstado(Estado.RECHAZADO);
-                    break;
-                case "cancelled":
-                    pedido.setEstado(Estado.CANCELADO);
-                    break;
-                case "refunded":
-                    pedido.setEstado(Estado.DEVOLUCION);
-                    break;
-                case "list":
-                    pedido.setEstado(Estado.LISTO);
-                    break;
-                case "delivery":
-                    pedido.setEstado(Estado.EN_DELIVERY);
-                    break;
-                case "dedicated":
-                    pedido.setEstado(Estado.ENTREGADO);
-                    break;
-                case "charged_back":
-                    pedido.setEstado(Estado.CANCELADO);
-                    break;
-                default:
-                    System.out.println("Estado de pago de MP desconocido: " + payment.getStatus());
+                case "approved": pedido.setEstado(Estado.PAGADO); break;
+                case "pending": pedido.setEstado(Estado.A_CONFIRMAR); break;
+                case "in_process": pedido.setEstado(Estado.EN_COCINA); break;
+                case "rejected": pedido.setEstado(Estado.RECHAZADO); break;
+                case "cancelled": pedido.setEstado(Estado.CANCELADO); break;
+                case "refunded": pedido.setEstado(Estado.DEVOLUCION); break;
+                case "list": pedido.setEstado(Estado.LISTO); break;
+                case "delivery": pedido.setEstado(Estado.EN_DELIVERY); break;
+                case "dedicated": pedido.setEstado(Estado.ENTREGADO); break;
+                case "charged_back": pedido.setEstado(Estado.CANCELADO); break;
+                default: System.out.println("Estado de pago de MP desconocido: " + payment.getStatus());
             }
 
             // Actualizar la Factura asociada al Pedido con los datos de Mercado Pago
@@ -193,47 +185,45 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 pedido.setFactura(factura);
             }
 
-            // CORRECCIÓN: Usar los métodos correctos del objeto Payment
             factura.setMpPaymentId(payment.getId() != null ? payment.getId().intValue() : null);
 
-
+            // Asignación de mpMerchantOrderId, usando payment.getOrder() si está disponible
+            // O como null si no está o causa error de compilación.
+            // NOTA: Si payment.getOrder() causa 'cannot find symbol', entonces no existe.
             if (payment.getOrder() != null && payment.getOrder().getId() != null) {
                 factura.setMpMerchantOrderId(payment.getOrder().getId().intValue());
-            }else {
-                // Si el Order objeto es null, asegura que el campo en factura también sea null o un valor por defecto.
+            } else {
                 factura.setMpMerchantOrderId(null);
             }
 
-
-            // OPCIÓN 3: Si necesitas obtener estos datos, puedes hacer consultas separadas
-            // usando MerchantOrderClient para obtener la orden del comerciante
+            // mpPreferenceId NO se actualiza aquí, ya se guardó en MPController
+            // factura.setMpPreferenceId(payment.getPreferenceId()); // ESTO NO ES NECESARIO
 
             factura.setMpPaymentType(payment.getPaymentTypeId());
             factura.setFormaPago(FormaPago.MERCADO_PAGO);
             factura.setTotalVenta(payment.getTransactionAmount() != null ? payment.getTransactionAmount().doubleValue() : null);
 
-            // Convertir fecha de MP a LocalDate
             if (payment.getDateApproved() != null) {
-                LocalDate fechaFacturacion = payment.getDateApproved().toLocalDate();
-                factura.setFechaFacturacion(fechaFacturacion);
+                factura.setFechaFacturacion(payment.getDateApproved().toLocalDate());
             } else if (payment.getDateCreated() != null) {
-                LocalDate fechaFacturacion = payment.getDateCreated().toLocalDate();
-                factura.setFechaFacturacion(fechaFacturacion);
+                factura.setFechaFacturacion(payment.getDateCreated().toLocalDate());
             }
 
-            // Guardar el pedido actualizado
             baseRepository.save(pedido);
 
             System.out.println("Pedido " + pedido.getId() + " actualizado a estado: " + pedido.getEstado() + " por notificación de MP.");
 
         } catch (MPException | MPApiException e) {
             System.err.println("Error SDK Mercado Pago al procesar notificación de pago: " + e.getMessage());
-            throw new Exception("Error al obtener detalles del pago de Mercado Pago", e);
+            e.printStackTrace();
+            throw new RuntimeException("Error SDK Mercado Pago al procesar notificación de pago: " + e.getMessage(), e);
         } catch (Exception e) {
             System.err.println("Error general al procesar notificación de pago: " + e.getMessage());
-            throw new Exception("Error al procesar la notificación de pago", e);
+            e.printStackTrace();
+            throw new RuntimeException("Error general al procesar notificación de pago: " + e.getMessage(), e);
         }
     }
+
     @Override
     @Transactional
     public Pedido update(Long id, Pedido updatedPedido) throws Exception {
@@ -253,7 +243,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             actual.setSucursal(updatedPedido.getSucursal());
             actual.setDomicilioEntrega(updatedPedido.getDomicilioEntrega());
 
-            // Actualizar Factura
             if (updatedPedido.getFactura() != null) {
                 Factura updatedFactura = updatedPedido.getFactura();
                 Factura existingFactura = actual.getFactura();
@@ -262,7 +251,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     existingFactura = new Factura();
                     actual.setFactura(existingFactura);
                 }
-                // Copiar propiedades de la factura actualizada a la existente
                 existingFactura.setFechaFacturacion(updatedFactura.getFechaFacturacion());
                 existingFactura.setMpPaymentId(updatedFactura.getMpPaymentId());
                 existingFactura.setMpMerchantOrderId(updatedFactura.getMpMerchantOrderId());
@@ -271,14 +259,13 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 existingFactura.setFormaPago(updatedFactura.getFormaPago());
                 existingFactura.setTotalVenta(updatedFactura.getTotalVenta());
             } else {
-                actual.setFactura(null); // Si la factura ya no viene, se elimina la relación
+                actual.setFactura(null);
             }
 
-            // Sincronizar la colección de Detalles del Pedido
             if (updatedPedido.getDetallesPedidos() != null) {
                 actual.getDetallesPedidos().clear();
                 for (DetallePedido detalle : updatedPedido.getDetallesPedidos()) {
-                    detalle.setPedido(actual); // Asegura la relación inversa
+                    detalle.setPedido(actual);
                     actual.getDetallesPedidos().add(detalle);
                 }
             } else {
@@ -287,8 +274,19 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
             return baseRepository.save(actual);
         } catch (Exception e) {
-            throw new Exception("Error al actualizar el pedido: " + e.getMessage());
+            throw new RuntimeException("Error al actualizar el pedido: " + e.getMessage(), e);
         }
     }
 
+    // Implementaciones de los nuevos métodos de consulta (asumimos que ya están implementados)
+    // List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception;
+    // List<Pedido> findPedidosByEstado(Estado estado) throws Exception;
+    // List<Pedido> findPedidosBetweenFechas(LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
+    // List<Pedido> findPedidosByClienteIdAndEstado(Long clienteId, Estado estado) throws Exception;
+    // List<Pedido> findPedidosByFechaAndEstado(LocalDate fechaInicio, LocalDate fechaFin, Estado estado) throws Exception;
+    // List<Pedido> findPedidosByEstadoOrderByFechaPedidoDesc(Estado estado) throws Exception;
+    // List<Pedido> findPedidosByClienteExcludingEstado(Long clienteId, Estado estadoExcluido) throws Exception;
+    // long countPedidosByEstado(Estado estado) throws Exception;
+    // List<Pedido> findPedidosBySucursalIdAndFechaBetween(Long sucursalId, LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
+    // List<Pedido> findPedidosByArticuloManufacturadoId(Long articuloManufacturadoId) throws Exception;
 }

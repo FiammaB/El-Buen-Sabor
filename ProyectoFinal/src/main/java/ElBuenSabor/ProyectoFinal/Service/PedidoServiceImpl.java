@@ -1,23 +1,26 @@
-// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Service/PedidoServiceImpl.java
+
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Entities.Estado;
 import ElBuenSabor.ProyectoFinal.Entities.FormaPago;
-import ElBuenSabor.ProyectoFinal.Entities.TipoEnvio;
+
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.exceptions.MPException;
+import com.mercadopago.resources.payment.Payment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+
 import java.util.Set;
-import java.util.stream.Collectors;
+
 
 @Service
 public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements PedidoService {
@@ -126,7 +129,111 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new Exception("Error al crear el pedido para Mercado Pago: " + e.getMessage());
         }
     }
+    @Override
+    @Transactional
+    public void procesarNotificacionPagoMercadoPago(String paymentId) throws Exception {
+        try {
+            PaymentClient paymentClient = new PaymentClient();
+            Payment payment = paymentClient.get(Long.valueOf(paymentId));
 
+            if (payment == null) {
+                System.err.println("Notificación: Pago no encontrado en Mercado Pago con ID: " + paymentId);
+                return;
+            }
+            System.out.println("Payment ID (MP): " + payment.getId());
+            // El external_reference que enviamos al crear la preferencia es el ID de nuestro Pedido
+            Long pedidoId = Long.valueOf(payment.getExternalReference());
+            Pedido pedido = findById(pedidoId);
+
+            if (pedido == null) {
+                System.err.println("Notificación: Pedido no encontrado en la BD con externalReference: " + payment.getExternalReference());
+                return;
+            }
+
+            // Actualizar el estado del Pedido según el estado del pago de Mercado Pago
+            switch (payment.getStatus()) {
+                case "approved":
+                    pedido.setEstado(Estado.PAGADO);
+                    break;
+                case "pending":
+                    pedido.setEstado(Estado.A_CONFIRMAR);
+                    break;
+                case "in_process":
+                    pedido.setEstado(Estado.EN_COCINA);
+                    break;
+                case "rejected":
+                    pedido.setEstado(Estado.RECHAZADO);
+                    break;
+                case "cancelled":
+                    pedido.setEstado(Estado.CANCELADO);
+                    break;
+                case "refunded":
+                    pedido.setEstado(Estado.DEVOLUCION);
+                    break;
+                case "list":
+                    pedido.setEstado(Estado.LISTO);
+                    break;
+                case "delivery":
+                    pedido.setEstado(Estado.EN_DELIVERY);
+                    break;
+                case "dedicated":
+                    pedido.setEstado(Estado.ENTREGADO);
+                    break;
+                case "charged_back":
+                    pedido.setEstado(Estado.CANCELADO);
+                    break;
+                default:
+                    System.out.println("Estado de pago de MP desconocido: " + payment.getStatus());
+            }
+
+            // Actualizar la Factura asociada al Pedido con los datos de Mercado Pago
+            Factura factura = pedido.getFactura();
+            if (factura == null) {
+                factura = new Factura();
+                pedido.setFactura(factura);
+            }
+
+            // CORRECCIÓN: Usar los métodos correctos del objeto Payment
+            factura.setMpPaymentId(payment.getId() != null ? payment.getId().intValue() : null);
+
+
+            if (payment.getOrder() != null && payment.getOrder().getId() != null) {
+                factura.setMpMerchantOrderId(payment.getOrder().getId().intValue());
+            }else {
+                // Si el Order objeto es null, asegura que el campo en factura también sea null o un valor por defecto.
+                factura.setMpMerchantOrderId(null);
+            }
+
+
+            // OPCIÓN 3: Si necesitas obtener estos datos, puedes hacer consultas separadas
+            // usando MerchantOrderClient para obtener la orden del comerciante
+
+            factura.setMpPaymentType(payment.getPaymentTypeId());
+            factura.setFormaPago(FormaPago.MERCADO_PAGO);
+            factura.setTotalVenta(payment.getTransactionAmount() != null ? payment.getTransactionAmount().doubleValue() : null);
+
+            // Convertir fecha de MP a LocalDate
+            if (payment.getDateApproved() != null) {
+                LocalDate fechaFacturacion = payment.getDateApproved().toLocalDate();
+                factura.setFechaFacturacion(fechaFacturacion);
+            } else if (payment.getDateCreated() != null) {
+                LocalDate fechaFacturacion = payment.getDateCreated().toLocalDate();
+                factura.setFechaFacturacion(fechaFacturacion);
+            }
+
+            // Guardar el pedido actualizado
+            baseRepository.save(pedido);
+
+            System.out.println("Pedido " + pedido.getId() + " actualizado a estado: " + pedido.getEstado() + " por notificación de MP.");
+
+        } catch (MPException | MPApiException e) {
+            System.err.println("Error SDK Mercado Pago al procesar notificación de pago: " + e.getMessage());
+            throw new Exception("Error al obtener detalles del pago de Mercado Pago", e);
+        } catch (Exception e) {
+            System.err.println("Error general al procesar notificación de pago: " + e.getMessage());
+            throw new Exception("Error al procesar la notificación de pago", e);
+        }
+    }
     @Override
     @Transactional
     public Pedido update(Long id, Pedido updatedPedido) throws Exception {
@@ -183,4 +290,5 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new Exception("Error al actualizar el pedido: " + e.getMessage());
         }
     }
+
 }

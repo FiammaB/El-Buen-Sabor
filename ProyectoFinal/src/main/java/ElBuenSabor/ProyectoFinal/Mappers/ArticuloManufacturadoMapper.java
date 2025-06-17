@@ -17,6 +17,7 @@ import org.mapstruct.MappingTarget;
 })
 public interface ArticuloManufacturadoMapper {
 
+    @Mapping(source = "categoria.id", target = "categoriaId")
     ArticuloManufacturadoDTO toDTO(ArticuloManufacturado entity);
 
     @Mapping(target = "detalles", source = "detalles")

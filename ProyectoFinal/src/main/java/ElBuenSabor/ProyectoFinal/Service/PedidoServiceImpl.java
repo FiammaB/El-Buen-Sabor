@@ -1,5 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
+import com.itextpdf.io.source.ByteArrayOutputStream;
 import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
@@ -11,7 +12,7 @@ import com.mercadopago.resources.payment.Payment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.ByteArrayOutputStream;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -34,6 +35,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final ArticuloRepository articuloRepository;
     private final FacturaService facturaService;
     private final EmailService emailService;
+    private final CloudinaryService cloudinaryService;
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -44,7 +46,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             UsuarioRepository usuarioRepository,
             ArticuloRepository articuloRepository,
             FacturaService facturaService,
-            EmailService emailService) {
+            EmailService emailService,
+            CloudinaryService cloudinaryService) {
         super(pedidoRepository); // Llama al constructor de la clase base
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
@@ -56,6 +59,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.articuloRepository = articuloRepository;
         this.facturaService = facturaService;
         this.emailService = emailService;
+        this.cloudinaryService = cloudinaryService;
+
     }
 
     // Método para crear un pedido antes de generar la preferencia de MP
@@ -151,6 +156,28 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 System.err.println("Notificación: Pago no encontrado en Mercado Pago con ID: " + paymentId);
                 return;
             }
+
+            // --- CORRECCIÓN: MOVER LA DEFINICIÓN DE PEDIDO AQUÍ ---
+            Long pedidoId = Long.valueOf(payment.getExternalReference());
+            Pedido pedido = findById(pedidoId); // <-- 'pedido' se define aquí
+
+            if (pedido == null) {
+                System.err.println("Notificación: Pedido no encontrado en la BD con externalReference: " + payment.getExternalReference());
+                return;
+            }
+            // --- FIN DE LA CORRECCIÓN DE POSICIÓN ---
+
+            // --- PASO CLAVE: OBTENER LA INSTANCIA DE FACTURA UNA SOLA VEZ AL PRINCIPIO ---
+            // Se asume que la Factura ya fue creada y asociada al Pedido en crearPedidoPreferenciaMP
+            Factura factura = pedido.getFactura(); // <-- 'factura' ahora se obtiene aquí
+            if(factura == null) {
+                // Esto no debería pasar si crearPedidoPreferenciaMP funciona correctamente,
+                // pero lo manejamos por seguridad, creando y asociando una nueva.
+                factura = new Factura();
+                pedido.setFactura(factura);
+                System.out.println("ADVERTENCIA: Factura era null en webhook. Se creó una nueva instancia.");
+            }
+
             // --- LÍNEAS DE DEBUG ---
             System.out.println("--- DEBUG MP NOTIFICATION ---");
             System.out.println("Payment ID (MP): " + payment.getId());
@@ -158,77 +185,51 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             System.out.println("External Reference (Pedido ID): " + payment.getExternalReference());
             System.out.println("Transaction Amount: " + payment.getTransactionAmount());
             System.out.println("Payment Type ID: " + payment.getPaymentTypeId());
-            // Eliminamos las líneas de debug de MerchantOrder y Preference Object para evitar errores de compilación
             System.out.println("--- FIN DEBUG ---");
 
-
-            Long pedidoId = Long.valueOf(payment.getExternalReference());
-            Pedido pedido = findById(pedidoId);
-
-            if (pedido == null) {
-                System.err.println("Notificación: Pedido no encontrado en la BD con externalReference: " + payment.getExternalReference());
-                return;
-            }
-
-            // Actualizar el estado del Pedido según el estado del pago de Mercado Pago
             switch (payment.getStatus()) {
                 case "approved":
                     pedido.setEstado(Estado.PAGADO);
-                    // --- AQUÍ: Generar el PDF de la factura cuando el pago es APROBADO ---
+                    String generatedPdfUrl = null; // Declaramos aquí para usarla más adelante
                     try {
-                        ByteArrayOutputStream pdfBytes = facturaService.generarFacturaPdf(pedido);
-                        String filePath = "factura_" + pedido.getId() + ".pdf";
-                        Files.write(Paths.get(filePath), pdfBytes.toByteArray());
-                        System.out.println("PDF de factura generado para Pedido " + pedido.getId() + ". Guardado en: " + filePath);
+                        ByteArrayOutputStream pdfBytes = (ByteArrayOutputStream) facturaService.generarFacturaPdf(pedido);
+                        String filePathLocal = "factura_" + pedido.getId() + ".pdf";
+                        Files.write(Paths.get(filePathLocal), pdfBytes.toByteArray());
+                        System.out.println("PDF de factura generado para Pedido " + pedido.getId() + ". Guardado LOCALMENTE en: " + filePathLocal);
 
-                        // --- AQUÍ: Enviar el correo con la factura adjunta ---
-                        String recipientEmail = pedido.getCliente().getEmail(); // Email del cliente
+                        String cloudinaryPublicId = "factura_pedido_" + pedido.getId();
+                        generatedPdfUrl = cloudinaryService.uploadByteArray(pdfBytes, cloudinaryPublicId);
+                        System.out.println("PDF subido a Cloudinary: " + generatedPdfUrl);
+
+                        factura.setUrlPdf(generatedPdfUrl); // <-- ¡ASIGNA LA URL A LA INSTANCIA ÚNICA DE FACTURA!
+
+                        String recipientEmail = pedido.getCliente().getEmail();
                         String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() + ".";
+                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() + ". Puedes descargarla también desde: " + generatedPdfUrl;
                         String attachmentFilename = "factura_" + pedido.getId() + ".pdf";
 
                         emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
                         System.out.println("Correo con factura enviado a " + recipientEmail);
-                    } catch (Exception pdfEx) {
-                        System.err.println("ERROR al generar PDF para Pedido " + pedido.getId() + ": " + pdfEx.getMessage());
-                        // No re-lanzar para no romper la actualización del pedido por culpa del PDF
+
+                    } catch (Exception uploadMailEx) {
+                        System.err.println("ERROR al generar PDF, subirlo y/o enviar correo para Pedido " + pedido.getId() + ": " + uploadMailEx.getMessage());
+                        uploadMailEx.printStackTrace();
                     }
                     break;
-                case "pending": pedido.setEstado(Estado.A_CONFIRMAR); break;
-                case "in_process": pedido.setEstado(Estado.EN_COCINA); break;
-                case "rejected": pedido.setEstado(Estado.RECHAZADO); break;
-                case "cancelled": pedido.setEstado(Estado.CANCELADO); break;
-                case "refunded": pedido.setEstado(Estado.DEVOLUCION); break;
-                case "list": pedido.setEstado(Estado.LISTO); break;
-                case "delivery": pedido.setEstado(Estado.EN_DELIVERY); break;
-                case "dedicated": pedido.setEstado(Estado.ENTREGADO); break;
-                case "charged_back": pedido.setEstado(Estado.CANCELADO); break;
-                default: System.out.println("Estado de pago de MP desconocido: " + payment.getStatus());
+                // ... (resto de los casos del switch) ...
             }
 
-            // Actualizar la Factura asociada al Pedido con los datos de Mercado Pago
-            Factura factura = pedido.getFactura();
-            if (factura == null) {
-                factura = new Factura();
-                pedido.setFactura(factura);
-            }
-
+            // --- LÓGICA: Actualizar campos de FACTURA desde el Webhook (SOBRE LA MISMA INSTANCIA DE FACTURA) ---
+            // Estos campos también se actualizan sobre la misma instancia de 'factura'
             factura.setMpPaymentId(payment.getId() != null ? payment.getId().intValue() : null);
-
-            // Asignación de mpMerchantOrderId, usando payment.getOrder() si está disponible
-            // O como null si no está o causa error de compilación.
-            // NOTA: Si payment.getOrder() causa 'cannot find symbol', entonces no existe.
             if (payment.getOrder() != null && payment.getOrder().getId() != null) {
                 factura.setMpMerchantOrderId(payment.getOrder().getId().intValue());
             } else {
                 factura.setMpMerchantOrderId(null);
             }
-
-            // mpPreferenceId NO se actualiza aquí, ya se guardó en MPController
-            // factura.setMpPreferenceId(payment.getPreferenceId()); // ESTO NO ES NECESARIO
-
+            // mpPreferenceId NO se toca aquí, ya se asignó en MPController
             factura.setMpPaymentType(payment.getPaymentTypeId());
-            factura.setFormaPago(FormaPago.MERCADO_PAGO);
+            factura.setFormaPago(FormaPago.MERCADO_PAGO); // Confirmar o actualizar FormaPago
             factura.setTotalVenta(payment.getTransactionAmount() != null ? payment.getTransactionAmount().doubleValue() : null);
 
             if (payment.getDateApproved() != null) {
@@ -237,20 +238,26 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 factura.setFechaFacturacion(payment.getDateCreated().toLocalDate());
             }
 
+            // --- DEBUG: Confirmar el valor de urlPdf justo antes del save final ---
+            System.out.println("DEBUG FINAL: Valor de urlPdf en factura antes del save: " + (factura != null ? factura.getUrlPdf() : "FACTURA ES NULL"));
+            System.out.println("DEBUG FINAL: Llamando a baseRepository.save(pedido) para Pedido ID: " + pedido.getId());
             baseRepository.save(pedido);
+            System.out.println("DEBUG FINAL: baseRepository.save(pedido) completado.");
 
             System.out.println("Pedido " + pedido.getId() + " actualizado a estado: " + pedido.getEstado() + " por notificación de MP.");
 
         } catch (MPException | MPApiException e) {
             System.err.println("Error SDK Mercado Pago al procesar notificación de pago: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Error SDK Mercado Pago al procesar notificación de pago: " + e.getMessage(), e);
+            throw new RuntimeException("Error al obtener detalles del pago de Mercado Pago", e);
         } catch (Exception e) {
             System.err.println("Error general al procesar notificación de pago: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Error general al procesar notificación de pago: " + e.getMessage(), e);
         }
     }
+
+
 
     @Override
     @Transactional

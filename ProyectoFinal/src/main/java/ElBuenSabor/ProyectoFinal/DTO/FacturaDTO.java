@@ -20,4 +20,5 @@ public class FacturaDTO {
     private String mpPaymentType;
     private FormaPago formaPago;
     private Double totalVenta;
+    private String urlPdf;
 }

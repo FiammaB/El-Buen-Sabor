@@ -28,5 +28,6 @@ public class Factura extends BaseEntity {
 
     @OneToOne(mappedBy = "factura")
     private Pedido pedido;
-
+    @Column(length = 500)
+    private String urlPdf;
 }

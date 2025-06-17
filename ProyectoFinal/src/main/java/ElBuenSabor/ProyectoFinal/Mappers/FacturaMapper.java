@@ -22,5 +22,4 @@ public interface FacturaMapper {
     default FormaPago stringToFormaPago(String formaPago) {
         return FormaPago.valueOf(formaPago.toUpperCase()); // Maneja bien EFECTIVO, efectivo, etc.
     }
-
 }

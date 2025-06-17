@@ -8,7 +8,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ArticuloInsumoDTO {
-
+    private Long id;
     private String denominacion;
     private Double precioCompra;
     private Double stockActual;
@@ -19,5 +19,4 @@ public class ArticuloInsumoDTO {
     private Long imagenId;
     private Long unidadMedidaId;
     private Long categoriaId;
-
 }

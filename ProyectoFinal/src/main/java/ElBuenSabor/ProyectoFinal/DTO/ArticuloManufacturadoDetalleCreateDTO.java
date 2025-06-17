@@ -8,6 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 public class ArticuloManufacturadoDetalleCreateDTO {
 
+    private Long id;
     private Double cantidad;
     private Long articuloInsumoId;
 }

@@ -26,28 +26,33 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
     }
 
     @Override
-    public Usuario login(String email, String password) {
-        Optional<Cliente> clienteOpt = clienteRepository.findByEmailAndPassword(email, password);
+    public Usuario login(String username, String password) {
+        Optional<Cliente> clienteOpt = clienteRepository.findByEmailAndPassword(username, password);
         return clienteOpt.map(Cliente::getUsuario).orElse(null);
     }
 
     @Override
     public Usuario register(RegisterRequest request) {
         Usuario usuario = new Usuario();
-        usuario.setUsername(request.getEmail());
+        usuario.setUsername(request.getUsername()); // Cambiado: antes era getEmail
         usuario.setRol(Rol.CLIENTE); // rol por defecto
         usuario = usuarioRepository.save(usuario);
 
         Cliente cliente = new Cliente();
         cliente.setNombre(request.getNombre());
         cliente.setApellido(request.getApellido());
-        cliente.setEmail(request.getEmail());
+        cliente.setEmail(request.getUsername()); // También corregido
         cliente.setPassword(request.getPassword());
+        cliente.setTelefono(request.getTelefono());
+        cliente.setFechaNacimiento(request.getFechaNacimiento());
         cliente.setUsuario(usuario);
+
         clienteRepository.save(cliente);
 
         return usuario;
     }
+
+
 
     @Override
     @Transactional

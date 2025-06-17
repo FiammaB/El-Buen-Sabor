@@ -205,7 +205,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                         String recipientEmail = pedido.getCliente().getEmail();
                         String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() + ". Puedes descargarla también desde: " + generatedPdfUrl;
+                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() ;
                         String attachmentFilename = "factura_" + pedido.getId() + ".pdf";
 
                         emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);

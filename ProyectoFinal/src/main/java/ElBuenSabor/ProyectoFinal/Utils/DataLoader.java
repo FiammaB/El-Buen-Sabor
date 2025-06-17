@@ -81,7 +81,7 @@ public class DataLoader implements CommandLineRunner {
             Usuario usuarioCliente = usuarioService.save(Usuario.builder()
                     .auth0Id("auth0|123456789")
                     .username("cliente_test")
-
+                    .rol(Rol.CLIENTE)
                     .build());
 
             // 5. Cliente asociado al Usuario
@@ -89,8 +89,8 @@ public class DataLoader implements CommandLineRunner {
                     .nombre("Fiamma")
                     .apellido("Brizuela")
                     .telefono("2615551234")
-                    .email("gastonsisterna30@gmail.com")
-                    .password("cliente123") // clave que usás en Postman
+                    .email("juan.perez@example.com")
+                    .password("cliente123")
                     .fechaNacimiento(LocalDate.of(1990, 5, 15))
                     .imagen(imgCliente)
                     .usuario(usuarioCliente)
@@ -151,7 +151,7 @@ public class DataLoader implements CommandLineRunner {
             // 9. Usuario ADMIN
             Usuario adminUsuario = Usuario.builder()
                     .username("admin@buen.com")
-
+                    .rol(Rol.ADMINISTRADOR)
                     .build();
             usuarioService.save(adminUsuario);
 

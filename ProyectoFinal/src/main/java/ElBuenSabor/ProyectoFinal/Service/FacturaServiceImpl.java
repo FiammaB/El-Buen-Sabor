@@ -6,6 +6,7 @@ import ElBuenSabor.ProyectoFinal.Entities.Factura;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
 import ElBuenSabor.ProyectoFinal.Repositories.FacturaRepository;
 
+import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.element.Paragraph;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Importar Transactional
 
 import com.itextpdf.layout.Document;
-import java.io.ByteArrayOutputStream;
+
 import java.time.format.DateTimeFormatter;
 
 

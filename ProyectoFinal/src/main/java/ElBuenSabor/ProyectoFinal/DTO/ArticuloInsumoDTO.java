@@ -7,7 +7,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArticuloInsumoDTO {
+public class ArticuloInsumoDTO extends ArticuloDTO {
 
     private String denominacion;
     private Double precioCompra;

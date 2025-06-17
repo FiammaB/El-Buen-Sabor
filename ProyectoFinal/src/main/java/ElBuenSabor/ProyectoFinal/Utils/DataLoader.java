@@ -1,6 +1,4 @@
-// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Util/DataLoader.java
 package ElBuenSabor.ProyectoFinal.Utils;
-
 
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
@@ -15,7 +13,6 @@ import java.util.Set;
 @Component
 public class DataLoader implements CommandLineRunner {
 
-    // ... (servicios inyectados) ...
     private final PaisService paisService;
     private final ProvinciaService provinciaService;
     private final LocalidadService localidadService;
@@ -28,7 +25,6 @@ public class DataLoader implements CommandLineRunner {
     private final ArticuloManufacturadoService articuloManufacturadoService;
     private final ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService;
     private final DomicilioService domicilioService;
-
 
     public DataLoader(PaisService paisService,
                       ProvinciaService provinciaService,
@@ -62,88 +58,54 @@ public class DataLoader implements CommandLineRunner {
         System.out.println("Cargando datos de ejemplo...");
 
         try {
-            // 1. Crear País, Provincia, Localidad
-            Pais pais = Pais.builder().nombre("Argentina").build();
-            pais = paisService.save(pais);
+            // 1. Ubicación
+            Pais pais = paisService.save(Pais.builder().nombre("Argentina").build());
+            Provincia provincia = provinciaService.save(Provincia.builder().nombre("Mendoza").pais(pais).build());
+            Localidad localidad = localidadService.save(Localidad.builder().nombre("Maipú").provincia(provincia).build());
 
-            Provincia provincia = Provincia.builder().nombre("Mendoza").pais(pais).build();
-            provincia = provinciaService.save(provincia);
+            // 2. Imágenes
+            Imagen imgCliente = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgHarina = imagenService.save(Imagen.builder().denominacion("https://example.com/harina.jpg").build());
+            Imagen imgTomate = imagenService.save(Imagen.builder().denominacion("https://example.com/tomate.jpg").build());
+            Imagen imgHamburguesa = imagenService.save(Imagen.builder().denominacion("https://example.com/hamburguesa.jpg").build());
 
-            Localidad localidad = Localidad.builder().nombre("Maipú").provincia(provincia).build();
-            localidad = localidadService.save(localidad);
-
-            // 2. Crear IMÁGENES ÚNICAS PARA CADA ENTIDAD (O AL MENOS PARA CADA ARTÍCULO)
-            Imagen imgCliente = Imagen.builder().denominacion("https://example.com/cliente.jpg").build();
-            imgCliente = imagenService.save(imgCliente);
-
-            Imagen imgHarina = Imagen.builder().denominacion("https://example.com/harina.jpg").build(); // Nueva imagen para Harina
-            imgHarina = imagenService.save(imgHarina);
-
-            Imagen imgTomate = Imagen.builder().denominacion("https://example.com/tomate.jpg").build(); // Nueva imagen para Tomate
-            imgTomate = imagenService.save(imgTomate);
-
-            Imagen imgHamburguesa = Imagen.builder().denominacion("https://example.com/hamburguesa.jpg").build(); // Nueva imagen para Hamburguesa
-            imgHamburguesa = imagenService.save(imgHamburguesa);
-
-
-            // 3. Crear Domicilio
-            Domicilio domicilioCliente = Domicilio.builder()
+            // 3. Domicilio
+            Domicilio domicilioCliente = domicilioService.save(Domicilio.builder()
                     .calle("Calle Falsa")
                     .numero(123)
                     .cp(5515)
                     .localidad(localidad)
-                    .build();
-            domicilioCliente = domicilioService.save(domicilioCliente);
+                    .build());
 
-            // 4. Crear Usuario
-            Usuario usuarioCliente = Usuario.builder()
+            // 4. Usuario CLIENTE
+            Usuario usuarioCliente = usuarioService.save(Usuario.builder()
                     .auth0Id("auth0|123456789")
                     .username("cliente_test")
-                    .build();
-            usuarioCliente = usuarioService.save(usuarioCliente);
+                    .rol(Rol.CLIENTE)
+                    .build());
 
-            // 5. Crear Cliente
+            // 5. Cliente asociado al Usuario
             Cliente cliente = Cliente.builder()
                     .nombre("Juan")
                     .apellido("Perez")
                     .telefono("2615551234")
                     .email("juan.perez@example.com")
-                    .password("hashed_password")
+                    .password("cliente123") // clave que usás en Postman
                     .fechaNacimiento(LocalDate.of(1990, 5, 15))
                     .imagen(imgCliente)
                     .usuario(usuarioCliente)
+                    .domicilios(Set.of(domicilioCliente))
                     .build();
 
-            Set<Domicilio> domiciliosCliente = new HashSet<>();
-            domiciliosCliente.add(domicilioCliente);
-            cliente.setDomicilios(domiciliosCliente);
+            clienteService.save(cliente);
 
-            cliente = clienteService.save(cliente);
+            // 6. Categoría y Unidades
+            Categoria categoriaComida = categoriaService.save(Categoria.builder().denominacion("Comida").build());
+            UnidadMedida unidadGramos = unidadMedidaService.save(UnidadMedida.builder().denominacion("gramos").build());
+            UnidadMedida unidadPorcion = unidadMedidaService.save(UnidadMedida.builder().denominacion("unidad").build());
 
-            // La línea siguiente no es necesaria ya que el Cliente es el lado dueño con CascadeType.MERGE/PERSIST.
-            // Si Domicilio.clientes se mantiene en memoria para la sesión, es por la relación bidireccional,
-            // pero JPA debería encargarse de la tabla de unión.
-            /*
-            Set<Cliente> clientesDomicilio = new HashSet<>();
-            clientesDomicilio.add(cliente);
-            domicilioCliente.setClientes(clientesDomicilio);
-            // domicilioService.update(domicilioCliente.getId(), domicilioCliente); // Evitar un save/update separado aquí si no es estrictamente necesario
-            */
-
-
-            // 6. Crear Categoría y Unidad de Medida
-            Categoria categoriaComida = Categoria.builder().denominacion("Comida").build();
-            categoriaComida = categoriaService.save(categoriaComida);
-
-            UnidadMedida unidadGramos = UnidadMedida.builder().denominacion("gramos").build();
-            unidadGramos = unidadMedidaService.save(unidadGramos);
-
-            UnidadMedida unidadPorcion = UnidadMedida.builder().denominacion("unidad").build();
-            unidadPorcion = unidadMedidaService.save(unidadPorcion);
-
-
-            // 7. Crear ArticuloInsumo
-            ArticuloInsumo insumoHarina = ArticuloInsumo.builder()
+            // 7. Insumos
+            ArticuloInsumo insumoHarina = articuloInsumoService.save(ArticuloInsumo.builder()
                     .denominacion("Harina")
                     .precioVenta(500.0)
                     .precioCompra(300.0)
@@ -152,11 +114,10 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(true)
                     .categoria(categoriaComida)
                     .unidadMedida(unidadGramos)
-                    .imagen(imgHarina) // <<-- Asigna la nueva imagen imgHarina
-                    .build();
-            insumoHarina = articuloInsumoService.save(insumoHarina);
+                    .imagen(imgHarina)
+                    .build());
 
-            ArticuloInsumo insumoTomate = ArticuloInsumo.builder()
+            ArticuloInsumo insumoTomate = articuloInsumoService.save(ArticuloInsumo.builder()
                     .denominacion("Tomate")
                     .precioVenta(100.0)
                     .precioCompra(50.0)
@@ -165,11 +126,10 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(true)
                     .categoria(categoriaComida)
                     .unidadMedida(unidadGramos)
-                    .imagen(imgTomate) // <<-- Asigna la nueva imagen imgTomate
-                    .build();
-            insumoTomate = articuloInsumoService.save(insumoTomate);
+                    .imagen(imgTomate)
+                    .build());
 
-            // 8. Crear ArticuloManufacturado
+            // 8. Artículo Manufacturado
             ArticuloManufacturado hamburguesa = ArticuloManufacturado.builder()
                     .denominacion("Hamburguesa Clásica")
                     .precioVenta(1250.0)
@@ -178,32 +138,24 @@ public class DataLoader implements CommandLineRunner {
                     .preparacion("Preparar la carne, cocinar, armar.")
                     .categoria(categoriaComida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imgHamburguesa) // <<-- Asigna la nueva imagen imgHamburguesa
+                    .imagen(imgHamburguesa)
                     .build();
 
-            // Añadir detalles (ingredientes) y establecer la relación inversa
-            Set<ArticuloManufacturadoDetalle> detallesHamburguesa = new HashSet<>();
-            ArticuloManufacturadoDetalle detalleHarina = ArticuloManufacturadoDetalle.builder()
-                    .cantidad(200.0)
-                    .articuloInsumo(insumoHarina)
+            Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
+            detalles.add(ArticuloManufacturadoDetalle.builder().cantidad(200.0).articuloInsumo(insumoHarina).articuloManufacturado(hamburguesa).build());
+            detalles.add(ArticuloManufacturadoDetalle.builder().cantidad(50.0).articuloInsumo(insumoTomate).articuloManufacturado(hamburguesa).build());
+
+            hamburguesa.setDetalles(detalles);
+            articuloManufacturadoService.save(hamburguesa);
+
+            // 9. Usuario ADMIN
+            Usuario adminUsuario = Usuario.builder()
+                    .username("admin@buen.com")
+                    .rol(Rol.ADMINISTRADOR)
                     .build();
-            detalleHarina.setArticuloManufacturado(hamburguesa);
-            detallesHamburguesa.add(detalleHarina);
-
-            ArticuloManufacturadoDetalle detalleTomate = ArticuloManufacturadoDetalle.builder()
-                    .cantidad(50.0)
-                    .articuloInsumo(insumoTomate)
-                    .build();
-            detalleTomate.setArticuloManufacturado(hamburguesa);
-            detallesHamburguesa.add(detalleTomate);
-
-            hamburguesa.setDetalles(detallesHamburguesa);
-
-            hamburguesa = articuloManufacturadoService.save(hamburguesa);
-
+            usuarioService.save(adminUsuario);
 
             System.out.println("Datos de ejemplo cargados exitosamente.");
-
         } catch (Exception e) {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());
             e.printStackTrace();

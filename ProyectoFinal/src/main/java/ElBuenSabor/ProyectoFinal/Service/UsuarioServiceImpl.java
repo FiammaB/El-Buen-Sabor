@@ -1,44 +1,63 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
+import ElBuenSabor.ProyectoFinal.Auth.RegisterRequest;
+import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
-import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Posiblemente ya no sea necesaria
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
+import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Importar Transactional
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List; // Importar List si no se usara el findAll del padre
+import java.util.Optional;
 
 @Service
-// UsuarioServiceImpl ahora extiende BaseServiceImpl
-// y la interfaz UsuarioService (que debe extender BaseService)
 public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implements UsuarioService {
 
-    // El repositorio se inyecta y se pasa al constructor del padre.
-    // Ya no necesitas 'private final UsuarioRepository usuarioRepository;' aquí
+    private final UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
+
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
-        super(usuarioRepository); // Llama al constructor de la clase base
+        super(usuarioRepository);
+        this.usuarioRepository = usuarioRepository;
     }
 
-    // Los métodos findAll(), findById(), save(), deleteById(), toggleBaja()
-    // ya están implementados en BaseServiceImpl y se heredan automáticamente.
+    @Override
+    public Usuario login(String email, String password) {
+        Optional<Cliente> clienteOpt = clienteRepository.findByEmailAndPassword(email, password);
+        return clienteOpt.map(Cliente::getUsuario).orElse(null);
+    }
 
     @Override
-    @Transactional // Asegúrate de que los métodos de modificación sean transaccionales
-    // La firma debe ser consistente con BaseService: update(ID id, E entity)
-    public Usuario update(Long id, Usuario updatedUsuario) throws Exception { // <<-- Añadir throws Exception
-        try {
-            // Usamos findById del padre (BaseServiceImpl) para obtener la entidad actual
-            Usuario existing = findById(id);
+    public Usuario register(RegisterRequest request) {
+        Usuario usuario = new Usuario();
+        usuario.setUsername(request.getEmail());
+        usuario.setRol(Rol.CLIENTE); // rol por defecto
+        usuario = usuarioRepository.save(usuario);
 
+        Cliente cliente = new Cliente();
+        cliente.setNombre(request.getNombre());
+        cliente.setApellido(request.getApellido());
+        cliente.setEmail(request.getEmail());
+        cliente.setPassword(request.getPassword());
+        cliente.setUsuario(usuario);
+        clienteRepository.save(cliente);
+
+        return usuario;
+    }
+
+    @Override
+    @Transactional
+    public Usuario update(Long id, Usuario updatedUsuario) throws Exception {
+        try {
+            Usuario existing = findById(id);
             existing.setAuth0Id(updatedUsuario.getAuth0Id());
             existing.setUsername(updatedUsuario.getUsername());
-            // Si Usuario tiene colecciones o otras relaciones,
-            // necesitarías lógica adicional aquí para sincronizarlas.
-
-            // Llamamos a save del baseRepository (heredado del padre) para persistir los cambios
             return baseRepository.save(existing);
         } catch (Exception e) {
-            // Re-lanzamos cualquier excepción, manteniendo la consistencia con BaseService.
             throw new Exception("Error al actualizar el usuario: " + e.getMessage());
         }
     }

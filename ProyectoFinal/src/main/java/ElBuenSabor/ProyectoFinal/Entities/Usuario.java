@@ -20,5 +20,7 @@ public class Usuario extends BaseEntity {
     private String auth0Id;
     @Column(unique = true)
     private String username;
+    @Column
+    private Rol rol;
 
 }

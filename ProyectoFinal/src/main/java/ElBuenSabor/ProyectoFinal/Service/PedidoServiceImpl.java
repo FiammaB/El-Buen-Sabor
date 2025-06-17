@@ -11,6 +11,9 @@ import com.mercadopago.resources.payment.Payment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -29,8 +32,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final SucursalRepository sucursalRepository;
     private final UsuarioRepository usuarioRepository;
     private final ArticuloRepository articuloRepository;
-
-
+    private final FacturaService facturaService;
+    private final EmailService emailService;
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -39,7 +42,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             DomicilioRepository domicilioRepository,
             SucursalRepository sucursalRepository,
             UsuarioRepository usuarioRepository,
-            ArticuloRepository articuloRepository) {
+            ArticuloRepository articuloRepository,
+            FacturaService facturaService,
+            EmailService emailService) {
         super(pedidoRepository); // Llama al constructor de la clase base
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
@@ -49,6 +54,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.sucursalRepository = sucursalRepository;
         this.usuarioRepository = usuarioRepository;
         this.articuloRepository = articuloRepository;
+        this.facturaService = facturaService;
+        this.emailService = emailService;
     }
 
     // Método para crear un pedido antes de generar la preferencia de MP
@@ -165,7 +172,28 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
             // Actualizar el estado del Pedido según el estado del pago de Mercado Pago
             switch (payment.getStatus()) {
-                case "approved": pedido.setEstado(Estado.PAGADO); break;
+                case "approved":
+                    pedido.setEstado(Estado.PAGADO);
+                    // --- AQUÍ: Generar el PDF de la factura cuando el pago es APROBADO ---
+                    try {
+                        ByteArrayOutputStream pdfBytes = facturaService.generarFacturaPdf(pedido);
+                        String filePath = "factura_" + pedido.getId() + ".pdf";
+                        Files.write(Paths.get(filePath), pdfBytes.toByteArray());
+                        System.out.println("PDF de factura generado para Pedido " + pedido.getId() + ". Guardado en: " + filePath);
+
+                        // --- AQUÍ: Enviar el correo con la factura adjunta ---
+                        String recipientEmail = pedido.getCliente().getEmail(); // Email del cliente
+                        String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
+                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() + ".";
+                        String attachmentFilename = "factura_" + pedido.getId() + ".pdf";
+
+                        emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
+                        System.out.println("Correo con factura enviado a " + recipientEmail);
+                    } catch (Exception pdfEx) {
+                        System.err.println("ERROR al generar PDF para Pedido " + pedido.getId() + ": " + pdfEx.getMessage());
+                        // No re-lanzar para no romper la actualización del pedido por culpa del PDF
+                    }
+                    break;
                 case "pending": pedido.setEstado(Estado.A_CONFIRMAR); break;
                 case "in_process": pedido.setEstado(Estado.EN_COCINA); break;
                 case "rejected": pedido.setEstado(Estado.RECHAZADO); break;

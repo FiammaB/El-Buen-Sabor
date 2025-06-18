@@ -4,6 +4,7 @@ import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloManufacturadoMapper;
+import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UnidadMedidaRepository;
@@ -23,6 +24,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final ImagenRepository imagenRepository;
+    private final ArticuloInsumoRepository articuloInsumoRepository;
 
     // El constructor inyecta el servicio específico de ArticuloManufacturado
     public ArticuloManufacturadoController(
@@ -30,12 +32,14 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             ArticuloManufacturadoMapper mapper,
             CategoriaRepository categoriaRepository,
             UnidadMedidaRepository unidadMedidaRepository,
-            ImagenRepository imagenRepository) {
+            ImagenRepository imagenRepository,
+            ArticuloInsumoRepository articuloInsumoRepository) {
         super(articuloManufacturadoService); // Pasa el servicio al constructor del BaseController
         this.mapper = mapper;
         this.categoriaRepository = categoriaRepository;
         this.unidadMedidaRepository = unidadMedidaRepository;
         this.imagenRepository = imagenRepository;
+        this.articuloInsumoRepository = articuloInsumoRepository;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -70,7 +74,8 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
     public ResponseEntity<?> create(@RequestBody ArticuloManufacturadoCreateDTO dto) {
         try {
-            ArticuloManufacturado entity = mapper.toEntity(dto);
+
+            ArticuloManufacturado entity = mapper.toEntity(dto, articuloInsumoRepository);
 
             // Establecer las relaciones ManyToOne
             entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
@@ -87,10 +92,9 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
 
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
     @PutMapping(value = "/{id}", consumes = "application/json")
-
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticuloManufacturadoCreateDTO dto) {
         try {
-            ArticuloManufacturado entity = mapper.toEntity(dto);
+            ArticuloManufacturado entity = mapper.toEntity(dto, articuloInsumoRepository);
 
             // Asegúrate de establecer las relaciones necesarias antes de actualizar
             entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
@@ -103,6 +107,20 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    @PatchMapping("/{id}/baja")
+    public ResponseEntity<?> toggleBaja(
+            @PathVariable Long id,
+            @RequestParam boolean baja // O usa 'estaDadoDeBaja' según tu naming preferido
+    ) {
+        try {
+            ArticuloManufacturado actualizado = baseService.toggleBaja(id, baja); // Usa tu método genérico
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
 
     // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
     // si la lógica de borrado/activación/desactivación ya implementada en BaseController

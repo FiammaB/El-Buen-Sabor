@@ -7,7 +7,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Component
@@ -141,7 +143,7 @@ public class DataLoader implements CommandLineRunner {
                     .imagen(imgHamburguesa)
                     .build();
 
-            Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
+            List<ArticuloManufacturadoDetalle> detalles = new ArrayList<>();
             detalles.add(ArticuloManufacturadoDetalle.builder().cantidad(200.0).articuloInsumo(insumoHarina).articuloManufacturado(hamburguesa).build());
             detalles.add(ArticuloManufacturadoDetalle.builder().cantidad(50.0).articuloInsumo(insumoTomate).articuloManufacturado(hamburguesa).build());
 

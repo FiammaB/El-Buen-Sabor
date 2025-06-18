@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional; // Importar Tra
 import java.util.List; // Importar List
 
 @Service
-
 public class ArticuloManufacturadoServiceImpl extends BaseServiceImpl<ArticuloManufacturado, Long> implements ArticuloManufacturadoService {
 
     public ArticuloManufacturadoServiceImpl(ArticuloManufacturadoRepository articuloManufacturadoRepository) {

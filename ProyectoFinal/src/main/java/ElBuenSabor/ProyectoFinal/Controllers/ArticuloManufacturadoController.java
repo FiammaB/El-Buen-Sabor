@@ -108,6 +108,20 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
         }
     }
 
+    @PatchMapping("/{id}/baja")
+    public ResponseEntity<?> toggleBaja(
+            @PathVariable Long id,
+            @RequestParam boolean baja // O usa 'estaDadoDeBaja' según tu naming preferido
+    ) {
+        try {
+            ArticuloManufacturado actualizado = baseService.toggleBaja(id, baja); // Usa tu método genérico
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+
     // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
     // si la lógica de borrado/activación/desactivación ya implementada en BaseController
     // es suficiente y no necesitas una respuesta con DTOs específicos.

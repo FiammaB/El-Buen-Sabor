@@ -114,7 +114,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             @RequestParam boolean baja // O usa 'estaDadoDeBaja' según tu naming preferido
     ) {
         try {
-            ArticuloManufacturado actualizado = baseService.toggleBaja(id, baja); // Usa tu método genérico
+            ArticuloManufacturado actualizado = baseService.toggleBaja(id, baja);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");

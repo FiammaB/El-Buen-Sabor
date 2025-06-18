@@ -3,6 +3,7 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoDTO;
 
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloInsumoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
@@ -103,5 +104,17 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
         }
     }
 
+    @PatchMapping("/{id}/baja")
+    public ResponseEntity<?> toggleBaja(
+            @PathVariable Long id,
+            @RequestParam boolean baja
+    ) {
+        try {
+            ArticuloInsumo actualizado = baseService.toggleBaja(id, baja);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
 
 }

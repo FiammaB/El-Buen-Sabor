@@ -43,4 +43,13 @@ public interface ArticuloManufacturadoMapper {
         }
     }
 
+<<<<<<< Updated upstream
+=======
+    default List<ArticuloManufacturadoDetalle> mapDetalles(List<ArticuloManufacturadoDetalleCreateDTO> dtos, ArticuloInsumoRepository repo) {
+        if (dtos == null) return null;
+        return dtos.stream()
+                .map(dto -> )
+                .collect(Collectors.toList());
+    }
+>>>>>>> Stashed changes
 }

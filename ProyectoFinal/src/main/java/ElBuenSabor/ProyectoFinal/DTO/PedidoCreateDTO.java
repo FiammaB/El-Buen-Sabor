@@ -24,8 +24,8 @@ public class PedidoCreateDTO {
 
     private Long clienteId;
     private Long domicilioId;
-    private Long sucursalId; // opcional si se retira en sucursal
-    private Long empleadoId; // puede venir nulo si aún no fue asignado
+    private Long sucursalId;
+    private Long empleadoId;
 
     private FacturaCreateDTO factura;
     private List<DetallePedidoCreateDTO> detalles;

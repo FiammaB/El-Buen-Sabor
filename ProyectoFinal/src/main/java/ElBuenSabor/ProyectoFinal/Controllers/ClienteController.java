@@ -2,16 +2,12 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.ClienteCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ClienteDTO;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
-import ElBuenSabor.ProyectoFinal.Entities.Domicilio; // Importa Domicilio
-import ElBuenSabor.ProyectoFinal.Entities.Imagen;   // Importa Imagen si ClienteCreateDTO tiene imagenId
-import ElBuenSabor.ProyectoFinal.Entities.Usuario;  // Importa Usuario si ClienteCreateDTO tiene usuarioId
+import ElBuenSabor.ProyectoFinal.DTO.PedidoDTO;
+import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Para manejar si no encuentra el ID
 import ElBuenSabor.ProyectoFinal.Mappers.ClienteMapper;
-import ElBuenSabor.ProyectoFinal.Service.ClienteService;
-import ElBuenSabor.ProyectoFinal.Service.DomicilioService; // <-- ¡Necesitamos este servicio!
-import ElBuenSabor.ProyectoFinal.Service.ImagenService;   // <-- ¡Necesitamos este servicio si mapeamos imagenId!
-import ElBuenSabor.ProyectoFinal.Service.UsuarioService;  // <-- ¡Necesitamos este servicio si mapeamos usuarioId!
+import ElBuenSabor.ProyectoFinal.Mappers.PedidoMapper;
+import ElBuenSabor.ProyectoFinal.Service.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,19 +24,24 @@ public class ClienteController extends BaseController<Cliente, Long> {
     private final DomicilioService domicilioService; // <-- Inyectamos DomicilioService
     private final ImagenService imagenService;       // <-- Inyectamos ImagenService
     private final UsuarioService usuarioService;      // <-- Inyectamos UsuarioService
-
+    private final PedidoService pedidoService; // <-- ¡Inyectar PedidoService!
+    private final PedidoMapper pedidoMapper;
     // El constructor inyecta el servicio específico de Cliente, el mapper y los nuevos servicios
     public ClienteController(
             ClienteService clienteService,
             ClienteMapper clienteMapper,
             DomicilioService domicilioService, // <-- Añadir inyección
             ImagenService imagenService,       // <-- Añadir inyección
-            UsuarioService usuarioService) {   // <-- Añadir inyección
+            UsuarioService usuarioService,
+            PedidoService pedidoService, // <-- Añadir al constructor
+            PedidoMapper pedidoMapper) {   // <-- Añadir inyección
         super(clienteService);
         this.clienteMapper = clienteMapper;
         this.domicilioService = domicilioService; // Asignar
         this.imagenService = imagenService;       // Asignar
         this.usuarioService = usuarioService;     // Asignar
+        this.pedidoService = pedidoService; // <-- Asignar
+        this.pedidoMapper = pedidoMapper;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -159,5 +160,23 @@ public class ClienteController extends BaseController<Cliente, Long> {
         }
     }
 
+    @GetMapping("/{clienteId}/pedidos") // Nuevo endpoint para obtener pedidos por cliente
+    public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long clienteId) {
+        try {
+            // Opcional: Verificar que el cliente existe
+            // Cliente cliente = baseService.findById(clienteId);
+            // if (cliente == null) {
+            //    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Cliente no encontrado.\"}");
+            // }
+
+            List<Pedido> pedidos = pedidoService.findPedidosByClienteId(clienteId);
+            List<PedidoDTO> dtos = pedidos.stream()
+                    .map(pedidoMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener pedidos del cliente: " + e.getMessage() + "\"}");
+        }
+    }
     // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
 }

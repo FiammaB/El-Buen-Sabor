@@ -38,5 +38,9 @@ public class NotaCredito extends BaseEntity { // Extiende BaseEntity para id y b
 
     // Opcional: URL del PDF de la Nota de Crédito si también se genera
     @Column(length = 500)
-    private String urlPdfNotaCredito; // <-- URL del PDF de la Nota de Crédito
+    private String urlPdfNotaCredito;
+
+    @OneToOne // Referencia al pedido original de donde viene la factura
+    @JoinColumn(name = "pedido_original_id") // Columna de clave foránea
+    private Pedido pedidoOriginal;
 }

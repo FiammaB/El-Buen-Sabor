@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final FacturaService facturaService;
     private final EmailService emailService;
     private final CloudinaryService cloudinaryService;
+    // Nuevos servicios para NotaCredito y RegistroAnulacion
+    private final NotaCreditoService notaCreditoService;
+    private final RegistroAnulacionService registroAnulacionService;
+    private final ArticuloInsumoService articuloInsumoService;
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -47,7 +52,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             ArticuloRepository articuloRepository,
             FacturaService facturaService,
             EmailService emailService,
-            CloudinaryService cloudinaryService) {
+            CloudinaryService cloudinaryService,
+            NotaCreditoService notaCreditoService,
+            RegistroAnulacionService registroAnulacionService,
+            ArticuloInsumoService articuloInsumoService) {
         super(pedidoRepository); // Llama al constructor de la clase base
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
@@ -60,6 +68,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.facturaService = facturaService;
         this.emailService = emailService;
         this.cloudinaryService = cloudinaryService;
+        this.notaCreditoService = notaCreditoService;
+        this.registroAnulacionService = registroAnulacionService;
+        this.articuloInsumoService = articuloInsumoService;
 
     }
 
@@ -313,6 +324,125 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception {
+        try {
+            return pedidoRepository.findByClienteId(clienteId);
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+    }
+
+
+    /**
+     * Anula una factura asociada a un pedido, genera una nota de crédito,
+     * repone el stock de ingredientes y registra la anulación.
+     * @param pedidoId ID del pedido cuya factura se anulará.
+     * @param motivoAnulacion Motivo de la anulación.
+     * @param usuarioAnulador Usuario que realiza la anulación.
+     * @return La NotaCredito generada.
+     * @throws Exception Si el pedido o la factura no se encuentran, o si ocurre un error en el proceso.
+     */
+    @Override
+    @Transactional // Esta operación debe ser transaccional
+    public NotaCredito anularFacturaYGenerarNotaCredito(Long pedidoId, String motivoAnulacion, Usuario usuarioAnulador) throws Exception {
+        try {
+            // 1. Obtener el pedido y la factura original
+            Pedido pedido = findById(pedidoId);
+            if (pedido == null) {
+                throw new ResourceNotFoundException("Pedido no encontrado con ID: " + pedidoId);
+            }
+
+            Factura facturaAnulada = pedido.getFactura();
+            if (facturaAnulada == null) {
+                throw new ResourceNotFoundException("Factura no encontrada para el pedido con ID: " + pedidoId);
+            }
+            if (facturaAnulada.isAnulada()) { // Asumiendo que has añadido 'private boolean anulada = false;' a Factura
+                throw new Exception("La factura ya ha sido anulada.");
+            }
+
+            // 2. Marcar la factura original como anulada
+            facturaAnulada.setAnulada(true); // Actualiza la bandera de anulada
+            // baseRepository.save(pedido); // Se guardará al final de la transacción
+
+            // 3. Crear la Nota de Crédito con los mismos ítems e importes
+            NotaCredito notaCredito = NotaCredito.builder()
+                    .fechaEmision(LocalDate.now())
+                    .total(facturaAnulada.getTotalVenta()) // Mismo importe total
+                    .motivo(motivoAnulacion)
+                    .facturaAnulada(facturaAnulada) // Referencia a la factura que anula
+                    .pedidoOriginal(pedido) // Referencia al pedido original
+                    .cliente(pedido.getCliente()) // Referencia al cliente del pedido
+                    .build();
+
+            // Copiar detalles del pedido original a la Nota de Crédito
+            Set<DetallePedido> detallesNotaCredito = new HashSet<>();
+            if (pedido.getDetallesPedidos() != null) {
+                for (DetallePedido detalleOriginal : pedido.getDetallesPedidos()) {
+                    // Crear una nueva instancia de DetallePedido para la Nota de Crédito
+                    // Importante: No es el mismo objeto DetallePedido de la BD, es una copia
+                    DetallePedido nuevoDetalleNC = DetallePedido.builder()
+                            .cantidad(detalleOriginal.getCantidad())
+                            .subTotal(detalleOriginal.getSubTotal())
+                            .articuloInsumo(detalleOriginal.getArticuloInsumo()) // Copia la referencia
+                            .articuloManufacturado(detalleOriginal.getArticuloManufacturado()) // Copia la referencia
+                            .build();
+                    // El nuevoDetalleNC.setPedido(null) o .setNotaCredito(notaCredito) dependiendo de la relación
+                    // En NotaCredito, DetallePedido tiene @JoinColumn(name = "nota_credito_id")
+                    nuevoDetalleNC.setNotaCredito(notaCredito); // Establecer la relación inversa
+                    detallesNotaCredito.add(nuevoDetalleNC);
+                }
+            }
+            notaCredito.setDetalles(detallesNotaCredito); // Asignar los detalles copiados
+            notaCredito = notaCreditoService.save(notaCredito); // Guardar la Nota de Crédito
+
+
+            // 4. Reponer el stock de ingredientes
+            if (pedido.getDetallesPedidos() != null) {
+                for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+                    // Reponer ingredientes solo si son artículos manufacturados
+                    if (detalle.getArticuloManufacturado() != null) {
+                        ArticuloManufacturado am = detalle.getArticuloManufacturado();
+                        if (am.getDetalles() != null) { // Detalles del AM que son los insumos
+                            for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
+                                ArticuloInsumo insumo = amd.getArticuloInsumo();
+                                if (insumo != null && insumo.getEsParaElaborar()) {
+                                    Double cantidadAReponer = amd.getCantidad() * detalle.getCantidad(); // Cantidad de insumo por cantidad de AM
+                                    insumo.setStockActual(insumo.getStockActual() + cantidadAReponer);
+                                    articuloInsumoService.save(insumo); // Guardar el insumo con stock repuesto
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Registrar la anulación
+            RegistroAnulacion registroAnulacion = RegistroAnulacion.builder()
+                    .fechaHoraAnulacion(LocalDateTime.now())
+                    .motivoAnulacion(motivoAnulacion)
+                    .usuarioAnulador(usuarioAnulador)
+                    .facturaAnulada(facturaAnulada)
+                    .notaCreditoGenerada(notaCredito)
+                    .build();
+            registroAnulacionService.save(registroAnulacion); // Guardar el registro de anulación
+
+            // 6. Opcional: Marcar el pedido como anulado o cambiar su estado
+            pedido.setAnulado(true); // Asumiendo que añades 'anulado' a Pedido
+            pedido.setEstado(Estado.CANCELADO); // O un nuevo estado como 'ANULADO_CON_NC'
+            baseRepository.save(pedido); // Guarda el pedido con la factura y el estado actualizado
+
+            System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");
+
+            return notaCredito;
+
+        } catch (Exception e) {
+            System.err.println("Error al anular factura y generar nota de crédito para pedido " + pedidoId + ": " + e.getMessage());
+            e.printStackTrace();
+            throw new Exception("Error en el proceso de anulación de factura: " + e.getMessage(), e);
+        }
+    }
     // Implementaciones de los nuevos métodos de consulta (asumimos que ya están implementados)
     // List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception;
     // List<Pedido> findPedidosByEstado(Estado estado) throws Exception;

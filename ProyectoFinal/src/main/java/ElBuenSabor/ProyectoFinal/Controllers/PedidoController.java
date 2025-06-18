@@ -1,11 +1,9 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.DetallePedidoCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.*;
+import ElBuenSabor.ProyectoFinal.Mappers.NotaCreditoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
-import ElBuenSabor.ProyectoFinal.DTO.FacturaCreateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PedidoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Entities.FormaPago;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
@@ -14,6 +12,7 @@ import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.PedidoService; // Usar la interfaz específica
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
+import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 public class PedidoController extends BaseController<Pedido, Long> {
 
     private final PedidoMapper pedidoMapper;
-
+    private final PedidoService pedidoService;
     // Repositorios necesarios para resolver relaciones en el controlador
     private final ArticuloInsumoRepository articuloInsumoRepository;
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
@@ -38,20 +37,25 @@ public class PedidoController extends BaseController<Pedido, Long> {
     private final SucursalRepository sucursalRepository;
     private final UsuarioRepository usuarioRepository;
     private final ArticuloRepository articuloRepository; // Aunque no se usa en el create/update, se mantiene si es una dependencia general.
-
+    private final UsuarioService usuarioService; // Asegúrate de que ya está, o añádelo
+    private final NotaCreditoMapper notaCreditoMapper;
     // El constructor inyecta el servicio específico de Pedido y todas las dependencias adicionales
     public PedidoController(
             PedidoService pedidoService, // Servicio específico
-            PedidoMapper pedidoMapper,
+            PedidoMapper pedidoMapper, PedidoService pedidoService1,
             ArticuloInsumoRepository articuloInsumoRepository,
             ArticuloManufacturadoRepository articuloManufacturadoRepository,
             ClienteRepository clienteRepository,
             DomicilioRepository domicilioRepository,
             SucursalRepository sucursalRepository,
             UsuarioRepository usuarioRepository,
-            ArticuloRepository articuloRepository) {
+            ArticuloRepository articuloRepository,
+            UsuarioService usuarioService, // Asegúrate de que ya esté en el constructor
+            NotaCreditoMapper notaCreditoMapper
+            ) {
         super(pedidoService); // Pasa el servicio al constructor del BaseController
         this.pedidoMapper = pedidoMapper;
+        this.pedidoService = pedidoService;
         this.articuloInsumoRepository = articuloInsumoRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
         this.clienteRepository = clienteRepository;
@@ -59,6 +63,8 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.sucursalRepository = sucursalRepository;
         this.usuarioRepository = usuarioRepository;
         this.articuloRepository = articuloRepository;
+        this.usuarioService = usuarioService;
+        this.notaCreditoMapper = notaCreditoMapper;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -264,6 +270,32 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener la URL del PDF de la factura: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{pedidoId}/anular") // Endpoint para anular factura y generar NC
+    public ResponseEntity<?> anularFactura(@PathVariable Long pedidoId, @RequestBody AnulacionRequestDTO anulacionRequest) {
+        try {
+            // Obtener el usuario que realiza la anulación
+            Usuario usuarioAnulador = usuarioService.findById(anulacionRequest.getUsuarioAnuladorId());
+            if (usuarioAnulador == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Usuario anulador no encontrado.\"}");
+            }
+
+            // Llamar al servicio para realizar la anulación
+            NotaCredito notaCreditoGenerada = pedidoService.anularFacturaYGenerarNotaCredito(
+                    pedidoId,
+                    anulacionRequest.getMotivoAnulacion(),
+                    usuarioAnulador
+            );
+
+            // Devolver la Nota de Crédito generada como DTO
+            return ResponseEntity.status(HttpStatus.CREATED).body(notaCreditoMapper.toDTO(notaCreditoGenerada));
+
+        } catch (ResourceNotFoundException e) { // Capturar si el pedido/factura no se encuentra
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al anular factura y generar nota de crédito: " + e.getMessage() + "\"}");
         }
     }
 }

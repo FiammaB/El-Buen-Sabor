@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,8 +24,8 @@ public class ArticuloManufacturado extends Articulo {
     @Column(length = 1000)
     private String preparacion; // Receta
 
-    @OneToMany(mappedBy = "articuloManufacturado", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER) // CASCADE.ALL para guardar/actualizar detalles
-    private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>(); // Los ingredientes de la receta
+    @OneToMany(mappedBy = "articuloManufacturado", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ArticuloManufacturadoDetalle> detalles = new ArrayList<>();
 
 
 }

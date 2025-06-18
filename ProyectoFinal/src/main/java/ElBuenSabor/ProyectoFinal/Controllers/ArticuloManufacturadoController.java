@@ -92,7 +92,6 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
 
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
     @PutMapping(value = "/{id}", consumes = "application/json")
-
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticuloManufacturadoCreateDTO dto) {
         try {
             ArticuloManufacturado entity = mapper.toEntity(dto, articuloInsumoRepository);

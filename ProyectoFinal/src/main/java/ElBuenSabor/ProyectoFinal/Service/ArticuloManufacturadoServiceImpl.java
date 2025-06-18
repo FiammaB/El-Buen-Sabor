@@ -1,6 +1,7 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturadoDetalle;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Todavía útil si findById no viene del padre
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,8 @@ public class ArticuloManufacturadoServiceImpl extends BaseServiceImpl<ArticuloMa
 
     @Override
     @Transactional
-    public ArticuloManufacturado update(Long id, ArticuloManufacturado updated) throws Exception { // <<-- Añadir throws Exception
+    public ArticuloManufacturado update(Long id, ArticuloManufacturado updated) throws Exception {
         try {
-            // Usamos findById del padre (BaseServiceImpl) para obtener la entidad actual
             ArticuloManufacturado actual = findById(id);
 
             actual.setDenominacion(updated.getDenominacion());
@@ -34,20 +34,21 @@ public class ArticuloManufacturadoServiceImpl extends BaseServiceImpl<ArticuloMa
             actual.setUnidadMedida(updated.getUnidadMedida());
             actual.setImagen(updated.getImagen());
 
-            // Lógica específica para manejar la colección 'detalles'
-            // Limpiamos los detalles existentes y añadimos los nuevos para asegurar la sincronización
-            if (updated.getDetalles() != null) {
-                actual.getDetalles().clear(); // Limpia los detalles existentes
-                updated.getDetalles().forEach(detalle -> {
-                    detalle.setArticuloManufacturado(actual); // Asegura la relación inversa
-                    actual.getDetalles().add(detalle);
-                });
-            }
+            // Limpiar detalles y agregar los nuevos
+            System.out.println("Detalles antes de limpiar: " + actual.getDetalles().size());
+            actual.getDetalles().clear();
+            System.out.println("Detalles después de limpiar y antes de agregar nuevos: " + actual.getDetalles().size());
 
-            // Llamamos a save del baseRepository (heredado del padre) para persistir los cambios
+            if (updated.getDetalles() != null) {
+                for (ArticuloManufacturadoDetalle detalle : updated.getDetalles()) {
+                    detalle.setArticuloManufacturado(actual); // Relación inversa
+                    actual.getDetalles().add(detalle);
+                }
+            }
+            System.out.println("Detalles después de agregar nuevos: " + actual.getDetalles().size());
+
             return baseRepository.save(actual);
         } catch (Exception e) {
-            // Re-lanzamos cualquier excepción, manteniendo la consistencia con BaseService.
             throw new Exception("Error al actualizar el artículo manufacturado: " + e.getMessage());
         }
     }

@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -113,63 +114,87 @@ public class PedidoController extends BaseController<Pedido, Long> {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
-            // Aplicar descuento del 10% si es retiro en local
+            // --- LÓGICA DE PREPARACIÓN DEL PEDIDO (común para MP y EFECTIVO) ---
+
+            // Aquí construimos el objeto Pedido completo para el cálculo del tiempo y total
+            Pedido pedidoParaCalculos = new Pedido();
+
+            // Resolver relaciones (Necesario para el cálculo de tiempo y para el save de Efectivo)
+            pedidoParaCalculos.setCliente(clienteService.findById(dto.getClienteId()));
+            pedidoParaCalculos.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
+            if (dto.getSucursalId() != null) pedidoParaCalculos.setSucursal(sucursalService.findById(dto.getSucursalId()));
+            if (dto.getEmpleadoId() != null) pedidoParaCalculos.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
+
+            // Descuento del 10% si es retiro en local (modifica el total del DTO)
+            Double totalCalculado = dto.getTotal();
             if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
-                double descuento = dto.getTotal() * 0.10;
-                dto.setTotal(dto.getTotal() - descuento); // Modifica el DTO antes de usarlo
+                double descuento = totalCalculado * 0.10;
+                totalCalculado = totalCalculado - descuento;
+                System.out.println("DEBUG Descuento: Aplicado 10% de descuento por Retiro en Local. Total Original: " + dto.getTotal() + ", Descuento: " + descuento + ", Total Final: " + totalCalculado);
+            } else {
+                System.out.println("DEBUG Descuento: No aplica descuento por Retiro en Local. Tipo de Envío: " + dto.getTipoEnvio());
+            }
+            pedidoParaCalculos.setTotal(totalCalculado); // Asignar el total ya con el descuento (si aplica)
+            pedidoParaCalculos.setTipoEnvio(dto.getTipoEnvio()); // Asignar tipo de envío
+            pedidoParaCalculos.setFormaPago(dto.getFormaPago()); // Asignar forma de pago
+
+            // Detalles del pedido (necesarios para tiempo estimado)
+            if (dto.getDetalles() != null) {
+                Set<DetallePedido> detalles = new HashSet<>();
+                for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
+                    DetallePedido detalle = new DetallePedido();
+                    detalle.setCantidad(detalleDTO.getCantidad());
+                    detalle.setSubTotal(detalleDTO.getSubTotal());
+                    if (detalleDTO.getArticuloId() != null) {
+                        ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                        if (insumo != null) { detalle.setArticuloInsumo(insumo); } else {
+                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId()).orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
+                            detalle.setArticuloManufacturado(manufacturado);
+                        }
+                    }
+                    detalle.setPedido(pedidoParaCalculos); // Relación inversa
+                    detalles.add(detalle);
+                }
+                pedidoParaCalculos.setDetallesPedidos(detalles);
             }
 
+            // --- ¡CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN AQUÍ! ---
+            LocalTime horaEstimada = pedidoService.calcularTiempoEstimadoFinalizacion(pedidoParaCalculos); // Llama al servicio para calcular
+            pedidoParaCalculos.setHoraEstimadaFinalizacion(horaEstimada); // <-- Asignar al pedido
+            System.out.println("DEBUG Tiempo Estimado: Hora estimada finalización asignada: " + horaEstimada);
+
+            // Asignar el resto de propiedades del DTO al pedidoParaCalculos
+            pedidoParaCalculos.setFechaPedido(dto.getFechaPedido());
+            pedidoParaCalculos.setEstado(Estado.A_CONFIRMAR); // Estado inicial
+            pedidoParaCalculos.setBaja(false); // No dado de baja por defecto
+
+
+            // --- LÓGICA DE DECISIÓN POR FORMA DE PAGO ---
             if (dto.getFormaPago() == FormaPago.MERCADO_PAGO) {
-                return mpController.crearPreferencia(dto); // Delega a MPController, que ya hace su propio save
+                // Ahora, los datos de factura y detalles se pasarán al servicio de MPController
+                // Aquí, el PedidoController llamará al MPController directamente
+                // (Esta delegación es para MP, donde el Pedido lo crea y guarda MPController)
+                // Pasar el DTO con el total y hora estimada ya calculados.
+                // Idealmente, deberíamos pasar el 'pedidoParaCalculos' al servicio de MPController,
+                // y que ese servicio guarde el pedido.
+                // Por simplicidad, adaptaremos el DTO para el MPController.
+                dto.setTotal(pedidoParaCalculos.getTotal());
+                // No podemos pasar horaEstimadaFinalizacion por DTO si no está en PedidoCreateDTO
+                // La lógica de MPController ya crea la Factura inicial.
+                return mpController.crearPreferencia(dto); // Delega al MPController
+
             } else if (dto.getFormaPago() == FormaPago.EFECTIVO) {
-                Pedido pedido = new Pedido();
-                // --- CORRECCIÓN AQUÍ: Asignar tipoEnvio y formaPago a la entidad PEDIDO ---
-                pedido.setTipoEnvio(dto.getTipoEnvio()); // <-- Asignar tipoEnvio
-                pedido.setFormaPago(dto.getFormaPago()); // <-- Asignar formaPago
-
-                // Resoluciones de DTO a entidad para el pedido manual:
-                pedido.setCliente(clienteService.findById(dto.getClienteId()));
-                pedido.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
-                if (dto.getSucursalId() != null) pedido.setSucursal(sucursalService.findById(dto.getSucursalId()));
-                if (dto.getEmpleadoId() != null) pedido.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
-
-                // Detalles del pedido
-                if (dto.getDetalles() != null) {
-                    Set<DetallePedido> detalles = new HashSet<>(); // Importar HashSet y Set
-                    for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
-                        DetallePedido detalle = new DetallePedido();
-                        detalle.setCantidad(detalleDTO.getCantidad());
-                        detalle.setSubTotal(detalleDTO.getSubTotal());
-
-                        if (detalleDTO.getArticuloId() != null) {
-                            ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                            if (insumo != null) { detalle.setArticuloInsumo(insumo); } else {
-                                ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId()).orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
-                                detalle.setArticuloManufacturado(manufacturado);
-                            }
-                        }
-                        detalle.setPedido(pedido);
-                        detalles.add(detalle);
-                    }
-                    pedido.setDetallesPedidos(detalles);
-                }
-
-                // Factura para efectivo
+                // Para efectivo, ya tenemos el pedidoParaCalculos completo.
+                // Ahora, creamos la factura final para efectivo.
                 Factura factura = Factura.builder()
                         .fechaFacturacion(LocalDate.now())
                         .formaPago(FormaPago.EFECTIVO)
-                        .totalVenta(dto.getTotal())
+                        .totalVenta(pedidoParaCalculos.getTotal()) // Usar el total ya calculado
                         .build();
-                pedido.setFactura(factura);
+                pedidoParaCalculos.setFactura(factura); // Asignar al pedidoParaCalculos
 
-                // Establecer estado, fecha y total
-                pedido.setEstado(Estado.A_CONFIRMAR);
-                pedido.setFechaPedido(LocalDate.now());
-                pedido.setBaja(false); // Asumo que se quiere no de baja por defecto
-                pedido.setTotal(dto.getTotal());
-
-                Pedido saved = baseService.save(pedido); // Guarda el pedido
-                return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved)); // Devuelve el DTO del pedido creado
+                Pedido saved = baseService.save(pedidoParaCalculos); // Guarda el pedido completo
+                return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved));
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Forma de pago no válida.\"}");
             }

@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -161,6 +162,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             pedido.setFechaPedido(LocalDate.now());
             pedido.setBaja(false);
             pedido.setTotal(dto.getTotal());
+            // --- ¡CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN AQUÍ! ---
+            LocalTime horaEstimada = calcularTiempoEstimadoFinalizacion(pedido);
+            pedido.setHoraEstimadaFinalizacion(horaEstimada); // <-- ¡Asignar aquí!
+            System.out.println("DEBUG Tiempo Estimado: Hora estimada finalización asignada: " + horaEstimada);
 
             return baseRepository.save(pedido); // Guarda el pedido en la BD
         } catch (Exception e) {
@@ -543,17 +548,61 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         }
     }
 
+    // --- Nuevo método para calcular el tiempo estimado de finalización ---
+    @Override // Implementa el método de la interfaz
+    public LocalTime calcularTiempoEstimadoFinalizacion(Pedido pedido) throws Exception {
+        long tiempoTotalMinutos = 0;
+
+        // 1. Del tiempo estimado de cada uno de los artículos pedidos por el cliente se elige el mayor
+        long maxTiempoArticulosPedido = 0;
+        if (pedido.getDetallesPedidos() != null) {
+            maxTiempoArticulosPedido = pedido.getDetallesPedidos().stream()
+                    .filter(dp -> dp.getArticuloManufacturado() != null && dp.getArticuloManufacturado().getTiempoEstimadoMinutos() != null)
+                    .mapToLong(dp -> dp.getArticuloManufacturado().getTiempoEstimadoMinutos())
+                    .max() // Obtiene el valor máximo de Integer
+                    .orElse(0L); // Si no hay AMs o tiempos, el máximo es 0
+        }
+        tiempoTotalMinutos += maxTiempoArticulosPedido;
+        System.out.println("DEBUG Tiempo Estimado: Max tiempo de artículos en este pedido: " + maxTiempoArticulosPedido + " min.");
 
 
-    // Implementaciones de los nuevos métodos de consulta (asumimos que ya están implementados)
-    // List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception;
-    // List<Pedido> findPedidosByEstado(Estado estado) throws Exception;
-    // List<Pedido> findPedidosBetweenFechas(LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
-    // List<Pedido> findPedidosByClienteIdAndEstado(Long clienteId, Estado estado) throws Exception;
-    // List<Pedido> findPedidosByFechaAndEstado(LocalDate fechaInicio, LocalDate fechaFin, Estado estado) throws Exception;
-    // List<Pedido> findPedidosByEstadoOrderByFechaPedidoDesc(Estado estado) throws Exception;
-    // List<Pedido> findPedidosByClienteExcludingEstado(Long clienteId, Estado estadoExcluido) throws Exception;
-    // long countPedidosByEstado(Estado estado) throws Exception;
-    // List<Pedido> findPedidosBySucursalIdAndFechaBetween(Long sucursalId, LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
-    // List<Pedido> findPedidosByArticuloManufacturadoId(Long articuloManufacturadoId) throws Exception;
-}
+        // 2. De los pedidos que se encuentran en cocina, el artículo con el mayor tiempo estimado
+        // Necesitamos una consulta para obtener pedidos en estado EN_COCINA
+        List<Pedido> pedidosEnCocina = pedidoRepository.findByEstado(Estado.EN_COCINA); // <-- Asegúrate que findByEstado(Estado) existe en PedidoRepository
+        long maxTiempoCocina = 0;
+        if (pedidosEnCocina != null && !pedidosEnCocina.isEmpty()) {
+            maxTiempoCocina = pedidosEnCocina.stream()
+                    .flatMap(p -> p.getDetallesPedidos().stream()) // Obtener todos los detalles de todos los pedidos en cocina
+                    .filter(dp -> dp.getArticuloManufacturado() != null && dp.getArticuloManufacturado().getTiempoEstimadoMinutos() != null)
+                    .mapToLong(dp -> dp.getArticuloManufacturado().getTiempoEstimadoMinutos())
+                    .max()
+                    .orElse(0L);
+        }
+        tiempoTotalMinutos += maxTiempoCocina;
+        System.out.println("DEBUG Tiempo Estimado: Max tiempo de artículos en pedidos en cocina: " + maxTiempoCocina + " min.");
+
+
+        // 3. 10 minutos de entrega por delivery (solo si el cliente eligió dicha opción)
+        if (pedido.getTipoEnvio() == TipoEnvio.DELIVERY) { // <-- Asumo que TipoEnvio ya está seteado en el pedido
+            tiempoTotalMinutos += 10;
+            System.out.println("DEBUG Tiempo Estimado: Añadidos 10 min por DELIVERY.");
+        }
+
+        System.out.println("DEBUG Tiempo Estimado: Tiempo total estimado: " + tiempoTotalMinutos + " min.");
+
+        // Convertir minutos a LocalTime (a partir de la hora actual)
+        LocalTime horaActual = LocalTime.now();
+        return horaActual.plusMinutes(tiempoTotalMinutos);
+
+    }
+    @Override
+    @Transactional(readOnly = true) // <-- Implementación del método findPedidosByEstado
+    public List<Pedido> findPedidosByEstado(Estado estado) throws Exception {
+        try {
+            return pedidoRepository.findByEstado(estado);
+        } catch (Exception e) {
+            throw new Exception("Error al buscar pedidos por estado: " + e.getMessage());
+        }
+    }
+
+  }

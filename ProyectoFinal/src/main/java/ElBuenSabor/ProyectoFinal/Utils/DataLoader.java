@@ -89,7 +89,7 @@ public class DataLoader implements CommandLineRunner {
                     .nombre("Fiamma")
                     .apellido("Brizuela")
                     .telefono("2615551234")
-                    .email("gastonsisterna30@gmail.com")
+                    .email("faustinovinolo@gmail.com")
                     .password("cliente123")
                     .fechaNacimiento(LocalDate.of(1990, 5, 15))
                     .imagen(imgCliente)

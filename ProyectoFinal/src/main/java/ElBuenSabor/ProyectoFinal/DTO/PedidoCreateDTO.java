@@ -17,8 +17,8 @@ public class PedidoCreateDTO {
 
     private LocalDate fechaPedido;
     private String estado;
-    private String tipoEnvio;
-    private String formaPago;
+    private TipoEnvio tipoEnvio;
+    private FormaPago formaPago;
     private String observaciones;
     private Double total;
 

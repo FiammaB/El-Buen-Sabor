@@ -143,7 +143,19 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 }
                 pedido.setDetallesPedidos(detalles);
             }
+            // --- LÓGICA: APLICAR DESCUENTO DEL 10% SI ES RETIRO EN LOCAL ---
+            Double totalCalculado = dto.getTotal(); // Usamos el total que viene del DTO inicialmente
 
+            if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) { // Verificar si es retiro en local
+                double descuento = totalCalculado * 0.10; // Calcular el 10% de descuento
+                totalCalculado = totalCalculado - descuento; // Aplicar el descuento
+                System.out.println("DEBUG Descuento: Aplicado 10% de descuento por Retiro en Local. Total Original: " + dto.getTotal() + ", Descuento: " + descuento + ", Total Final: " + totalCalculado);
+            } else {
+                System.out.println("DEBUG Descuento: No aplica descuento por Retiro en Local. Tipo de Envío: " + dto.getTipoEnvio());
+            }
+
+            pedido.setTotal(totalCalculado); // <-- Asignar el total ya con el descuento (si aplica)
+            pedido.setTipoEnvio(dto.getTipoEnvio());
             // Establecer estado inicial del pedido (antes del pago)
             pedido.setEstado(Estado.A_CONFIRMAR);
             pedido.setFechaPedido(LocalDate.now());
@@ -484,7 +496,44 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             baseRepository.save(pedido); // Guarda el pedido con la factura y el estado actualizado
 
             System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");
+            // --- NUEVA LÓGICA: Generar PDF de Nota de Crédito y Subir a Cloudinary ---
+            try {
+                ByteArrayOutputStream pdfNotaCreditoBytes = facturaService.generarNotaCreditoPdf(notaCredito);
+                // Opcional: Guardar el PDF de la NC localmente para verificar
+                String filePathLocalNC = "nota_credito_" + notaCredito.getId() + ".pdf";
+                Files.write(Paths.get(filePathLocalNC), pdfNotaCreditoBytes.toByteArray());
+                System.out.println("PDF de Nota de Crédito generado para NC " + notaCredito.getId() + ". Guardado LOCALMENTE en: " + filePathLocalNC);
 
+                String cloudinaryPublicIdNC = "nota_credito_" + notaCredito.getId(); // ID único para Cloudinary
+                String pdfUrlNC = cloudinaryService.uploadByteArray(pdfNotaCreditoBytes, cloudinaryPublicIdNC);
+                System.out.println("PDF de Nota de Crédito subido a Cloudinary: " + pdfUrlNC);
+
+                notaCredito.setUrlPdfNotaCredito(pdfUrlNC); // <-- ¡Guardar la URL en la NotaCredito!
+                notaCreditoService.save(notaCredito); // <-- Volver a guardar la NotaCredito para persistir la URL
+
+                // --- NUEVA LÓGICA: Enviar el correo con la Nota de Crédito adjunta ---
+                String recipientEmail = notaCredito.getCliente().getEmail(); // Email del cliente de la Nota de Crédito
+                String subject = "Nota de Crédito de tu pedido #" + pedido.getId() + " - El Buen Sabor";
+                String body = "Estimado/a " + notaCredito.getCliente().getNombre() + ", \n\n" +
+                        "Adjuntamos la Nota de Crédito N° " + notaCredito.getId() + " emitida por la anulación de tu factura del pedido #" + pedido.getId() + ".\n" +
+                        "Motivo de la anulación: " + notaCredito.getMotivo() + "\n\n" +
+                        "Puedes descargarla también desde: " + pdfUrlNC + "\n\n" +
+                        "Gracias por tu comprensión.\n\n" +
+                        "Atentamente,\n" +
+                        "El equipo de El Buen Sabor";
+                String attachmentFilenameNC = "nota_credito_" + notaCredito.getId() + ".pdf";
+
+                emailService.sendEmail(recipientEmail, subject, body, pdfNotaCreditoBytes, attachmentFilenameNC);
+                System.out.println("Correo con Nota de Crédito enviado a " + recipientEmail);
+                // --- FIN NUEVA LÓGICA ---
+
+            } catch (Exception pdfUploadNCEx) {
+                System.err.println("ERROR al generar PDF o subir Nota de Crédito " + notaCredito.getId() + " a Cloudinary: " + pdfUploadNCEx.getMessage());
+                pdfUploadNCEx.printStackTrace();
+                // No re-lanzamos para no detener la anulación si solo falla el PDF/subida.
+            }
+            // --- FIN NUEVA LÓGICA ---
+            System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");
             return notaCredito;
 
         } catch (Exception e) {
@@ -493,6 +542,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new Exception("Error en el proceso de anulación de factura: " + e.getMessage(), e);
         }
     }
+
+
+
     // Implementaciones de los nuevos métodos de consulta (asumimos que ya están implementados)
     // List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception;
     // List<Pedido> findPedidosByEstado(Estado estado) throws Exception;

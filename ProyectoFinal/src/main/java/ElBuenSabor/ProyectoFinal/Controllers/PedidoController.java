@@ -9,14 +9,15 @@ import ElBuenSabor.ProyectoFinal.Entities.FormaPago;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.PedidoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
-import ElBuenSabor.ProyectoFinal.Service.PedidoService; // Usar la interfaz específica
+import ElBuenSabor.ProyectoFinal.Service.*;
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
-import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,6 +40,10 @@ public class PedidoController extends BaseController<Pedido, Long> {
     private final ArticuloRepository articuloRepository; // Aunque no se usa en el create/update, se mantiene si es una dependencia general.
     private final UsuarioService usuarioService; // Asegúrate de que ya está, o añádelo
     private final NotaCreditoMapper notaCreditoMapper;
+    private final MPController mpController;
+    private final ClienteService clienteService;
+    private final DomicilioService domicilioService;
+    private final SucursalService sucursalService;
     // El constructor inyecta el servicio específico de Pedido y todas las dependencias adicionales
     public PedidoController(
             PedidoService pedidoService, // Servicio específico
@@ -51,7 +56,13 @@ public class PedidoController extends BaseController<Pedido, Long> {
             UsuarioRepository usuarioRepository,
             ArticuloRepository articuloRepository,
             UsuarioService usuarioService, // Asegúrate de que ya esté en el constructor
-            NotaCreditoMapper notaCreditoMapper
+            NotaCreditoMapper notaCreditoMapper,
+            MPController mpController,
+            ClienteService clienteService,
+            DomicilioService domicilioService,
+            SucursalService sucursalService
+
+
             ) {
         super(pedidoService); // Pasa el servicio al constructor del BaseController
         this.pedidoMapper = pedidoMapper;
@@ -65,6 +76,10 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.articuloRepository = articuloRepository;
         this.usuarioService = usuarioService;
         this.notaCreditoMapper = notaCreditoMapper;
+        this.mpController = mpController;
+        this.clienteService = clienteService;
+        this.domicilioService = domicilioService;
+        this.sucursalService = sucursalService;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -96,73 +111,73 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
     // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
     @PostMapping(consumes = "application/json")
-    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
-            Pedido pedido = pedidoMapper.toEntity(dto); // Mapea el DTO a la entidad Pedido
-
-            // 🧩 Asignación de relaciones obligatorias (resolviendo por ID)
-            pedido.setCliente(clienteRepository.findById(dto.getClienteId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
-
-            pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
-
-            // 🧩 Relaciones opcionales (resolviendo por ID)
-            if (dto.getSucursalId() != null) {
-                pedido.setSucursal(sucursalRepository.findById(dto.getSucursalId()).orElse(null));
+            // Aplicar descuento del 10% si es retiro en local
+            if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
+                double descuento = dto.getTotal() * 0.10;
+                dto.setTotal(dto.getTotal() - descuento); // Modifica el DTO antes de usarlo
             }
 
-            if (dto.getEmpleadoId() != null) {
-                pedido.setEmpleado(usuarioRepository.findById(dto.getEmpleadoId()).orElse(null));
-            }
+            if (dto.getFormaPago() == FormaPago.MERCADO_PAGO) {
+                return mpController.crearPreferencia(dto); // Delega a MPController, que ya hace su propio save
+            } else if (dto.getFormaPago() == FormaPago.EFECTIVO) {
+                Pedido pedido = new Pedido();
+                // --- CORRECCIÓN AQUÍ: Asignar tipoEnvio y formaPago a la entidad PEDIDO ---
+                pedido.setTipoEnvio(dto.getTipoEnvio()); // <-- Asignar tipoEnvio
+                pedido.setFormaPago(dto.getFormaPago()); // <-- Asignar formaPago
 
-            // 🧾 Factura (si viene en el DTO de creación)
-            if (dto.getFactura() != null) {
-                FacturaCreateDTO f = dto.getFactura();
+                // Resoluciones de DTO a entidad para el pedido manual:
+                pedido.setCliente(clienteService.findById(dto.getClienteId()));
+                pedido.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
+                if (dto.getSucursalId() != null) pedido.setSucursal(sucursalService.findById(dto.getSucursalId()));
+                if (dto.getEmpleadoId() != null) pedido.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
+
+                // Detalles del pedido
+                if (dto.getDetalles() != null) {
+                    Set<DetallePedido> detalles = new HashSet<>(); // Importar HashSet y Set
+                    for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
+                        DetallePedido detalle = new DetallePedido();
+                        detalle.setCantidad(detalleDTO.getCantidad());
+                        detalle.setSubTotal(detalleDTO.getSubTotal());
+
+                        if (detalleDTO.getArticuloId() != null) {
+                            ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                            if (insumo != null) { detalle.setArticuloInsumo(insumo); } else {
+                                ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId()).orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
+                                detalle.setArticuloManufacturado(manufacturado);
+                            }
+                        }
+                        detalle.setPedido(pedido);
+                        detalles.add(detalle);
+                    }
+                    pedido.setDetallesPedidos(detalles);
+                }
+
+                // Factura para efectivo
                 Factura factura = Factura.builder()
-                        .fechaFacturacion(f.getFechaFacturacion())
-                        .mpPaymentId(f.getMpPaymentId())
-                        .mpMerchantOrderId(f.getMpMerchantOrderId())
-                        .mpPreferenceId(f.getMpPreferenceId())
-                        .mpPaymentType(f.getMpPaymentType())
-                        .formaPago(FormaPago.valueOf(String.valueOf(f.getFormaPago())))
-                        .totalVenta(f.getTotalVenta())
+                        .fechaFacturacion(LocalDate.now())
+                        .formaPago(FormaPago.EFECTIVO)
+                        .totalVenta(dto.getTotal())
                         .build();
                 pedido.setFactura(factura);
+
+                // Establecer estado, fecha y total
+                pedido.setEstado(Estado.A_CONFIRMAR);
+                pedido.setFechaPedido(LocalDate.now());
+                pedido.setBaja(false); // Asumo que se quiere no de baja por defecto
+                pedido.setTotal(dto.getTotal());
+
+                Pedido saved = baseService.save(pedido); // Guarda el pedido
+                return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved)); // Devuelve el DTO del pedido creado
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Forma de pago no válida.\"}");
             }
 
-            // 🧾 Detalles del pedido (colección)
-            if (dto.getDetalles() != null) {
-                Set<DetallePedido> detalles = dto.getDetalles().stream().map(detalleDTO -> {
-                    DetallePedido detalle = new DetallePedido();
-                    detalle.setCantidad(detalleDTO.getCantidad());
-                    detalle.setSubTotal(detalleDTO.getSubTotal());
-
-                    // Resolver el tipo de artículo según a cuál repositorio pertenezca
-                    ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                    if (insumo != null) {
-                        detalle.setArticuloInsumo(insumo);
-                    } else {
-                        ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
-                        detalle.setArticuloManufacturado(manufacturado);
-                    }
-
-                    detalle.setPedido(pedido); // Establecer la relación inversa
-                    return detalle;
-                }).collect(Collectors.toSet());
-                pedido.setDetallesPedidos(detalles);
-            }
-            pedido.setBaja(false); // Por defecto, un nuevo pedido no está dado de baja
-
-            Pedido saved = baseService.save(pedido); // Llama al save del padre
-            return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al crear el pedido: " + e.getMessage() + "\"}");
         }
     }
-
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
     // (Tu controlador original no tenía un PUT explícito, pero es buena práctica añadirlo)
     @PutMapping(value = "/{id}", consumes = "application/json")
@@ -174,8 +189,8 @@ public class PedidoController extends BaseController<Pedido, Long> {
             existingPedido.setFechaPedido(dto.getFechaPedido());
             // No hay hora estimada en PedidoCreateDTO, si la necesitas, agrégala al DTO
             existingPedido.setEstado(Estado.valueOf(dto.getEstado())); // Convertir String a Enum
-            existingPedido.setTipoEnvio(TipoEnvio.valueOf(dto.getTipoEnvio())); // Convertir String a Enum
-            existingPedido.setFormaPago(FormaPago.valueOf(dto.getFormaPago())); // Convertir String a Enum
+            existingPedido.setTipoEnvio(dto.getTipoEnvio()); // Convertir String a Enum
+            existingPedido.setFormaPago(dto.getFormaPago()); // Convertir String a Enum
             existingPedido.setTotal(dto.getTotal());
             // Si hay Observaciones en Pedido, asegúrate de que el DTO las tenga
             // existingPedido.setObservaciones(dto.getObservaciones());

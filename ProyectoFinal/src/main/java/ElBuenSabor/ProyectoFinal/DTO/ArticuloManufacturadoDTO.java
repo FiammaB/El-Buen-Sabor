@@ -14,6 +14,8 @@ public class ArticuloManufacturadoDTO extends ArticuloDTO {
     private String descripcion;
     private Integer tiempoEstimadoMinutos;
     private String preparacion;
+    private CategoriaDTO categoria;
+    private Long categoriaId;
 
     private List<ArticuloManufacturadoDetalleDTO> detalles;
 }

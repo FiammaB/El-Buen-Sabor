@@ -30,10 +30,9 @@ public class Categoria extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "categoria")
     private List<Articulo> articulos = new ArrayList<>();
-    // ¡ESTA ES LA MODIFICACIÓN CLAVE!
+
     @Builder.Default
     @ManyToMany(mappedBy = "categorias") // Mapeado por el campo 'categorias' en la entidad Sucursal
     private Set<Sucursal> sucursales = new HashSet<>(); // Una categoría puede estar en varias sucursales
-    // ¡AÑADIR ESTE CAMPO PARA EL BORRADO LÓGICO DE CATEGORÍAS!
-   // protected boolean estaDadoDeBaja = false;
+
 }

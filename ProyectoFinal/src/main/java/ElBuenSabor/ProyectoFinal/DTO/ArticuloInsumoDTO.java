@@ -7,15 +7,15 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArticuloInsumoDTO extends ArticuloDTO {
 
-    private String denominacion;
+public class ArticuloInsumoDTO extends ArticuloDTO{
+
+
     private Double precioCompra;
     private Double stockActual;
     private Double stockMinimo;
     private Boolean esParaElaborar;
 
-    private Double precioVenta;
     private Long imagenId;
     private Long unidadMedidaId;
     private Long categoriaId;

@@ -4,6 +4,7 @@ import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloManufacturadoMapper;
+import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UnidadMedidaRepository;
@@ -23,6 +24,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final ImagenRepository imagenRepository;
+    private final ArticuloInsumoRepository articuloInsumoRepository;
 
     // El constructor inyecta el servicio específico de ArticuloManufacturado
     public ArticuloManufacturadoController(
@@ -30,12 +32,14 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             ArticuloManufacturadoMapper mapper,
             CategoriaRepository categoriaRepository,
             UnidadMedidaRepository unidadMedidaRepository,
-            ImagenRepository imagenRepository) {
+            ImagenRepository imagenRepository,
+            ArticuloInsumoRepository articuloInsumoRepository) {
         super(articuloManufacturadoService); // Pasa el servicio al constructor del BaseController
         this.mapper = mapper;
         this.categoriaRepository = categoriaRepository;
         this.unidadMedidaRepository = unidadMedidaRepository;
         this.imagenRepository = imagenRepository;
+        this.articuloInsumoRepository = articuloInsumoRepository;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -70,7 +74,8 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
     public ResponseEntity<?> create(@RequestBody ArticuloManufacturadoCreateDTO dto) {
         try {
-            ArticuloManufacturado entity = mapper.toEntity(dto);
+
+            ArticuloManufacturado entity = mapper.toEntity(dto, articuloInsumoRepository);
 
             // Establecer las relaciones ManyToOne
             entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
@@ -90,7 +95,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
 
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticuloManufacturadoCreateDTO dto) {
         try {
-            ArticuloManufacturado entity = mapper.toEntity(dto);
+            ArticuloManufacturado entity = mapper.toEntity(dto, articuloInsumoRepository);
 
             // Asegúrate de establecer las relaciones necesarias antes de actualizar
             entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));

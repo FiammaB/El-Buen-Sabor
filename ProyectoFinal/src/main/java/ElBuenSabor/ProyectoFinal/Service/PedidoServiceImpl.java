@@ -202,6 +202,56 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 case "approved":
                     pedido.setEstado(Estado.PAGADO);
                     String generatedPdfUrl = null; // Declaramos aquí para usarla más adelante
+                    // --- LÓGICA DE DESCUENTO DE STOCK ACTUALIZADA ---
+                    System.out.println("DEBUG Stock (Descuento): Iniciando descuento de stock para Pedido ID: " + pedido.getId());
+                    if (pedido.getDetallesPedidos() != null && !pedido.getDetallesPedidos().isEmpty()) {
+                        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+                            if (detalle.getArticuloManufacturado() != null) {
+                                // Descontar insumos de ArticuloManufacturado (por su receta)
+                                ArticuloManufacturado am = detalle.getArticuloManufacturado();
+                                System.out.println("DEBUG Stock (Descuento): Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad: " + detalle.getCantidad());
+                                if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
+                                    for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
+                                        ArticuloInsumo insumo = amd.getArticuloInsumo();
+                                        if (insumo != null && insumo.getEsParaElaborar()) {
+                                            Double cantidadADescontar = amd.getCantidad() * detalle.getCantidad();
+                                            double stockAntes = insumo.getStockActual();
+                                            insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
+                                            articuloInsumoService.save(insumo); // Guardar el insumo
+                                            System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
+                                                    "' (ID: " + insumo.getId() + ") para AM. Cant: " + cantidadADescontar +
+                                                    ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
+                                        }
+                                    }
+                                } else {
+                                    System.out.println("DEBUG Stock (Descuento): AM '" + am.getDenominacion() + "' no tiene detalles de insumo definidos.");
+                                }
+                            } else if (detalle.getArticuloInsumo() != null) {
+                                // Descontar ArticuloInsumo directamente (si se vende como tal)
+                                ArticuloInsumo insumo = detalle.getArticuloInsumo();
+                                if (insumo != null && !insumo.getEsParaElaborar()) { // Descontar solo si NO es para elaborar (se vende directo)
+                                    int cantidadADescontar = detalle.getCantidad(); // La cantidad del detalle es la cantidad del insumo
+                                    double stockAntes = insumo.getStockActual();
+                                    insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
+                                    articuloInsumoService.save(insumo); // Guardar el insumo
+                                    System.out.println("DEBUG Stock (Descuento): Descontado ArticuloInsumo Directo '" + insumo.getDenominacion() +
+                                            "' (ID: " + insumo.getId() + "). Cant: " + cantidadADescontar +
+                                            ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
+                                } else if (insumo != null && insumo.getEsParaElaborar()) {
+                                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo '" + insumo.getDenominacion() + "' es para elaborar. Se espera que sea parte de un AM. No se descuenta directamente.");
+                                } else {
+                                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo en detalle es nulo.");
+                                }
+                            } else {
+                                System.out.println("DEBUG Stock (Descuento): Detalle de pedido sin ArticuloManufacturado ni ArticuloInsumo asociado.");
+                            }
+                        }
+                    } else {
+                        System.out.println("DEBUG Stock (Descuento): Pedido no tiene detalles de pedido para descontar stock o colección vacía.");
+                    }
+                    System.out.println("DEBUG Stock (Descuento): Finalizado descuento de stock.");
+                    // --- FIN LÓGICA DE DESCUENTO DE STOCK ACTUALIZADA ---
+
                     try {
                         ByteArrayOutputStream pdfBytes = (ByteArrayOutputStream) facturaService.generarFacturaPdf(pedido);
                         String filePathLocal = "factura_" + pedido.getId() + ".pdf";

@@ -41,14 +41,9 @@ public class MPController {
     @Value("${mercadopago.access.token}")
     private String accessToken;
 
-    @Value("${mercadopago.back-urls.success}")
-    private String successUrl;
 
-    @Value("${mercadopago.back-urls.pending}")
-    private String pendingUrl;
 
-    @Value("${mercadopago.back-urls.failure}")
-    private String failureUrl;
+
 
     @Value("${mercadopago.notification.url}")
     private String notificationUrl;

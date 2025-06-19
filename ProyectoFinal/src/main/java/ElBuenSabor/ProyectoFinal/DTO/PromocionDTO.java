@@ -21,10 +21,8 @@ public class PromocionDTO {
     private LocalDate fechaHasta;
     private LocalTime horaDesde;
     private LocalTime horaHasta;
-    private String descripcionDescuento;
     private Double precioPromocional;
     private TipoPromocion tipoPromocion;
-    private ImagenDTO imagen;
 
     private List<ArticuloManufacturadoDTO> articulosManufacturados;
     private List<SucursalDTO> sucursales;

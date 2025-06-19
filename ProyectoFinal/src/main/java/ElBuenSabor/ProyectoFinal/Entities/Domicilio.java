@@ -27,6 +27,12 @@ public class Domicilio extends BaseEntity {
     @JoinColumn(name = "localidad_id")
     private Localidad localidad;
 
+    // ELIMINA ESTO:
+    // @ManyToOne
+    // @JoinColumn(name = "cliente_id")
+    // private Cliente cliente;
+
+    // AÑADE ESTO:
     @ManyToMany(mappedBy = "domicilios") // Mapeado por el campo 'domicilios' en la entidad Cliente
     private Set<Cliente> clientes = new HashSet<>(); // Un domicilio puede pertenecer a muchos clientes
 

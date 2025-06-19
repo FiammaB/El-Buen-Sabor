@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SucursalCreateDTO {
 
+    private Long id;
     private String nombre;
     private LocalTime horarioApertura;
     private LocalTime horarioCierre;

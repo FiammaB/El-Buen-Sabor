@@ -21,6 +21,10 @@ public class ClienteCreateDTO {
 
     private Long usuarioId;
     private Long imagenId;
+    // CAMBIA ESTO:
+    // private List<Long> domicilioIds; // Ya lo tenías así, ¡genial!
 
-    private List<Long> domicilioIds;
+    // Si `domicilioIds` ya está como `List<Long>`, entonces tu DTO ya está adaptado.
+    // Solo confirma que tienes `List<Long> domicilioIds;`
+    private List<Long> domicilioIds; // Esto ya estaba bien, solo reconfirmamos.
 }

@@ -12,8 +12,11 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {LocalidadMapper.class})
 public interface DomicilioMapper {
 
+    // Cuando mapeas de Domicilio (Entity) a DomicilioDTO, ignora la colección 'clientes'
+
     DomicilioDTO toDTO(Domicilio domicilio);
 
+    // Cuando mapeas de DomicilioDTO a Domicilio (Entity), no habrá un 'clientes' en el DTO para mapear.
     Domicilio toEntity(DomicilioDTO dto);
 
     List<DomicilioDTO> toDTOList(List<Domicilio> domicilios);

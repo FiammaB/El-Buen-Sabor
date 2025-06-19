@@ -2,13 +2,16 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.ClienteCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ClienteDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PedidoDTO;
-import ElBuenSabor.ProyectoFinal.Entities.*;
+import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Entities.Domicilio; // Importa Domicilio
+import ElBuenSabor.ProyectoFinal.Entities.Imagen;   // Importa Imagen si ClienteCreateDTO tiene imagenId
+import ElBuenSabor.ProyectoFinal.Entities.Usuario;  // Importa Usuario si ClienteCreateDTO tiene usuarioId
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Para manejar si no encuentra el ID
 import ElBuenSabor.ProyectoFinal.Mappers.ClienteMapper;
-import ElBuenSabor.ProyectoFinal.Mappers.PedidoMapper;
-import ElBuenSabor.ProyectoFinal.Service.*;
+import ElBuenSabor.ProyectoFinal.Service.ClienteService;
+import ElBuenSabor.ProyectoFinal.Service.DomicilioService; // <-- ¡Necesitamos este servicio!
+import ElBuenSabor.ProyectoFinal.Service.ImagenService;   // <-- ¡Necesitamos este servicio si mapeamos imagenId!
+import ElBuenSabor.ProyectoFinal.Service.UsuarioService;  // <-- ¡Necesitamos este servicio si mapeamos usuarioId!
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,26 +28,19 @@ public class ClienteController extends BaseController<Cliente, Long> {
     private final DomicilioService domicilioService; // <-- Inyectamos DomicilioService
     private final ImagenService imagenService;       // <-- Inyectamos ImagenService
     private final UsuarioService usuarioService;      // <-- Inyectamos UsuarioService
-    private final PedidoService pedidoService; // <-- ¡Inyectar PedidoService!
-    private final PedidoMapper pedidoMapper;
-    private final ClienteService clienteService;
+
     // El constructor inyecta el servicio específico de Cliente, el mapper y los nuevos servicios
     public ClienteController(
             ClienteService clienteService,
             ClienteMapper clienteMapper,
             DomicilioService domicilioService, // <-- Añadir inyección
             ImagenService imagenService,       // <-- Añadir inyección
-            UsuarioService usuarioService,
-            PedidoService pedidoService, // <-- Añadir al constructor
-            PedidoMapper pedidoMapper) {   // <-- Añadir inyección
+            UsuarioService usuarioService) {   // <-- Añadir inyección
         super(clienteService);
-        this.clienteService = clienteService;
         this.clienteMapper = clienteMapper;
         this.domicilioService = domicilioService; // Asignar
         this.imagenService = imagenService;       // Asignar
         this.usuarioService = usuarioService;     // Asignar
-        this.pedidoService = pedidoService; // <-- Asignar
-        this.pedidoMapper = pedidoMapper;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -109,36 +105,59 @@ public class ClienteController extends BaseController<Cliente, Long> {
     }
 
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
-//    @PutMapping("/{id}/perfil")
-//    public ResponseEntity<?> updatePerfil(
-//            @PathVariable Long id,
-//            @RequestBody ClientePerfilUpdateDTO dto
-//    ) {
-//        try {
-//            clienteService.actualizarPerfil(id, dto);
-//            return ResponseEntity.ok("{\"message\": \"Perfil actualizado correctamente\"}");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
-//        }
-//    }
+    @PutMapping(value = "/{id}", consumes = "application/json")
 
-    @GetMapping("/{clienteId}/pedidos") // Nuevo endpoint para obtener pedidos por cliente
-    public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long clienteId) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ClienteCreateDTO updateDTO) {
         try {
-            // Opcional: Verificar que el cliente existe
-            // Cliente cliente = baseService.findById(clienteId);
-            // if (cliente == null) {
-            //    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Cliente no encontrado.\"}");
-            // }
+            // Es mejor obtener la entidad existente y actualizar sus propiedades
+            Cliente existing = baseService.findById(id); // Obtiene el cliente existente
 
-            List<Pedido> pedidos = pedidoService.findPedidosByClienteId(clienteId);
-            List<PedidoDTO> dtos = pedidos.stream()
-                    .map(pedidoMapper::toDTO)
-                    .toList();
-            return ResponseEntity.ok(dtos);
+            // Actualizar propiedades básicas
+            existing.setNombre(updateDTO.getNombre());
+            existing.setApellido(updateDTO.getApellido());
+            existing.setTelefono(updateDTO.getTelefono());
+            existing.setEmail(updateDTO.getEmail());
+            // Cuidado: la password no suele actualizarse así. Solo actualiza si tu lógica lo requiere.
+            // existing.setPassword(updateDTO.getPassword());
+            existing.setFechaNacimiento(updateDTO.getFechaNacimiento());
+            // La baja se maneja con toggleBaja o si tu ClienteService.update lo permite a través del DTO.
+            // Si el DTO de actualización no debe cambiar la 'baja', omite esta línea:
+            // existing.setBaja(updateDTO.getBaja());
+
+            // Actualizar relaciones ManyToOne (Usuario, Imagen)
+            if (updateDTO.getUsuarioId() != null) {
+                Usuario usuario = usuarioService.findById(updateDTO.getUsuarioId());
+                existing.setUsuario(usuario);
+            } else {
+                existing.setUsuario(null); // Si el ID es null, remover la relación
+            }
+            if (updateDTO.getImagenId() != null) {
+                Imagen imagen = imagenService.findById(updateDTO.getImagenId());
+                existing.setImagen(imagen);
+            } else {
+                existing.setImagen(null); // Si el ID es null, remover la relación
+            }
+
+            // Sincronizar relaciones ManyToMany para Domicilios
+            if (updateDTO.getDomicilioIds() != null) {
+                existing.getDomicilios().clear(); // Limpia la colección existente
+                for (Long domicilioId : updateDTO.getDomicilioIds()) {
+                    Domicilio domicilio = domicilioService.findById(domicilioId);
+                    existing.getDomicilios().add(domicilio);
+                    // IMPORTANTE: Asegúrate de que la relación inversa Domicilio.clientes se actualice también
+                    // si es manejada manualmente o si Cascade no es suficiente (común en ManyToMany)
+                    domicilio.getClientes().add(existing); // <-- Añadir la inversa si es bidireccional y no por Cascade
+                }
+            } else {
+                existing.getDomicilios().clear(); // Si no se envían IDs, limpiar la colección
+            }
+
+            Cliente updated = baseService.update(id, existing);
+            return ResponseEntity.ok(clienteMapper.toDTO(updated));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener pedidos del cliente: " + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
+    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
 }

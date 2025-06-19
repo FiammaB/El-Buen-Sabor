@@ -3,6 +3,7 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturadoDetalle;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloManufacturadoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/articuloManufacturado") // Define la URL base para este controlador
@@ -91,18 +93,48 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     }
 
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+
     @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticuloManufacturadoCreateDTO dto) {
         try {
-            ArticuloManufacturado entity = mapper.toEntity(dto, articuloInsumoRepository);
+            // Obtener la entidad existente
+            ArticuloManufacturado existingEntity = baseService.findById(id);
 
-            // Asegúrate de establecer las relaciones necesarias antes de actualizar
-            entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
-            entity.setUnidadMedida(unidadMedidaRepository.findById(dto.getUnidadMedidaId()).orElse(null));
-            entity.setImagen(imagenRepository.findById(dto.getImagenId()).orElse(null));
+            // Mapear solo los campos necesarios, preservando la colección existente
+            existingEntity.setDenominacion(dto.getDenominacion());
+            existingEntity.setPrecioVenta(dto.getPrecioVenta());
+            existingEntity.setDescripcion(dto.getDescripcion());
+            existingEntity.setTiempoEstimadoMinutos(dto.getTiempoEstimadoMinutos());
+            existingEntity.setPreparacion(dto.getPreparacion());
 
-            ArticuloManufacturado updated = baseService.update(id, entity); // Llama al update del padre
-            return ResponseEntity.ok(mapper.toDTO(updated)); // Convierte a DTO para la respuesta
+            // Actualizar relaciones ManyToOne
+            existingEntity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
+            existingEntity.setUnidadMedida(unidadMedidaRepository.findById(dto.getUnidadMedidaId()).orElse(null));
+            existingEntity.setImagen(imagenRepository.findById(dto.getImagenId()).orElse(null));
+
+            // Manejar los detalles de manera específica para evitar duplicados
+            if (dto.getDetalles() != null) {
+
+                existingEntity.getDetalles().clear();
+
+                // Agregar nuevos detalles
+                List<ArticuloManufacturadoDetalle> nuevosDetalles = dto.getDetalles().stream()
+                        .map(detalleDTO -> {
+                            ArticuloManufacturadoDetalle detalle = new ArticuloManufacturadoDetalle();
+                            detalle.setCantidad(detalleDTO.getCantidad());
+                            detalle.setArticuloInsumo(
+                                    articuloInsumoRepository.findById(detalleDTO.getArticuloInsumoId()).orElse(null)
+                            );
+                            detalle.setArticuloManufacturado(existingEntity);
+                            return detalle;
+                        })
+                        .collect(Collectors.toList());
+
+                existingEntity.getDetalles().addAll(nuevosDetalles);
+            }
+
+            ArticuloManufacturado updated = baseService.save(existingEntity); // Usar save en lugar de update
+            return ResponseEntity.ok(mapper.toDTO(updated));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }

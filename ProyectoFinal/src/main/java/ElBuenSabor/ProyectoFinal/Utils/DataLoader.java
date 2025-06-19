@@ -665,14 +665,37 @@ public class DataLoader {
             articuloManufacturadoService.save(barrolucoSimple);
 
 
-            // 9. Usuario ADMIN
-            Usuario adminUsuario = Usuario.builder()
-                    .username("admin@buen.com")
-                    .rol(Rol.ADMINISTRADOR)
-                    .build();
-            usuarioService.save(adminUsuario);
+            // 9.1 Cliente con rol ADMINISTRADOR
+            Imagen imgClienteAdmin = imagenService.save(Imagen.builder()
+                    .denominacion("https://example.com/cliente.jpg")
+                    .build());
 
-            System.out.println("Datos de ejemplo cargados exitosamente.");
+            Domicilio domicilioAdmin = domicilioService.save(Domicilio.builder()
+                    .calle("Calle Verdadera")
+                    .numero(456)
+                    .cp(5500)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioAdminCliente = usuarioService.save(Usuario.builder()
+                    .auth0Id("auth0|admin456")
+                    .username("admincliente@buen.com")
+                    .rol(Rol.ADMINISTRADOR)
+                    .build());
+
+            Cliente clienteAdmin = Cliente.builder()
+                    .nombre("Administrador")
+                    .apellido("Test")
+                    .telefono("2610000000")
+                    .email("admincliente@buen.com")
+                    .password("admin123")
+                    .fechaNacimiento(LocalDate.of(1985, 1, 1))
+                    .imagen(imgClienteAdmin)
+                    .usuario(usuarioAdminCliente)
+                    .domicilios(Set.of(domicilioAdmin))
+                    .build();
+
+            clienteService.save(clienteAdmin);
         } catch (Exception e) {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());
             e.printStackTrace();

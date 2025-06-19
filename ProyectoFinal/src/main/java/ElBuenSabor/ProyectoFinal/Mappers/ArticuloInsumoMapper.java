@@ -12,6 +12,7 @@ import org.mapstruct.*;
 })
 public interface ArticuloInsumoMapper {
 
+    @Mapping(source = "baja", target = "baja")
     ArticuloInsumoDTO toDTO(ArticuloInsumo entity);
 
     @Mapping(target = "detalles", ignore = true)

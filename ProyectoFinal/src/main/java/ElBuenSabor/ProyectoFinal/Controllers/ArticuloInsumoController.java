@@ -124,6 +124,21 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
         }
     }
 
+    @PutMapping("/{id}/actualizar-precio")
+    public ResponseEntity<?> actualizarPrecioCompra(
+            @PathVariable Long id,
+            @RequestParam("precioCompra") Double precioCompra
+    ) {
+        try {
+            ArticuloInsumo insumo = articuloInsumoService.findById(id);
+            insumo.setPrecioCompra(precioCompra);
+            articuloInsumoService.save(insumo);
+            return ResponseEntity.ok(insumo); // o devolver DTO
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
     @PatchMapping("/{id}/baja")
     public ResponseEntity<?> toggleBaja(
             @PathVariable Long id,

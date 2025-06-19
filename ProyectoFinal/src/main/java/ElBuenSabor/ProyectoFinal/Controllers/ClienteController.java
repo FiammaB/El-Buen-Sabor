@@ -27,6 +27,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
     private final UsuarioService usuarioService;      // <-- Inyectamos UsuarioService
     private final PedidoService pedidoService; // <-- ¡Inyectar PedidoService!
     private final PedidoMapper pedidoMapper;
+    private final ClienteService clienteService;
     // El constructor inyecta el servicio específico de Cliente, el mapper y los nuevos servicios
     public ClienteController(
             ClienteService clienteService,
@@ -37,6 +38,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
             PedidoService pedidoService, // <-- Añadir al constructor
             PedidoMapper pedidoMapper) {   // <-- Añadir inyección
         super(clienteService);
+        this.clienteService = clienteService;
         this.clienteMapper = clienteMapper;
         this.domicilioService = domicilioService; // Asignar
         this.imagenService = imagenService;       // Asignar
@@ -107,18 +109,18 @@ public class ClienteController extends BaseController<Cliente, Long> {
     }
 
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
-    @PutMapping("/{id}/perfil")
-    public ResponseEntity<?> updatePerfil(
-            @PathVariable Long id,
-            @RequestBody ClientePerfilUpdateDTO dto
-    ) {
-        try {
-            clienteService.actualizarPerfil(id, dto);
-            return ResponseEntity.ok("{\"message\": \"Perfil actualizado correctamente\"}");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
+//    @PutMapping("/{id}/perfil")
+//    public ResponseEntity<?> updatePerfil(
+//            @PathVariable Long id,
+//            @RequestBody ClientePerfilUpdateDTO dto
+//    ) {
+//        try {
+//            clienteService.actualizarPerfil(id, dto);
+//            return ResponseEntity.ok("{\"message\": \"Perfil actualizado correctamente\"}");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+//        }
+//    }
 
     @GetMapping("/{clienteId}/pedidos") // Nuevo endpoint para obtener pedidos por cliente
     public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long clienteId) {

@@ -51,6 +51,7 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             List<ArticuloInsumoDTO> dtos = insumos.stream()
                     .map(articuloInsumoMapper::toDTO)
                     .toList();
+            System.out.println("LISTA DE INSUMOS: " + dtos);
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -151,5 +152,7 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+
 
 }

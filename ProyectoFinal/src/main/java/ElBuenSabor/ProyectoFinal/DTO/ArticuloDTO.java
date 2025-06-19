@@ -15,6 +15,6 @@ public class ArticuloDTO {
     private ImagenDTO imagen;
     private UnidadMedidaDTO unidadMedida;
     private CategoriaDTO categoria;
-    private boolean estaDadoDeBaja;
+    private Boolean baja;
 
 }

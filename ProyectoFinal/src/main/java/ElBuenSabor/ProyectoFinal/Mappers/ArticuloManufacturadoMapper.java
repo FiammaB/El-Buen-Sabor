@@ -19,19 +19,19 @@ import java.util.stream.Collectors;
 })
 public interface ArticuloManufacturadoMapper {
 
-    @Mapping(source = "baja", target = "estaDadoDeBaja")
+    @Mapping(source = "baja", target = "baja")
     @Mapping(source = "categoria.id", target = "categoriaId")
     ArticuloManufacturadoDTO toDTO(ArticuloManufacturado entity);
 
-    @Mapping(source = "estaDadoDeBaja", target = "baja")
+    @Mapping(source = "baja", target = "baja")
     ArticuloManufacturado toEntity(ArticuloManufacturadoDTO dto);
 
     @Mapping(target = "detalles", source = "detalles")
-    @Mapping(source = "estaDadoDeBaja", target = "baja", ignore = true)
+    @Mapping(source = "baja", target = "baja", ignore = true)
     ArticuloManufacturado toEntity(ArticuloManufacturadoCreateDTO dto, @Context ArticuloInsumoRepository articuloInsumoRepo);
 
     @Mapping(target = "detalles", ignore = true)
-    @Mapping(source = "estaDadoDeBaja", target = "baja", ignore = true)
+    @Mapping(source = "baja", target = "baja", ignore = true)
     ArticuloManufacturado toEntity(ArticuloManufacturadoCreateDTO dto);
 
     @AfterMapping

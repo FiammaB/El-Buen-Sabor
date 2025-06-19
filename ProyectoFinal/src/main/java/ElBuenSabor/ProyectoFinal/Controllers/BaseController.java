@@ -96,6 +96,7 @@ public abstract class BaseController<E extends BaseEntity, ID extends Serializab
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<?> deactivate(@PathVariable ID id) {
         try {
+            System.out.println("Id a dar de baja: " + id);
             baseService.toggleBaja(id, true);
             return ResponseEntity.ok("{\"message\": \"Entidad desactivada exitosamente.\"}");
         } catch (Exception e) {

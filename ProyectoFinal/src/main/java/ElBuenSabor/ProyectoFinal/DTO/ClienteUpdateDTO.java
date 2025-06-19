@@ -15,7 +15,7 @@ public class ClienteUpdateDTO {
     private String telefono;
     private String email;
     private LocalDate fechaNacimiento;
-    private boolean baja;
+    private boolean estaDadoDeBaja;
 
     private Long imagenId;
 }

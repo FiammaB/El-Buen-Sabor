@@ -1,67 +1,47 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PromocionDTO;
-import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO;
-import ElBuenSabor.ProyectoFinal.Entities.*;
-import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Posiblemente ya no sea necesaria
-import ElBuenSabor.ProyectoFinal.Repositories.*;
+import ElBuenSabor.ProyectoFinal.Entities.Promocion;
+import ElBuenSabor.ProyectoFinal.Entities.TipoPromocion;
+import ElBuenSabor.ProyectoFinal.Repositories.PromocionRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-// PromocionServiceImpl ahora extiende BaseServiceImpl
-// y la interfaz PromocionService (que debe extender BaseService)
 public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> implements PromocionService {
+
+    private final PromocionRepository promocionRepository;
 
     public PromocionServiceImpl(PromocionRepository promocionRepository) {
         super(promocionRepository);
+        this.promocionRepository = promocionRepository;
+    }
+
+    @Override
+    public List<Promocion> getPromocionesActivas() {
+        return promocionRepository.findAll()
+                .stream()
+                .filter(p -> !p.isBaja())
+                .collect(Collectors.toList());
     }
 
 
     @Override
-    @Transactional
-    public Promocion update(Long id, Promocion updatedPromocion) throws Exception { // <<-- Añadir throws Exception
-        try {
-            Promocion actual = findById(id);
+    public Promocion update(Long id, Promocion updatedPromocion) throws Exception {
+        Promocion promocion = promocionRepository.findById(id)
+                .orElseThrow(() -> new Exception("Promoción no encontrada con ID: " + id));
 
-            actual.setDenominacion(updatedPromocion.getDenominacion());
-            actual.setFechaDesde(updatedPromocion.getFechaDesde());
-            actual.setFechaHasta(updatedPromocion.getFechaHasta());
-            actual.setHoraDesde(updatedPromocion.getHoraDesde());
-            actual.setHoraHasta(updatedPromocion.getHoraHasta());
-            actual.setDescripcionDescuento(updatedPromocion.getDescripcionDescuento());
-            actual.setPrecioPromocional(updatedPromocion.getPrecioPromocional());
-            actual.setTipoPromocion(updatedPromocion.getTipoPromocion());
-            actual.setImagen(updatedPromocion.getImagen());
+        promocion.setDenominacion(updatedPromocion.getDenominacion());
+        promocion.setFechaDesde(updatedPromocion.getFechaDesde());
+        promocion.setFechaHasta(updatedPromocion.getFechaHasta());
+        promocion.setHoraDesde(updatedPromocion.getHoraDesde());
+        promocion.setHoraHasta(updatedPromocion.getHoraHasta());
+        promocion.setPrecioPromocional(updatedPromocion.getPrecioPromocional());
+        promocion.setTipoPromocion(updatedPromocion.getTipoPromocion());
+        promocion.setArticulosManufacturados(updatedPromocion.getArticulosManufacturados());
+        promocion.setSucursales(updatedPromocion.getSucursales());
 
-
-            if (updatedPromocion.getArticulosManufacturados() != null) {
-                actual.getArticulosManufacturados().clear();
-                actual.getArticulosManufacturados().addAll(updatedPromocion.getArticulosManufacturados());
-
-            }
-
-            // Sincronizar la colección de Sucursales
-            if (updatedPromocion.getSucursales() != null) {
-                actual.getSucursales().clear();
-                actual.getSucursales().addAll(updatedPromocion.getSucursales());
-                // Si la relación es bidireccional, asegura que las Sucursales apunten a esta Promocion
-                actual.getSucursales().forEach(sucursal -> sucursal.getPromociones().add(actual));
-            }
-
-
-            // Llamamos a save del baseRepository (heredado del padre) para persistir los cambios
-            return baseRepository.save(actual);
-        } catch (Exception e) {
-            // Re-lanzamos cualquier excepción, manteniendo la consistencia con BaseService.
-            throw new Exception("Error al actualizar la promoción: " + e.getMessage());
-        }
+        return promocionRepository.save(promocion);
     }
 }

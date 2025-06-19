@@ -41,6 +41,15 @@ public class MPController {
     @Value("${mercadopago.access.token}")
     private String accessToken;
 
+    @Value("${mercadopago.back-urls.success}")
+    private String successUrl;
+
+    @Value("${mercadopago.back-urls.pending}")
+    private String pendingUrl;
+
+    @Value("${mercadopago.back-urls.failure}")
+    private String failureUrl;
+
     @Value("${mercadopago.notification.url}")
     private String notificationUrl;
 
@@ -121,13 +130,11 @@ public class MPController {
             }
 
             // 3. Configurar las URLs de redirección y el webhook
-            PreferenceBackUrlsRequest backUrls =
-                    PreferenceBackUrlsRequest.builder()
-                            .success("https://localhost:5173/order-confirmation")
-                            .pending("https://localhost:5173/")
-                            .failure("https://localhost:5173/pagoRechazado")
-                            .build();
-
+            PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
+                    .success(successUrl)
+                    .pending(pendingUrl)
+                    .failure(failureUrl)
+                    .build();
 
             // 4. Construir la solicitud de preferencia
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()

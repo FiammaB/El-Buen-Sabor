@@ -1,24 +1,23 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.*;
-import ElBuenSabor.ProyectoFinal.Mappers.NotaCreditoMapper;
+import ElBuenSabor.ProyectoFinal.DTO.DetallePedidoCreateDTO;
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
+import ElBuenSabor.ProyectoFinal.DTO.FacturaCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PedidoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Entities.FormaPago;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.PedidoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
-import ElBuenSabor.ProyectoFinal.Service.*;
+import ElBuenSabor.ProyectoFinal.Service.PedidoService; // Usar la interfaz específica
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
 public class PedidoController extends BaseController<Pedido, Long> {
 
     private final PedidoMapper pedidoMapper;
-    private final PedidoService pedidoService;
+
     // Repositorios necesarios para resolver relaciones en el controlador
     private final ArticuloInsumoRepository articuloInsumoRepository;
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
@@ -39,35 +38,20 @@ public class PedidoController extends BaseController<Pedido, Long> {
     private final SucursalRepository sucursalRepository;
     private final UsuarioRepository usuarioRepository;
     private final ArticuloRepository articuloRepository; // Aunque no se usa en el create/update, se mantiene si es una dependencia general.
-    private final UsuarioService usuarioService; // Asegúrate de que ya está, o añádelo
-    private final NotaCreditoMapper notaCreditoMapper;
-    private final MPController mpController;
-    private final ClienteService clienteService;
-    private final DomicilioService domicilioService;
-    private final SucursalService sucursalService;
+
     // El constructor inyecta el servicio específico de Pedido y todas las dependencias adicionales
     public PedidoController(
             PedidoService pedidoService, // Servicio específico
-            PedidoMapper pedidoMapper, PedidoService pedidoService1,
+            PedidoMapper pedidoMapper,
             ArticuloInsumoRepository articuloInsumoRepository,
             ArticuloManufacturadoRepository articuloManufacturadoRepository,
             ClienteRepository clienteRepository,
             DomicilioRepository domicilioRepository,
             SucursalRepository sucursalRepository,
             UsuarioRepository usuarioRepository,
-            ArticuloRepository articuloRepository,
-            UsuarioService usuarioService, // Asegúrate de que ya esté en el constructor
-            NotaCreditoMapper notaCreditoMapper,
-            MPController mpController,
-            ClienteService clienteService,
-            DomicilioService domicilioService,
-            SucursalService sucursalService
-
-
-            ) {
+            ArticuloRepository articuloRepository) {
         super(pedidoService); // Pasa el servicio al constructor del BaseController
         this.pedidoMapper = pedidoMapper;
-        this.pedidoService = pedidoService;
         this.articuloInsumoRepository = articuloInsumoRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
         this.clienteRepository = clienteRepository;
@@ -75,12 +59,6 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.sucursalRepository = sucursalRepository;
         this.usuarioRepository = usuarioRepository;
         this.articuloRepository = articuloRepository;
-        this.usuarioService = usuarioService;
-        this.notaCreditoMapper = notaCreditoMapper;
-        this.mpController = mpController;
-        this.clienteService = clienteService;
-        this.domicilioService = domicilioService;
-        this.sucursalService = sucursalService;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -112,97 +90,73 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
     // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
     @PostMapping(consumes = "application/json")
+    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
-            // --- LÓGICA DE PREPARACIÓN DEL PEDIDO (común para MP y EFECTIVO) ---
+            Pedido pedido = pedidoMapper.toEntity(dto); // Mapea el DTO a la entidad Pedido
 
-            // Aquí construimos el objeto Pedido completo para el cálculo del tiempo y total
-            Pedido pedidoParaCalculos = new Pedido();
+            // 🧩 Asignación de relaciones obligatorias (resolviendo por ID)
+            pedido.setCliente(clienteRepository.findById(dto.getClienteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
 
-            // Resolver relaciones (Necesario para el cálculo de tiempo y para el save de Efectivo)
-            pedidoParaCalculos.setCliente(clienteService.findById(dto.getClienteId()));
-            pedidoParaCalculos.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
-            if (dto.getSucursalId() != null) pedidoParaCalculos.setSucursal(sucursalService.findById(dto.getSucursalId()));
-            if (dto.getEmpleadoId() != null) pedidoParaCalculos.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
+            pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
 
-            // Descuento del 10% si es retiro en local (modifica el total del DTO)
-            Double totalCalculado = dto.getTotal();
-            if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
-                double descuento = totalCalculado * 0.10;
-                totalCalculado = totalCalculado - descuento;
-                System.out.println("DEBUG Descuento: Aplicado 10% de descuento por Retiro en Local. Total Original: " + dto.getTotal() + ", Descuento: " + descuento + ", Total Final: " + totalCalculado);
-            } else {
-                System.out.println("DEBUG Descuento: No aplica descuento por Retiro en Local. Tipo de Envío: " + dto.getTipoEnvio());
+            // 🧩 Relaciones opcionales (resolviendo por ID)
+            if (dto.getSucursalId() != null) {
+                pedido.setSucursal(sucursalRepository.findById(dto.getSucursalId()).orElse(null));
             }
-            pedidoParaCalculos.setTotal(totalCalculado); // Asignar el total ya con el descuento (si aplica)
-            pedidoParaCalculos.setTipoEnvio(dto.getTipoEnvio()); // Asignar tipo de envío
-            pedidoParaCalculos.setFormaPago(dto.getFormaPago()); // Asignar forma de pago
 
-            // Detalles del pedido (necesarios para tiempo estimado)
+            if (dto.getEmpleadoId() != null) {
+                pedido.setEmpleado(usuarioRepository.findById(dto.getEmpleadoId()).orElse(null));
+            }
+
+            // 🧾 Factura (si viene en el DTO de creación)
+            if (dto.getFactura() != null) {
+                FacturaCreateDTO f = dto.getFactura();
+                Factura factura = Factura.builder()
+                        .fechaFacturacion(f.getFechaFacturacion())
+                        .mpPaymentId(f.getMpPaymentId())
+                        .mpMerchantOrderId(f.getMpMerchantOrderId())
+                        .mpPreferenceId(f.getMpPreferenceId())
+                        .mpPaymentType(f.getMpPaymentType())
+                        .formaPago(FormaPago.valueOf(String.valueOf(f.getFormaPago())))
+                        .totalVenta(f.getTotalVenta())
+                        .build();
+                pedido.setFactura(factura);
+            }
+
+            // 🧾 Detalles del pedido (colección)
             if (dto.getDetalles() != null) {
-                Set<DetallePedido> detalles = new HashSet<>();
-                for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
+                Set<DetallePedido> detalles = dto.getDetalles().stream().map(detalleDTO -> {
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
                     detalle.setSubTotal(detalleDTO.getSubTotal());
-                    if (detalleDTO.getArticuloId() != null) {
-                        ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                        if (insumo != null) { detalle.setArticuloInsumo(insumo); } else {
-                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId()).orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
-                            detalle.setArticuloManufacturado(manufacturado);
-                        }
+
+                    // Resolver el tipo de artículo según a cuál repositorio pertenezca
+                    ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                    if (insumo != null) {
+                        detalle.setArticuloInsumo(insumo);
+                    } else {
+                        ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
+                        detalle.setArticuloManufacturado(manufacturado);
                     }
-                    detalle.setPedido(pedidoParaCalculos); // Relación inversa
-                    detalles.add(detalle);
-                }
-                pedidoParaCalculos.setDetallesPedidos(detalles);
+
+                    detalle.setPedido(pedido); // Establecer la relación inversa
+                    return detalle;
+                }).collect(Collectors.toSet());
+                pedido.setDetallesPedidos(detalles);
             }
+            pedido.setBaja(false); // Por defecto, un nuevo pedido no está dado de baja
 
-            // --- ¡CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN AQUÍ! ---
-            LocalTime horaEstimada = pedidoService.calcularTiempoEstimadoFinalizacion(pedidoParaCalculos); // Llama al servicio para calcular
-            pedidoParaCalculos.setHoraEstimadaFinalizacion(horaEstimada); // <-- Asignar al pedido
-            System.out.println("DEBUG Tiempo Estimado: Hora estimada finalización asignada: " + horaEstimada);
-
-            // Asignar el resto de propiedades del DTO al pedidoParaCalculos
-            pedidoParaCalculos.setFechaPedido(dto.getFechaPedido());
-            pedidoParaCalculos.setEstado(Estado.A_CONFIRMAR); // Estado inicial
-            pedidoParaCalculos.setBaja(false); // No dado de baja por defecto
-
-
-            // --- LÓGICA DE DECISIÓN POR FORMA DE PAGO ---
-            if (dto.getFormaPago() == FormaPago.MERCADO_PAGO) {
-                // Ahora, los datos de factura y detalles se pasarán al servicio de MPController
-                // Aquí, el PedidoController llamará al MPController directamente
-                // (Esta delegación es para MP, donde el Pedido lo crea y guarda MPController)
-                // Pasar el DTO con el total y hora estimada ya calculados.
-                // Idealmente, deberíamos pasar el 'pedidoParaCalculos' al servicio de MPController,
-                // y que ese servicio guarde el pedido.
-                // Por simplicidad, adaptaremos el DTO para el MPController.
-                dto.setTotal(pedidoParaCalculos.getTotal());
-                // No podemos pasar horaEstimadaFinalizacion por DTO si no está en PedidoCreateDTO
-                // La lógica de MPController ya crea la Factura inicial.
-                return mpController.crearPreferencia(dto); // Delega al MPController
-
-            } else if (dto.getFormaPago() == FormaPago.EFECTIVO) {
-                // Para efectivo, ya tenemos el pedidoParaCalculos completo.
-                // Ahora, creamos la factura final para efectivo.
-                Factura factura = Factura.builder()
-                        .fechaFacturacion(LocalDate.now())
-                        .formaPago(FormaPago.EFECTIVO)
-                        .totalVenta(pedidoParaCalculos.getTotal()) // Usar el total ya calculado
-                        .build();
-                pedidoParaCalculos.setFactura(factura); // Asignar al pedidoParaCalculos
-
-                Pedido saved = baseService.save(pedidoParaCalculos); // Guarda el pedido completo
-                return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Forma de pago no válida.\"}");
-            }
-
+            Pedido saved = baseService.save(pedido); // Llama al save del padre
+            return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved)); // Convierte a DTO para la respuesta
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al crear el pedido: " + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
     // (Tu controlador original no tenía un PUT explícito, pero es buena práctica añadirlo)
     @PutMapping(value = "/{id}", consumes = "application/json")
@@ -214,8 +168,8 @@ public class PedidoController extends BaseController<Pedido, Long> {
             existingPedido.setFechaPedido(dto.getFechaPedido());
             // No hay hora estimada en PedidoCreateDTO, si la necesitas, agrégala al DTO
             existingPedido.setEstado(Estado.valueOf(dto.getEstado())); // Convertir String a Enum
-            existingPedido.setTipoEnvio(dto.getTipoEnvio()); // Convertir String a Enum
-            existingPedido.setFormaPago(dto.getFormaPago()); // Convertir String a Enum
+            existingPedido.setTipoEnvio(TipoEnvio.valueOf(dto.getTipoEnvio())); // Convertir String a Enum
+            existingPedido.setFormaPago(FormaPago.valueOf(dto.getFormaPago())); // Convertir String a Enum
             existingPedido.setTotal(dto.getTotal());
             // Si hay Observaciones en Pedido, asegúrate de que el DTO las tenga
             // existingPedido.setObservaciones(dto.getObservaciones());
@@ -310,32 +264,6 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener la URL del PDF de la factura: " + e.getMessage() + "\"}");
-        }
-    }
-
-    @PatchMapping("/{pedidoId}/anular") // Endpoint para anular factura y generar NC
-    public ResponseEntity<?> anularFactura(@PathVariable Long pedidoId, @RequestBody AnulacionRequestDTO anulacionRequest) {
-        try {
-            // Obtener el usuario que realiza la anulación
-            Usuario usuarioAnulador = usuarioService.findById(anulacionRequest.getUsuarioAnuladorId());
-            if (usuarioAnulador == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Usuario anulador no encontrado.\"}");
-            }
-
-            // Llamar al servicio para realizar la anulación
-            NotaCredito notaCreditoGenerada = pedidoService.anularFacturaYGenerarNotaCredito(
-                    pedidoId,
-                    anulacionRequest.getMotivoAnulacion(),
-                    usuarioAnulador
-            );
-
-            // Devolver la Nota de Crédito generada como DTO
-            return ResponseEntity.status(HttpStatus.CREATED).body(notaCreditoMapper.toDTO(notaCreditoGenerada));
-
-        } catch (ResourceNotFoundException e) { // Capturar si el pedido/factura no se encuentra
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al anular factura y generar nota de crédito: " + e.getMessage() + "\"}");
         }
     }
 }

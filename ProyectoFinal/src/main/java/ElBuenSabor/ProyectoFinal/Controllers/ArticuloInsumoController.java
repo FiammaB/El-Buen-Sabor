@@ -3,7 +3,6 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoDTO;
 
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloInsumoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
@@ -25,7 +24,6 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final ImagenRepository imagenRepository;
-    private final ArticuloInsumoService articuloInsumoService;
 
     // El constructor inyecta el servicio específico de ArticuloInsumo
     public ArticuloInsumoController(
@@ -35,7 +33,6 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             UnidadMedidaRepository unidadMedidaRepository,
             ImagenRepository imagenRepository) {
         super(articuloInsumoService); // Pasa el servicio al constructor del BaseController
-        this.articuloInsumoService = articuloInsumoService;
         this.articuloInsumoMapper = articuloInsumoMapper;
         this.categoriaRepository = categoriaRepository;
         this.unidadMedidaRepository = unidadMedidaRepository;
@@ -51,7 +48,6 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             List<ArticuloInsumoDTO> dtos = insumos.stream()
                     .map(articuloInsumoMapper::toDTO)
                     .toList();
-            System.out.println("LISTA DE INSUMOS: " + dtos);
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -106,53 +102,6 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-
-    @PutMapping("/{id}/sumar-stock")
-    public ResponseEntity<?> sumarStock(
-            @PathVariable Long id,
-            @RequestParam("cantidad") Integer cantidad
-    ) {
-        try {
-            ArticuloInsumo insumo = articuloInsumoService.findById(id);
-            if (insumo.getBaja() != null && insumo.getBaja()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No se puede actualizar stock de un insumo dado de baja.");
-            }
-            insumo.setStockActual(insumo.getStockActual() + cantidad);
-            articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(insumo); // o devolver DTO
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}/actualizar-precio")
-    public ResponseEntity<?> actualizarPrecioCompra(
-            @PathVariable Long id,
-            @RequestParam("precioCompra") Double precioCompra
-    ) {
-        try {
-            ArticuloInsumo insumo = articuloInsumoService.findById(id);
-            insumo.setPrecioCompra(precioCompra);
-            articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(insumo); // o devolver DTO
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
-        }
-    }
-
-    @PatchMapping("/{id}/baja")
-    public ResponseEntity<?> toggleBaja(
-            @PathVariable Long id,
-            @RequestParam boolean baja
-    ) {
-        try {
-            ArticuloInsumo actualizado = baseService.toggleBaja(id, baja);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
-
 
 
 }

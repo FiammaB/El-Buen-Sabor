@@ -15,7 +15,7 @@ import jakarta.mail.util.ByteArrayDataSource; // Importar ByteArrayDataSource
 import java.io.ByteArrayOutputStream;
 
 @Service
-public class  EmailServiceImpl implements EmailService {
+public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private JavaMailSender mailSender; // Spring Boot autoconfigura esto

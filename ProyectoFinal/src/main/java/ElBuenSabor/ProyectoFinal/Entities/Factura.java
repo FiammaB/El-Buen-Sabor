@@ -26,11 +26,6 @@ public class Factura extends BaseEntity {
     private FormaPago formaPago;        // Forma de pago registrada en la factura [cite: 251]
     private Double totalVenta;          // Total de la venta en la factura [cite: 251]
 
-    @OneToOne(mappedBy = "facturaAnulada") // Relación inversa con RegistroAnulacion
-    private RegistroAnulacion registroAnulacion; // <-- Nueva propiedad
-
-    // Opcional: Campo para marcar la factura como anulada
-    private boolean anulada = false; // <-- Nueva propiedad
     @OneToOne(mappedBy = "factura")
     private Pedido pedido;
     @Column(length = 500)

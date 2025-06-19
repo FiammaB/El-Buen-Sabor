@@ -55,8 +55,5 @@ public class Pedido extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "empleado_id")
     private Usuario empleado;
-    private boolean anulado = false;
 
-    @OneToOne(mappedBy = "pedidoOriginal") // Relación inversa con NotaCredito
-    private NotaCredito notaCredito;
 }

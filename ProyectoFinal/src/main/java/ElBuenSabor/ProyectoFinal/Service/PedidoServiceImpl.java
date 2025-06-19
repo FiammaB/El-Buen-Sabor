@@ -16,8 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,10 +36,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final FacturaService facturaService;
     private final EmailService emailService;
     private final CloudinaryService cloudinaryService;
-    // Nuevos servicios para NotaCredito y RegistroAnulacion
-    private final NotaCreditoService notaCreditoService;
-    private final RegistroAnulacionService registroAnulacionService;
-    private final ArticuloInsumoService articuloInsumoService;
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -53,10 +47,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             ArticuloRepository articuloRepository,
             FacturaService facturaService,
             EmailService emailService,
-            CloudinaryService cloudinaryService,
-            NotaCreditoService notaCreditoService,
-            RegistroAnulacionService registroAnulacionService,
-            ArticuloInsumoService articuloInsumoService) {
+            CloudinaryService cloudinaryService) {
         super(pedidoRepository); // Llama al constructor de la clase base
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
@@ -69,9 +60,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.facturaService = facturaService;
         this.emailService = emailService;
         this.cloudinaryService = cloudinaryService;
-        this.notaCreditoService = notaCreditoService;
-        this.registroAnulacionService = registroAnulacionService;
-        this.articuloInsumoService = articuloInsumoService;
 
     }
 
@@ -144,28 +132,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 }
                 pedido.setDetallesPedidos(detalles);
             }
-            // --- LÓGICA: APLICAR DESCUENTO DEL 10% SI ES RETIRO EN LOCAL ---
-            Double totalCalculado = dto.getTotal(); // Usamos el total que viene del DTO inicialmente
 
-            if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) { // Verificar si es retiro en local
-                double descuento = totalCalculado * 0.10; // Calcular el 10% de descuento
-                totalCalculado = totalCalculado - descuento; // Aplicar el descuento
-                System.out.println("DEBUG Descuento: Aplicado 10% de descuento por Retiro en Local. Total Original: " + dto.getTotal() + ", Descuento: " + descuento + ", Total Final: " + totalCalculado);
-            } else {
-                System.out.println("DEBUG Descuento: No aplica descuento por Retiro en Local. Tipo de Envío: " + dto.getTipoEnvio());
-            }
-
-            pedido.setTotal(totalCalculado); // <-- Asignar el total ya con el descuento (si aplica)
-            pedido.setTipoEnvio(dto.getTipoEnvio());
             // Establecer estado inicial del pedido (antes del pago)
             pedido.setEstado(Estado.A_CONFIRMAR);
             pedido.setFechaPedido(LocalDate.now());
             pedido.setBaja(false);
             pedido.setTotal(dto.getTotal());
-            // --- ¡CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN AQUÍ! ---
-            LocalTime horaEstimada = calcularTiempoEstimadoFinalizacion(pedido);
-            pedido.setHoraEstimadaFinalizacion(horaEstimada); // <-- ¡Asignar aquí!
-            System.out.println("DEBUG Tiempo Estimado: Hora estimada finalización asignada: " + horaEstimada);
 
             return baseRepository.save(pedido); // Guarda el pedido en la BD
         } catch (Exception e) {
@@ -219,56 +191,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 case "approved":
                     pedido.setEstado(Estado.PAGADO);
                     String generatedPdfUrl = null; // Declaramos aquí para usarla más adelante
-                    // --- LÓGICA DE DESCUENTO DE STOCK ACTUALIZADA ---
-                    System.out.println("DEBUG Stock (Descuento): Iniciando descuento de stock para Pedido ID: " + pedido.getId());
-                    if (pedido.getDetallesPedidos() != null && !pedido.getDetallesPedidos().isEmpty()) {
-                        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
-                            if (detalle.getArticuloManufacturado() != null) {
-                                // Descontar insumos de ArticuloManufacturado (por su receta)
-                                ArticuloManufacturado am = detalle.getArticuloManufacturado();
-                                System.out.println("DEBUG Stock (Descuento): Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad: " + detalle.getCantidad());
-                                if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
-                                    for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
-                                        ArticuloInsumo insumo = amd.getArticuloInsumo();
-                                        if (insumo != null && insumo.getEsParaElaborar()) {
-                                            Double cantidadADescontar = amd.getCantidad() * detalle.getCantidad();
-                                            double stockAntes = insumo.getStockActual();
-                                            insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
-                                            articuloInsumoService.save(insumo); // Guardar el insumo
-                                            System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
-                                                    "' (ID: " + insumo.getId() + ") para AM. Cant: " + cantidadADescontar +
-                                                    ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
-                                        }
-                                    }
-                                } else {
-                                    System.out.println("DEBUG Stock (Descuento): AM '" + am.getDenominacion() + "' no tiene detalles de insumo definidos.");
-                                }
-                            } else if (detalle.getArticuloInsumo() != null) {
-                                // Descontar ArticuloInsumo directamente (si se vende como tal)
-                                ArticuloInsumo insumo = detalle.getArticuloInsumo();
-                                if (insumo != null && !insumo.getEsParaElaborar()) { // Descontar solo si NO es para elaborar (se vende directo)
-                                    int cantidadADescontar = detalle.getCantidad(); // La cantidad del detalle es la cantidad del insumo
-                                    double stockAntes = insumo.getStockActual();
-                                    insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
-                                    articuloInsumoService.save(insumo); // Guardar el insumo
-                                    System.out.println("DEBUG Stock (Descuento): Descontado ArticuloInsumo Directo '" + insumo.getDenominacion() +
-                                            "' (ID: " + insumo.getId() + "). Cant: " + cantidadADescontar +
-                                            ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
-                                } else if (insumo != null && insumo.getEsParaElaborar()) {
-                                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo '" + insumo.getDenominacion() + "' es para elaborar. Se espera que sea parte de un AM. No se descuenta directamente.");
-                                } else {
-                                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo en detalle es nulo.");
-                                }
-                            } else {
-                                System.out.println("DEBUG Stock (Descuento): Detalle de pedido sin ArticuloManufacturado ni ArticuloInsumo asociado.");
-                            }
-                        }
-                    } else {
-                        System.out.println("DEBUG Stock (Descuento): Pedido no tiene detalles de pedido para descontar stock o colección vacía.");
-                    }
-                    System.out.println("DEBUG Stock (Descuento): Finalizado descuento de stock.");
-                    // --- FIN LÓGICA DE DESCUENTO DE STOCK ACTUALIZADA ---
-
                     try {
                         ByteArrayOutputStream pdfBytes = (ByteArrayOutputStream) facturaService.generarFacturaPdf(pedido);
                         String filePathLocal = "factura_" + pedido.getId() + ".pdf";
@@ -283,7 +205,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                         String recipientEmail = pedido.getCliente().getEmail();
                         String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() ;
+                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() + ". Puedes descargarla también desde: " + generatedPdfUrl;
                         String attachmentFilename = "factura_" + pedido.getId() + ".pdf";
 
                         emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
@@ -391,218 +313,15 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception {
-        try {
-            return pedidoRepository.findByClienteId(clienteId);
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
-    }
-
-
-    /**
-     * Anula una factura asociada a un pedido, genera una nota de crédito,
-     * repone el stock de ingredientes y registra la anulación.
-     * @param pedidoId ID del pedido cuya factura se anulará.
-     * @param motivoAnulacion Motivo de la anulación.
-     * @param usuarioAnulador Usuario que realiza la anulación.
-     * @return La NotaCredito generada.
-     * @throws Exception Si el pedido o la factura no se encuentran, o si ocurre un error en el proceso.
-     */
-    @Override
-    @Transactional // Esta operación debe ser transaccional
-    public NotaCredito anularFacturaYGenerarNotaCredito(Long pedidoId, String motivoAnulacion, Usuario usuarioAnulador) throws Exception {
-        try {
-            // 1. Obtener el pedido y la factura original
-            Pedido pedido = findById(pedidoId);
-            if (pedido == null) {
-                throw new ResourceNotFoundException("Pedido no encontrado con ID: " + pedidoId);
-            }
-
-            Factura facturaAnulada = pedido.getFactura();
-            if (facturaAnulada == null) {
-                throw new ResourceNotFoundException("Factura no encontrada para el pedido con ID: " + pedidoId);
-            }
-            if (facturaAnulada.isAnulada()) { // Asumiendo que has añadido 'private boolean anulada = false;' a Factura
-                throw new Exception("La factura ya ha sido anulada.");
-            }
-
-            // 2. Marcar la factura original como anulada
-            facturaAnulada.setAnulada(true); // Actualiza la bandera de anulada
-            // baseRepository.save(pedido); // Se guardará al final de la transacción
-
-            // 3. Crear la Nota de Crédito con los mismos ítems e importes
-            NotaCredito notaCredito = NotaCredito.builder()
-                    .fechaEmision(LocalDate.now())
-                    .total(facturaAnulada.getTotalVenta()) // Mismo importe total
-                    .motivo(motivoAnulacion)
-                    .facturaAnulada(facturaAnulada) // Referencia a la factura que anula
-                    .pedidoOriginal(pedido) // Referencia al pedido original
-                    .cliente(pedido.getCliente()) // Referencia al cliente del pedido
-                    .build();
-
-            // Copiar detalles del pedido original a la Nota de Crédito
-            Set<DetallePedido> detallesNotaCredito = new HashSet<>();
-            if (pedido.getDetallesPedidos() != null) {
-                for (DetallePedido detalleOriginal : pedido.getDetallesPedidos()) {
-                    // Crear una nueva instancia de DetallePedido para la Nota de Crédito
-                    // Importante: No es el mismo objeto DetallePedido de la BD, es una copia
-                    DetallePedido nuevoDetalleNC = DetallePedido.builder()
-                            .cantidad(detalleOriginal.getCantidad())
-                            .subTotal(detalleOriginal.getSubTotal())
-                            .articuloInsumo(detalleOriginal.getArticuloInsumo()) // Copia la referencia
-                            .articuloManufacturado(detalleOriginal.getArticuloManufacturado()) // Copia la referencia
-                            .build();
-                    // El nuevoDetalleNC.setPedido(null) o .setNotaCredito(notaCredito) dependiendo de la relación
-                    // En NotaCredito, DetallePedido tiene @JoinColumn(name = "nota_credito_id")
-                    nuevoDetalleNC.setNotaCredito(notaCredito); // Establecer la relación inversa
-                    detallesNotaCredito.add(nuevoDetalleNC);
-                }
-            }
-            notaCredito.setDetalles(detallesNotaCredito); // Asignar los detalles copiados
-            notaCredito = notaCreditoService.save(notaCredito); // Guardar la Nota de Crédito
-
-
-            // 4. Reponer el stock de ingredientes
-            if (pedido.getDetallesPedidos() != null) {
-                for (DetallePedido detalle : pedido.getDetallesPedidos()) {
-                    // Reponer ingredientes solo si son artículos manufacturados
-                    if (detalle.getArticuloManufacturado() != null) {
-                        ArticuloManufacturado am = detalle.getArticuloManufacturado();
-                        if (am.getDetalles() != null) { // Detalles del AM que son los insumos
-                            for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
-                                ArticuloInsumo insumo = amd.getArticuloInsumo();
-                                if (insumo != null && insumo.getEsParaElaborar()) {
-                                    Double cantidadAReponer = amd.getCantidad() * detalle.getCantidad(); // Cantidad de insumo por cantidad de AM
-                                    insumo.setStockActual(insumo.getStockActual() + cantidadAReponer);
-                                    articuloInsumoService.save(insumo); // Guardar el insumo con stock repuesto
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 5. Registrar la anulación
-            RegistroAnulacion registroAnulacion = RegistroAnulacion.builder()
-                    .fechaHoraAnulacion(LocalDateTime.now())
-                    .motivoAnulacion(motivoAnulacion)
-                    .usuarioAnulador(usuarioAnulador)
-                    .facturaAnulada(facturaAnulada)
-                    .notaCreditoGenerada(notaCredito)
-                    .build();
-            registroAnulacionService.save(registroAnulacion); // Guardar el registro de anulación
-
-            // 6. Opcional: Marcar el pedido como anulado o cambiar su estado
-            pedido.setAnulado(true); // Asumiendo que añades 'anulado' a Pedido
-            pedido.setEstado(Estado.CANCELADO); // O un nuevo estado como 'ANULADO_CON_NC'
-            baseRepository.save(pedido); // Guarda el pedido con la factura y el estado actualizado
-
-            System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");
-            // --- NUEVA LÓGICA: Generar PDF de Nota de Crédito y Subir a Cloudinary ---
-            try {
-                ByteArrayOutputStream pdfNotaCreditoBytes = facturaService.generarNotaCreditoPdf(notaCredito);
-                // Opcional: Guardar el PDF de la NC localmente para verificar
-                String filePathLocalNC = "nota_credito_" + notaCredito.getId() + ".pdf";
-                Files.write(Paths.get(filePathLocalNC), pdfNotaCreditoBytes.toByteArray());
-                System.out.println("PDF de Nota de Crédito generado para NC " + notaCredito.getId() + ". Guardado LOCALMENTE en: " + filePathLocalNC);
-
-                String cloudinaryPublicIdNC = "nota_credito_" + notaCredito.getId(); // ID único para Cloudinary
-                String pdfUrlNC = cloudinaryService.uploadByteArray(pdfNotaCreditoBytes, cloudinaryPublicIdNC);
-                System.out.println("PDF de Nota de Crédito subido a Cloudinary: " + pdfUrlNC);
-
-                notaCredito.setUrlPdfNotaCredito(pdfUrlNC); // <-- ¡Guardar la URL en la NotaCredito!
-                notaCreditoService.save(notaCredito); // <-- Volver a guardar la NotaCredito para persistir la URL
-
-                // --- NUEVA LÓGICA: Enviar el correo con la Nota de Crédito adjunta ---
-                String recipientEmail = notaCredito.getCliente().getEmail(); // Email del cliente de la Nota de Crédito
-                String subject = "Nota de Crédito de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                String body = "Estimado/a " + notaCredito.getCliente().getNombre() + ", \n\n" +
-                        "Adjuntamos la Nota de Crédito N° " + notaCredito.getId() + " emitida por la anulación de tu factura del pedido #" + pedido.getId() + ".\n" +
-                        "Motivo de la anulación: " + notaCredito.getMotivo() + "\n\n" +
-                        "Puedes descargarla también desde: " + pdfUrlNC + "\n\n" +
-                        "Gracias por tu comprensión.\n\n" +
-                        "Atentamente,\n" +
-                        "El equipo de El Buen Sabor";
-                String attachmentFilenameNC = "nota_credito_" + notaCredito.getId() + ".pdf";
-
-                emailService.sendEmail(recipientEmail, subject, body, pdfNotaCreditoBytes, attachmentFilenameNC);
-                System.out.println("Correo con Nota de Crédito enviado a " + recipientEmail);
-                // --- FIN NUEVA LÓGICA ---
-
-            } catch (Exception pdfUploadNCEx) {
-                System.err.println("ERROR al generar PDF o subir Nota de Crédito " + notaCredito.getId() + " a Cloudinary: " + pdfUploadNCEx.getMessage());
-                pdfUploadNCEx.printStackTrace();
-                // No re-lanzamos para no detener la anulación si solo falla el PDF/subida.
-            }
-            // --- FIN NUEVA LÓGICA ---
-            System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");
-            return notaCredito;
-
-        } catch (Exception e) {
-            System.err.println("Error al anular factura y generar nota de crédito para pedido " + pedidoId + ": " + e.getMessage());
-            e.printStackTrace();
-            throw new Exception("Error en el proceso de anulación de factura: " + e.getMessage(), e);
-        }
-    }
-
-    // --- Nuevo método para calcular el tiempo estimado de finalización ---
-    @Override // Implementa el método de la interfaz
-    public LocalTime calcularTiempoEstimadoFinalizacion(Pedido pedido) throws Exception {
-        long tiempoTotalMinutos = 0;
-
-        // 1. Del tiempo estimado de cada uno de los artículos pedidos por el cliente se elige el mayor
-        long maxTiempoArticulosPedido = 0;
-        if (pedido.getDetallesPedidos() != null) {
-            maxTiempoArticulosPedido = pedido.getDetallesPedidos().stream()
-                    .filter(dp -> dp.getArticuloManufacturado() != null && dp.getArticuloManufacturado().getTiempoEstimadoMinutos() != null)
-                    .mapToLong(dp -> dp.getArticuloManufacturado().getTiempoEstimadoMinutos())
-                    .max() // Obtiene el valor máximo de Integer
-                    .orElse(0L); // Si no hay AMs o tiempos, el máximo es 0
-        }
-        tiempoTotalMinutos += maxTiempoArticulosPedido;
-        System.out.println("DEBUG Tiempo Estimado: Max tiempo de artículos en este pedido: " + maxTiempoArticulosPedido + " min.");
-
-
-        // 2. De los pedidos que se encuentran en cocina, el artículo con el mayor tiempo estimado
-        // Necesitamos una consulta para obtener pedidos en estado EN_COCINA
-        List<Pedido> pedidosEnCocina = pedidoRepository.findByEstado(Estado.EN_COCINA); // <-- Asegúrate que findByEstado(Estado) existe en PedidoRepository
-        long maxTiempoCocina = 0;
-        if (pedidosEnCocina != null && !pedidosEnCocina.isEmpty()) {
-            maxTiempoCocina = pedidosEnCocina.stream()
-                    .flatMap(p -> p.getDetallesPedidos().stream()) // Obtener todos los detalles de todos los pedidos en cocina
-                    .filter(dp -> dp.getArticuloManufacturado() != null && dp.getArticuloManufacturado().getTiempoEstimadoMinutos() != null)
-                    .mapToLong(dp -> dp.getArticuloManufacturado().getTiempoEstimadoMinutos())
-                    .max()
-                    .orElse(0L);
-        }
-        tiempoTotalMinutos += maxTiempoCocina;
-        System.out.println("DEBUG Tiempo Estimado: Max tiempo de artículos en pedidos en cocina: " + maxTiempoCocina + " min.");
-
-
-        // 3. 10 minutos de entrega por delivery (solo si el cliente eligió dicha opción)
-        if (pedido.getTipoEnvio() == TipoEnvio.DELIVERY) { // <-- Asumo que TipoEnvio ya está seteado en el pedido
-            tiempoTotalMinutos += 10;
-            System.out.println("DEBUG Tiempo Estimado: Añadidos 10 min por DELIVERY.");
-        }
-
-        System.out.println("DEBUG Tiempo Estimado: Tiempo total estimado: " + tiempoTotalMinutos + " min.");
-
-        // Convertir minutos a LocalTime (a partir de la hora actual)
-        LocalTime horaActual = LocalTime.now();
-        return horaActual.plusMinutes(tiempoTotalMinutos);
-
-    }
-    @Override
-    @Transactional(readOnly = true) // <-- Implementación del método findPedidosByEstado
-    public List<Pedido> findPedidosByEstado(Estado estado) throws Exception {
-        try {
-            return pedidoRepository.findByEstado(estado);
-        } catch (Exception e) {
-            throw new Exception("Error al buscar pedidos por estado: " + e.getMessage());
-        }
-    }
-
-  }
+    // Implementaciones de los nuevos métodos de consulta (asumimos que ya están implementados)
+    // List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception;
+    // List<Pedido> findPedidosByEstado(Estado estado) throws Exception;
+    // List<Pedido> findPedidosBetweenFechas(LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
+    // List<Pedido> findPedidosByClienteIdAndEstado(Long clienteId, Estado estado) throws Exception;
+    // List<Pedido> findPedidosByFechaAndEstado(LocalDate fechaInicio, LocalDate fechaFin, Estado estado) throws Exception;
+    // List<Pedido> findPedidosByEstadoOrderByFechaPedidoDesc(Estado estado) throws Exception;
+    // List<Pedido> findPedidosByClienteExcludingEstado(Long clienteId, Estado estadoExcluido) throws Exception;
+    // long countPedidosByEstado(Estado estado) throws Exception;
+    // List<Pedido> findPedidosBySucursalIdAndFechaBetween(Long sucursalId, LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
+    // List<Pedido> findPedidosByArticuloManufacturadoId(Long articuloManufacturadoId) throws Exception;
+}

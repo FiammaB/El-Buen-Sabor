@@ -2,47 +2,56 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 
 @Entity
-@Table(name = "promocion")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
+
 public class Promocion extends BaseEntity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String denominacion;
+
     private LocalDate fechaDesde;
     private LocalDate fechaHasta;
+
     private LocalTime horaDesde;
     private LocalTime horaHasta;
-    private String descripcionDescuento;
+
     private Double precioPromocional;
 
     @Enumerated(EnumType.STRING)
-    private TipoPromocion tipoPromocion; // happyHour, promocionGeneral [cite: 249]
+    private TipoPromocion tipoPromocion;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "imagen_id") // Una promoción puede tener una imagen
-    private Imagen imagen;
+    private boolean baja = false;
 
+    // Relaciones
     @ManyToMany
     @JoinTable(
-            name = "promocion_articulo_manufacturado",
+            name = "promocion_articulos",
             joinColumns = @JoinColumn(name = "promocion_id"),
-            inverseJoinColumns = @JoinColumn(name = "articulo_manufacturado_id")
+            inverseJoinColumns = @JoinColumn(name = "articulo_id")
     )
     private List<ArticuloManufacturado> articulosManufacturados;
 
-    @ManyToMany(mappedBy = "promociones") // Mapeado por el campo 'promociones' en la entidad Sucursal
-    private List<Sucursal> sucursales = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(
+            name = "promocion_sucursal",
+            joinColumns = @JoinColumn(name = "promocion_id"),
+            inverseJoinColumns = @JoinColumn(name = "sucursal_id")
+    )
+    private List<Sucursal> sucursales;
 }

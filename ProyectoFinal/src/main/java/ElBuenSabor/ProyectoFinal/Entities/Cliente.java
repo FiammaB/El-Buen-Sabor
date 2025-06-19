@@ -30,6 +30,11 @@ public class Cliente extends BaseEntity {
     private String password;
     private LocalDate fechaNacimiento;
 
+    // CAMBIA ESTO:
+    // @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private List<Domicilio> domicilios = new ArrayList<>();
+
+    // AÑADE ESTO:
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) // Usamos PERSIST y MERGE para ManyToMany
     @JoinTable(
             name = "cliente_domicilio", // Nombre de la tabla de unión

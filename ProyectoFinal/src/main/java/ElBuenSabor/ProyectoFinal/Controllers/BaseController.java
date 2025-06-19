@@ -93,10 +93,11 @@ public abstract class BaseController<E extends BaseEntity, ID extends Serializab
         }
     }
 
+    // Endpoint para desactivar (cambiar 'baja' a true) una entidad por su ID
+    // Similar a DELETE pero con un endpoint más semántico para "desactivar"
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<?> deactivate(@PathVariable ID id) {
         try {
-            System.out.println("Id a dar de baja: " + id);
             baseService.toggleBaja(id, true);
             return ResponseEntity.ok("{\"message\": \"Entidad desactivada exitosamente.\"}");
         } catch (Exception e) {

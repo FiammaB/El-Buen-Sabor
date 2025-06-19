@@ -16,4 +16,5 @@ public class ArticuloDTO {
     private UnidadMedidaDTO unidadMedida;
     private CategoriaDTO categoria;
     private Boolean baja;
+
 }

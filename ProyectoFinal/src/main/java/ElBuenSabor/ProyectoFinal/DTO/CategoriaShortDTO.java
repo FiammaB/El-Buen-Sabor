@@ -13,6 +13,6 @@ import java.util.List;
 public class CategoriaShortDTO {
     //RequestDTO
     private String denominacion;
-    private Long categoriaPadreId; // Null if it's a top-level category
-    private List<Long> sucursalIds; // IDs of sucursales this category belongs to
+    private Long categoriaPadreId;
+    private List<Long> sucursalIds;
 }

@@ -20,11 +20,11 @@ public class ClienteDTO {
     private String telefono;
     private String email;
     private LocalDate fechaNacimiento;
-    private boolean estaDadoDeBaja;
+    private boolean baja;
 
     private ImagenDTO imagen;
     private UsuarioDTO usuario;
-    // Esto ya estaba como List<DomicilioDTO>, lo cual es aceptable para un DTO de respuesta
-    private List<DomicilioDTO> domicilios; // <-- Se mantiene así.
+
+    private List<DomicilioDTO> domicilios;
 
 }

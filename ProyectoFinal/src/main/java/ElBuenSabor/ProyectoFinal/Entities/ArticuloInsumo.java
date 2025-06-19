@@ -37,5 +37,4 @@ public class ArticuloInsumo extends Articulo {
                 ", baja=" + getBaja() +
                 '}';
     }
-
 }

@@ -17,15 +17,15 @@ public class PedidoCreateDTO {
 
     private LocalDate fechaPedido;
     private String estado;
-    private String tipoEnvio;
-    private String formaPago;
+    private TipoEnvio tipoEnvio;
+    private FormaPago formaPago;
     private String observaciones;
     private Double total;
 
     private Long clienteId;
     private Long domicilioId;
-    private Long sucursalId; // opcional si se retira en sucursal
-    private Long empleadoId; // puede venir nulo si aún no fue asignado
+    private Long sucursalId;
+    private Long empleadoId;
 
     private FacturaCreateDTO factura;
     private List<DetallePedidoCreateDTO> detalles;

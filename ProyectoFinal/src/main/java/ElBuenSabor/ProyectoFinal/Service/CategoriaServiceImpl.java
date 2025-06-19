@@ -1,18 +1,23 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
+import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Categoria;
 // ResourceNotFoundException ya se maneja en BaseServiceImpl
 // import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
+import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Entities.Domicilio;
+import ElBuenSabor.ProyectoFinal.Entities.Imagen;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Importar Transactional
 
+import java.util.HashSet;
 import java.util.List; // Importar List si no se usara el findAll del padre
+import java.util.Set;
 
 @Service
-
 public class CategoriaServiceImpl extends BaseServiceImpl<Categoria, Long> implements CategoriaService {
 
 
@@ -34,4 +39,6 @@ public class CategoriaServiceImpl extends BaseServiceImpl<Categoria, Long> imple
             throw new Exception("Error al actualizar la categoría: " + e.getMessage());
         }
     }
+
+
 }

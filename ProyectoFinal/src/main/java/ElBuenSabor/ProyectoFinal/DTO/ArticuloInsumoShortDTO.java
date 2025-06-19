@@ -14,4 +14,5 @@ public class ArticuloInsumoShortDTO extends ArticuloDTO {
     private Double stockActual;
     private Double stockMinimo;
     private Boolean esParaElaborar;
+
 }

@@ -12,13 +12,11 @@ import org.springframework.transaction.annotation.Transactional; // Importar Tra
 import java.util.List; // Importar List si no se usara el findAll del padre
 
 @Service
-// ClienteServiceImpl ahora extiende BaseServiceImpl
-// y la interfaz ClienteService (que debe extender BaseService)
 public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implements ClienteService {
 
 
     public ClienteServiceImpl(ClienteRepository clienteRepository) {
-        super(clienteRepository); // Llama al constructor de la clase base
+        super(clienteRepository);
     }
 
     @Override

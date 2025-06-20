@@ -8,14 +8,13 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Component
-public class DataLoader {
+public class DataLoader implements CommandLineRunner {
 
-  private final PaisService paisService;
+    private final PaisService paisService;
     private final ProvinciaService provinciaService;
     private final LocalidadService localidadService;
     private final CategoriaService categoriaService;
@@ -53,11 +52,11 @@ public class DataLoader {
         this.articuloManufacturadoDetalleService = articuloManufacturadoDetalleService;
         this.domicilioService = domicilioService;
     }
-  /*
+
     @Override
     @Transactional
-     public void run(String... args) throws Exception {
-       System.out.println("Cargando datos de ejemplo...");
+    public void run(String... args) throws Exception {
+        System.out.println("Cargando datos de ejemplo...");
 
         try {
             // 1. Ubicación
@@ -700,5 +699,5 @@ public class DataLoader {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());
             e.printStackTrace();
         }
-    }*/
+    }
 }

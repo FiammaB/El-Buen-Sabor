@@ -20,4 +20,3 @@ public interface ArticuloInsumoMapper {
 
     ArticuloInsumoShortDTO toShortDTO(ArticuloInsumo entity);
 }
-

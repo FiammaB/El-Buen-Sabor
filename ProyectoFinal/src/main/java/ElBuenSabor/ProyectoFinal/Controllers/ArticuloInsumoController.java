@@ -152,7 +152,4 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-
-
-
 }

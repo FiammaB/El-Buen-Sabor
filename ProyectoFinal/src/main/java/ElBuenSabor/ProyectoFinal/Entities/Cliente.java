@@ -1,15 +1,13 @@
-// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Entities/Cliente.java
 package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet; // Importa HashSet
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;     // Importa Set
+import java.util.Set;
 
 @Entity
 @Table(name = "cliente")
@@ -23,20 +21,17 @@ public class Cliente extends BaseEntity {
     private String nombre;
     private String apellido;
     private String telefono;
-
-    @Column(unique = true)
-    private String email;
-
-    private String password;
     private LocalDate fechaNacimiento;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) // Usamos PERSIST y MERGE para ManyToMany
+    private Boolean baja; // 👉 agregado para soporte de borrado lógico
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-            name = "cliente_domicilio", // Nombre de la tabla de unión
-            joinColumns = @JoinColumn(name = "cliente_id"), // Columna para el ID del cliente
-            inverseJoinColumns = @JoinColumn(name = "domicilio_id") // Columna para el ID del domicilio
+            name = "cliente_domicilio",
+            joinColumns = @JoinColumn(name = "cliente_id"),
+            inverseJoinColumns = @JoinColumn(name = "domicilio_id")
     )
-    private Set<Domicilio> domicilios = new HashSet<>(); // Un cliente puede tener varios domicilios
+    private Set<Domicilio> domicilios = new HashSet<>();
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true)
@@ -48,5 +43,4 @@ public class Cliente extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "imagen_id")
     private Imagen imagen;
-
 }

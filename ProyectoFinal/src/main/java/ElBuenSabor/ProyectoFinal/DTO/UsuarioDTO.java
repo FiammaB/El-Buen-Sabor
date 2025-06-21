@@ -1,5 +1,6 @@
 package ElBuenSabor.ProyectoFinal.DTO;
 
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import lombok.*;
 
 @Data
@@ -8,6 +9,8 @@ import lombok.*;
 @AllArgsConstructor
 public class UsuarioDTO {
     private Long id;
-    private String auth0Id;
-    private String username;
+    private String email;
+    private String password;
+    private String nombre;
+    private Rol rol;
 }

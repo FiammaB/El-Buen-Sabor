@@ -1,67 +1,43 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.Auth.RegisterRequest;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
-import ElBuenSabor.ProyectoFinal.Entities.Rol;
-import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private ClienteRepository clienteRepository;
-
-    public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
+    public UsuarioServiceImpl(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         super(usuarioRepository);
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
-    public Usuario login(String username, String password) {
-        Optional<Cliente> clienteOpt = clienteRepository.findByEmailAndPassword(username, password);
-        return clienteOpt.map(Cliente::getUsuario).orElse(null);
+    public Usuario findByEmail(String email) {
+        return usuarioRepository.findByEmail(email).orElse(null);
     }
-
-    @Override
-    public Usuario register(RegisterRequest request) {
-        Usuario usuario = new Usuario();
-        usuario.setUsername(request.getUsername()); // Cambiado: antes era getEmail
-        usuario.setRol(Rol.CLIENTE); // rol por defecto
-        usuario = usuarioRepository.save(usuario);
-
-        Cliente cliente = new Cliente();
-        cliente.setNombre(request.getNombre());
-        cliente.setApellido(request.getApellido());
-        cliente.setEmail(request.getUsername()); // También corregido
-        cliente.setPassword(request.getPassword());
-        cliente.setTelefono(request.getTelefono());
-        cliente.setFechaNacimiento(request.getFechaNacimiento());
-        cliente.setUsuario(usuario);
-
-        clienteRepository.save(cliente);
-
-        return usuario;
-    }
-
-
 
     @Override
     @Transactional
     public Usuario update(Long id, Usuario updatedUsuario) throws Exception {
         try {
             Usuario existing = findById(id);
-            existing.setAuth0Id(updatedUsuario.getAuth0Id());
-            existing.setUsername(updatedUsuario.getUsername());
-            return baseRepository.save(existing);
+
+            existing.setNombre(updatedUsuario.getNombre());
+            existing.setEmail(updatedUsuario.getEmail());
+            existing.setRol(updatedUsuario.getRol());
+
+            if (updatedUsuario.getPassword() != null && !updatedUsuario.getPassword().isEmpty()) {
+                existing.setPassword(passwordEncoder.encode(updatedUsuario.getPassword()));
+            }
+
+            return usuarioRepository.save(existing);
         } catch (Exception e) {
             throw new Exception("Error al actualizar el usuario: " + e.getMessage());
         }

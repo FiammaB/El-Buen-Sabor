@@ -11,5 +11,5 @@ public interface BaseService<E extends BaseEntity, ID> { // E es el tipo de Enti
     E update(ID id, E entity) throws Exception;
     void deleteById(ID id) throws Exception;
     // Nuevo método para manejar el borrado lógico (cambiar estado 'baja')
-    E toggleBaja(ID id, boolean estaDadoDeBaja) throws Exception;
+    E toggleBaja(ID id, boolean Baja) throws Exception;
 }

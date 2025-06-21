@@ -85,10 +85,10 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID extends Serializa
 
     @Override
     @Transactional
-    public E toggleBaja(ID id, boolean estaDadoDeBaja) throws Exception {
+    public E toggleBaja(ID id, boolean Baja) throws Exception {
         try {
             E entity = findById(id);
-            entity.setBaja(estaDadoDeBaja);
+            entity.setBaja(Baja);
             return baseRepository.save(entity);
         } catch (Exception e) {
             throw new Exception(e.getMessage());

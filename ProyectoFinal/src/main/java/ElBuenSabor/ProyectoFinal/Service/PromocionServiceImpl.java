@@ -20,11 +20,22 @@ import java.util.stream.Collectors;
 // y la interfaz PromocionService (que debe extender BaseService)
 public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> implements PromocionService {
 
+
+
+    private final PromocionRepository promocionRepository;
+
     public PromocionServiceImpl(PromocionRepository promocionRepository) {
         super(promocionRepository);
+        this.promocionRepository = promocionRepository;
     }
 
-
+    @Override
+    public List<Promocion> getPromocionesActivas() {
+        return promocionRepository.findAll()
+                .stream()
+                .filter(p -> !p.getBaja())
+                .collect(Collectors.toList());
+    }
     @Override
     @Transactional
     public Promocion update(Long id, Promocion updatedPromocion) throws Exception { // <<-- Añadir throws Exception

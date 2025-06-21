@@ -281,10 +281,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                         factura.setUrlPdf(generatedPdfUrl); // <-- ¡ASIGNA LA URL A LA INSTANCIA ÚNICA DE FACTURA!
 
-                        String recipientEmail = pedido.getCliente().getEmail();
+                        String recipientEmail = pedido.getCliente().getUsuario().getEmail();
                         String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId() ;
-                        String attachmentFilename = "factura_" + pedido.getId() + ".pdf";
+                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getUsuario().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId();
+                        String attachmentFilename = "factura_" + pedido.getId() + ".pdf"; // ✅ línea agregada
 
                         emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
                         System.out.println("Correo con factura enviado a " + recipientEmail);
@@ -293,6 +293,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                         System.err.println("ERROR al generar PDF, subirlo y/o enviar correo para Pedido " + pedido.getId() + ": " + uploadMailEx.getMessage());
                         uploadMailEx.printStackTrace();
                     }
+
                     break;
                 // ... (resto de los casos del switch) ...
             }
@@ -504,7 +505,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // --- NUEVA LÓGICA: Generar PDF de Nota de Crédito y Subir a Cloudinary ---
             try {
                 ByteArrayOutputStream pdfNotaCreditoBytes = facturaService.generarNotaCreditoPdf(notaCredito);
-                // Opcional: Guardar el PDF de la NC localmente para verificar
+
                 String filePathLocalNC = "nota_credito_" + notaCredito.getId() + ".pdf";
                 Files.write(Paths.get(filePathLocalNC), pdfNotaCreditoBytes.toByteArray());
                 System.out.println("PDF de Nota de Crédito generado para NC " + notaCredito.getId() + ". Guardado LOCALMENTE en: " + filePathLocalNC);
@@ -514,12 +515,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 System.out.println("PDF de Nota de Crédito subido a Cloudinary: " + pdfUrlNC);
 
                 notaCredito.setUrlPdfNotaCredito(pdfUrlNC); // <-- ¡Guardar la URL en la NotaCredito!
-                notaCreditoService.save(notaCredito); // <-- Volver a guardar la NotaCredito para persistir la URL
+                notaCreditoService.save(notaCredito); // <-- Persistir la URL
 
-                // --- NUEVA LÓGICA: Enviar el correo con la Nota de Crédito adjunta ---
-                String recipientEmail = notaCredito.getCliente().getEmail(); // Email del cliente de la Nota de Crédito
+                // ✅ Corrección: acceder al usuario del cliente
+                String recipientEmail = notaCredito.getCliente().getUsuario().getEmail();
                 String subject = "Nota de Crédito de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                String body = "Estimado/a " + notaCredito.getCliente().getNombre() + ", \n\n" +
+                String body = "Estimado/a " + notaCredito.getCliente().getUsuario().getNombre() + ", \n\n" +
                         "Adjuntamos la Nota de Crédito N° " + notaCredito.getId() + " emitida por la anulación de tu factura del pedido #" + pedido.getId() + ".\n" +
                         "Motivo de la anulación: " + notaCredito.getMotivo() + "\n\n" +
                         "Puedes descargarla también desde: " + pdfUrlNC + "\n\n" +
@@ -530,13 +531,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                 emailService.sendEmail(recipientEmail, subject, body, pdfNotaCreditoBytes, attachmentFilenameNC);
                 System.out.println("Correo con Nota de Crédito enviado a " + recipientEmail);
-                // --- FIN NUEVA LÓGICA ---
 
             } catch (Exception pdfUploadNCEx) {
                 System.err.println("ERROR al generar PDF o subir Nota de Crédito " + notaCredito.getId() + " a Cloudinary: " + pdfUploadNCEx.getMessage());
                 pdfUploadNCEx.printStackTrace();
-                // No re-lanzamos para no detener la anulación si solo falla el PDF/subida.
             }
+
             // --- FIN NUEVA LÓGICA ---
             System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");
             return notaCredito;

@@ -4,6 +4,7 @@ import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -26,6 +27,7 @@ public class DataLoader implements CommandLineRunner {
     private final ArticuloManufacturadoService articuloManufacturadoService;
     private final ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService;
     private final DomicilioService domicilioService;
+    private final PasswordEncoder passwordEncoder; // ✅ agregado
 
     public DataLoader(PaisService paisService,
                       ProvinciaService provinciaService,
@@ -38,7 +40,8 @@ public class DataLoader implements CommandLineRunner {
                       ArticuloInsumoService articuloInsumoService,
                       ArticuloManufacturadoService articuloManufacturadoService,
                       ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService,
-                      DomicilioService domicilioService) {
+                      DomicilioService domicilioService,
+                      PasswordEncoder passwordEncoder) { // ✅ agregado acá también
         this.paisService = paisService;
         this.provinciaService = provinciaService;
         this.localidadService = localidadService;
@@ -51,7 +54,9 @@ public class DataLoader implements CommandLineRunner {
         this.articuloManufacturadoService = articuloManufacturadoService;
         this.articuloManufacturadoDetalleService = articuloManufacturadoDetalleService;
         this.domicilioService = domicilioService;
+        this.passwordEncoder = passwordEncoder; // ✅ asignación
     }
+
 
     @Override
     @Transactional
@@ -113,27 +118,30 @@ public class DataLoader implements CommandLineRunner {
                     .localidad(localidad)
                     .build());
 
-            // 4. Usuario CLIENTE
+// 4. Usuario CLIENTE
             Usuario usuarioCliente = usuarioService.save(Usuario.builder()
-                    .auth0Id("auth0|123456789")
-                    .username("cliente_test")
+                    .email("faustinovinolo@gmail.com") // ✅ usar email como identificador
+                    .password(passwordEncoder.encode("cliente123")) // ✅ contraseña encriptada
                     .rol(Rol.CLIENTE)
+                    .nombre("Fiamma") // ✅ nombre real
                     .build());
 
-            // 5. Cliente asociado al Usuario
+// 5. Cliente asociado al Usuario
             Cliente cliente = Cliente.builder()
-                    .nombre("Fiamma")
                     .apellido("Brizuela")
                     .telefono("2615551234")
-                    .email("faustinovinolo@gmail.com")
-                    .password("cliente123")
                     .fechaNacimiento(LocalDate.of(1990, 5, 15))
                     .imagen(imgCliente)
-                    .usuario(usuarioCliente)
+                    .usuario(usuarioCliente) // ✅ relación con el usuario ya creado
                     .domicilios(Set.of(domicilioCliente))
+                    .baja(false) // ✅ para que no figure como eliminado
                     .build();
 
             clienteService.save(cliente);
+
+
+
+
 
             // 6. Categoría y Unidades
             Categoria categoriaPizza = categoriaService.save(Categoria.builder().denominacion("Pizza").build());
@@ -664,37 +672,13 @@ public class DataLoader implements CommandLineRunner {
             articuloManufacturadoService.save(barrolucoSimple);
 
 
-            // 9.1 Cliente con rol ADMINISTRADOR
-            Imagen imgClienteAdmin = imagenService.save(Imagen.builder()
-                    .denominacion("https://example.com/cliente.jpg")
-                    .build());
-
-            Domicilio domicilioAdmin = domicilioService.save(Domicilio.builder()
-                    .calle("Calle Verdadera")
-                    .numero(456)
-                    .cp(5500)
-                    .localidad(localidad)
-                    .build());
-
-            Usuario usuarioAdminCliente = usuarioService.save(Usuario.builder()
-                    .auth0Id("auth0|admin456")
-                    .username("admincliente@buen.com")
+            Usuario usuarioAdmin = usuarioService.save(Usuario.builder()
+                    .email("admin@buen.com")
+                    .password(passwordEncoder.encode("admin123")) // asegurate que uses PasswordEncoder
+                    .nombre("Admin General")
                     .rol(Rol.ADMINISTRADOR)
                     .build());
 
-            Cliente clienteAdmin = Cliente.builder()
-                    .nombre("Administrador")
-                    .apellido("Test")
-                    .telefono("2610000000")
-                    .email("admincliente@buen.com")
-                    .password("admin123")
-                    .fechaNacimiento(LocalDate.of(1985, 1, 1))
-                    .imagen(imgClienteAdmin)
-                    .usuario(usuarioAdminCliente)
-                    .domicilios(Set.of(domicilioAdmin))
-                    .build();
-
-            clienteService.save(clienteAdmin);
         } catch (Exception e) {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());
             e.printStackTrace();

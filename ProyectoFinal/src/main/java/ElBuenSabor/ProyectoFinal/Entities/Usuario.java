@@ -2,13 +2,10 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Entity
 @Table(name = "usuario")
-@Inheritance(strategy = InheritanceType.JOINED) // Usamos JOINED para separar las tablas por tipo de usuario
+@Inheritance(strategy = InheritanceType.JOINED)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -16,11 +13,14 @@ import java.util.List;
 @Builder
 public class Usuario extends BaseEntity {
 
-    @Column(unique = true)
-    private String auth0Id;
-    @Column(unique = true)
-    private String username;
-    @Column
-    private Rol rol;
+    @Column(unique = true, nullable = false)
+    private String email;
 
+    @Column(nullable = false)
+    private String password;
+
+    private String nombre; // 👉 nombre real de la persona
+
+    @Enumerated(EnumType.STRING)
+    private Rol rol;
 }

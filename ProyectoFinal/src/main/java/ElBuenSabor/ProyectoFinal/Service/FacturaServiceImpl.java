@@ -66,13 +66,20 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
         document.add(new Paragraph("Fecha: " + pedido.getFechaPedido().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
 
         Cliente cliente = pedido.getCliente();
-        if (cliente != null) {
-            document.add(new Paragraph("Cliente: " + cliente.getNombre() + " " + cliente.getApellido()));
-            document.add(new Paragraph("Email: " + cliente.getEmail()));
+        if (cliente != null && cliente.getUsuario() != null) {
+            document.add(new Paragraph("Cliente: "
+                    + cliente.getUsuario().getNombre() + " "
+                    + cliente.getApellido()));
+            document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
+
             if (pedido.getDomicilioEntrega() != null) {
-                document.add(new Paragraph("Dirección: " + pedido.getDomicilioEntrega().getCalle() + " " + pedido.getDomicilioEntrega().getNumero() + ", " + pedido.getDomicilioEntrega().getLocalidad().getNombre()));
+                document.add(new Paragraph("Dirección: "
+                        + pedido.getDomicilioEntrega().getCalle() + " "
+                        + pedido.getDomicilioEntrega().getNumero() + ", "
+                        + pedido.getDomicilioEntrega().getLocalidad().getNombre()));
             }
         }
+
         document.add(new Paragraph("\n"));
 
         // Tabla de detalles del pedido
@@ -171,10 +178,13 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
             document.add(new Paragraph("Motivo: " + notaCredito.getMotivo()));
 
             Cliente cliente = notaCredito.getCliente();
-            if (cliente != null) {
-                document.add(new Paragraph("Cliente: " + cliente.getNombre() + " " + cliente.getApellido()));
-                document.add(new Paragraph("Email: " + cliente.getEmail()));
+            if (cliente != null && cliente.getUsuario() != null) {
+                document.add(new Paragraph("Cliente: "
+                        + cliente.getUsuario().getNombre() + " "
+                        + cliente.getApellido()));
+                document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
             }
+
 
             Factura facturaOriginal = notaCredito.getFacturaAnulada();
             if (facturaOriginal != null) {

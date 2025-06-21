@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public class RegisterRequest {
     private String nombre;
     private String apellido;
-    private String username; // en vez de "email"
+    private String email;      // ✅ corregido
     private String password;
     private String telefono;
     private LocalDate fechaNacimiento;

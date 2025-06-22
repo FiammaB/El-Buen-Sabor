@@ -152,6 +152,28 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    // Filtrar
+    @GetMapping("/filtrar")
+    public ResponseEntity<?> filtrarArticulos(
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String denominacion,
+            @RequestParam(required = false) Boolean baja
+    ) {
+        try {
+            List<ArticuloManufacturado> articulos = ((ArticuloManufacturadoService) baseService)
+                    .filtrar(categoriaId, denominacion, baja);
+
+            List<ArticuloManufacturadoDTO> dtos = articulos.stream()
+                    .map(mapper::toDTO)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
 }
 
     // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController

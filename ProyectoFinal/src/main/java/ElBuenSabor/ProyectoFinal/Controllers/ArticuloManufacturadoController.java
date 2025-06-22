@@ -152,7 +152,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-
+}
 
     // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
     // si la lógica de borrado/activación/desactivación ya implementada en BaseController
@@ -160,4 +160,3 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     // @DeleteMapping("/{id}") ya está cubierto por BaseController
     // @PatchMapping("/{id}/activate") ya está cubierto por BaseController
     // @PatchMapping("/{id}/deactivate") ya está cubierto por BaseController
-}

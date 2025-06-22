@@ -116,42 +116,61 @@ public class PedidoController extends BaseController<Pedido, Long> {
         try {
             // --- LÓGICA DE PREPARACIÓN DEL PEDIDO (común para MP y EFECTIVO) ---
 
-            // Aquí construimos el objeto Pedido completo para el cálculo del tiempo y total
             Pedido pedidoParaCalculos = new Pedido();
 
-            // Resolver relaciones (Necesario para el cálculo de tiempo y para el save de Efectivo)
+            // Validaciones de IDs obligatorios
+            if (dto.getClienteId() == null) {
+                return ResponseEntity.badRequest().body("El ID del cliente no puede ser nulo");
+            }
+            if (dto.getDomicilioId() == null) {
+                return ResponseEntity.badRequest().body("El ID del domicilio no puede ser nulo");
+            }
+
+            // Resolver relaciones necesarias
             pedidoParaCalculos.setCliente(clienteService.findById(dto.getClienteId()));
             pedidoParaCalculos.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
-            if (dto.getSucursalId() != null) pedidoParaCalculos.setSucursal(sucursalService.findById(dto.getSucursalId()));
-            if (dto.getEmpleadoId() != null) pedidoParaCalculos.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
 
-            // Descuento del 10% si es retiro en local (modifica el total del DTO)
+            if (dto.getSucursalId() != null) {
+                pedidoParaCalculos.setSucursal(sucursalService.findById(dto.getSucursalId()));
+            }
+
+            if (dto.getEmpleadoId() != null) {
+                pedidoParaCalculos.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
+            }
+
+            // Descuento por Retiro en Local
             Double totalCalculado = dto.getTotal();
             if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
                 double descuento = totalCalculado * 0.10;
-                totalCalculado = totalCalculado - descuento;
-                System.out.println("DEBUG Descuento: Aplicado 10% de descuento por Retiro en Local. Total Original: " + dto.getTotal() + ", Descuento: " + descuento + ", Total Final: " + totalCalculado);
+                totalCalculado -= descuento;
+                System.out.println("DEBUG Descuento: Aplicado 10% por Retiro en Local. Total Original: " + dto.getTotal() + ", Final: " + totalCalculado);
             } else {
-                System.out.println("DEBUG Descuento: No aplica descuento por Retiro en Local. Tipo de Envío: " + dto.getTipoEnvio());
+                System.out.println("DEBUG Descuento: No aplica descuento. Tipo de Envío: " + dto.getTipoEnvio());
             }
-            pedidoParaCalculos.setTotal(totalCalculado); // Asignar el total ya con el descuento (si aplica)
-            pedidoParaCalculos.setTipoEnvio(dto.getTipoEnvio()); // Asignar tipo de envío
-            pedidoParaCalculos.setFormaPago(dto.getFormaPago()); // Asignar forma de pago
 
-            // Detalles del pedido (necesarios para tiempo estimado)
+            pedidoParaCalculos.setTotal(totalCalculado);
+            pedidoParaCalculos.setTipoEnvio(dto.getTipoEnvio());
+            pedidoParaCalculos.setFormaPago(dto.getFormaPago());
+
+            // Construcción de detalles del pedido
             if (dto.getDetalles() != null) {
                 Set<DetallePedido> detalles = new HashSet<>();
                 for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
                     detalle.setSubTotal(detalleDTO.getSubTotal());
+
                     if (detalleDTO.getArticuloId() != null) {
                         ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                        if (insumo != null) { detalle.setArticuloInsumo(insumo); } else {
-                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId()).orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
+                        if (insumo != null) {
+                            detalle.setArticuloInsumo(insumo);
+                        } else {
+                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado"));
                             detalle.setArticuloManufacturado(manufacturado);
                         }
                     }
+
                     detalle.setPedido(pedidoParaCalculos); // Relación inversa
                     detalles.add(detalle);
                 }

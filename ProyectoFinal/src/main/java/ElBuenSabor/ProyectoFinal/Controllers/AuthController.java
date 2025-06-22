@@ -4,11 +4,13 @@ import ElBuenSabor.ProyectoFinal.Auth.LoginRequest;
 import ElBuenSabor.ProyectoFinal.Auth.RegisterRequest;
 import ElBuenSabor.ProyectoFinal.Auth.UsuarioResponse;
 import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,11 +20,12 @@ public class AuthController {
 
     private final UsuarioService usuarioService;
     private final ClienteRepository clienteRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Usuario usuario = usuarioService.login(request.getUsername(), request.getPassword());
-        if (usuario == null) {
+        Usuario usuario = usuarioService.findByEmail(request.getEmail());
+        if (usuario == null || !passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
 
@@ -30,25 +33,46 @@ public class AuthController {
 
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),
-                cliente != null ? cliente.getNombre() : "Sin nombre",
-                cliente != null ? cliente.getEmail() : usuario.getUsername(),
-                usuario.getRol().name()
+                cliente != null ? cliente.getNombre() : usuario.getNombre(),
+                usuario.getEmail(),
+                usuario.getRol()
         );
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        Usuario nuevo = usuarioService.register(request);
+        try {
+            // 1. Crear Usuario
+            Usuario usuario = new Usuario();
+            usuario.setEmail(request.getEmail());
+            usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+            usuario.setNombre(request.getNombre());
+            usuario.setRol(Rol.CLIENTE);
 
-        Cliente cliente = clienteRepository.findByUsuario(nuevo).orElse(null);
+            Usuario nuevoUsuario = usuarioService.save(usuario);
 
-        UsuarioResponse response = new UsuarioResponse(
-                nuevo.getId(),
-                cliente != null ? cliente.getNombre() : "Sin nombre",
-                cliente != null ? cliente.getEmail() : nuevo.getUsername(),
-                nuevo.getRol().name()
-        );
-        return ResponseEntity.ok(response);
+            // 2. Crear Cliente vinculado
+            Cliente cliente = new Cliente();
+            cliente.setNombre(request.getNombre());
+            cliente.setApellido(request.getApellido());
+            cliente.setTelefono(request.getTelefono());
+            cliente.setFechaNacimiento(request.getFechaNacimiento());
+            cliente.setUsuario(nuevoUsuario);
+            cliente.setBaja(false);
+            clienteRepository.save(cliente);
+
+            // 3. Devolver respuesta
+            UsuarioResponse response = new UsuarioResponse(
+                    nuevoUsuario.getId(),
+                    cliente.getNombre(),
+                    nuevoUsuario.getEmail(),
+                    nuevoUsuario.getRol()
+            );
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
     }
 }

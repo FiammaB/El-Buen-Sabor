@@ -23,7 +23,6 @@ public class Cliente extends BaseEntity {
     private String telefono;
     private LocalDate fechaNacimiento;
 
-    private Boolean baja; // 👉 agregado para soporte de borrado lógico
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(

@@ -357,4 +357,18 @@ public class PedidoController extends BaseController<Pedido, Long> {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al anular factura y generar nota de crédito: " + e.getMessage() + "\"}");
         }
     }
+    @GetMapping("/cocinero")
+    public ResponseEntity<?> getPedidosEnPreparacion() {
+        try {
+            List<Pedido> pedidosEnPreparacion = pedidoService.findPedidosByEstado(Estado.EN_PREPARACION);
+            List<PedidoDTO> dtos = pedidosEnPreparacion.stream()
+                    .map(pedidoMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Error al obtener los pedidos en preparación: " + e.getMessage() + "\"}");
+        }
+    }
+
 }

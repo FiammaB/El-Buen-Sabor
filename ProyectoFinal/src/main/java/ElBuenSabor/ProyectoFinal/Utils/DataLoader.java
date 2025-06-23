@@ -134,14 +134,9 @@ public class DataLoader implements CommandLineRunner {
                     .imagen(imgCliente)
                     .usuario(usuarioCliente) // ✅ relación con el usuario ya creado
                     .domicilios(Set.of(domicilioCliente))
-                    .baja(false) // ✅ para que no figure como eliminado
                     .build();
 
             clienteService.save(cliente);
-
-
-
-
 
             // 6. Categoría y Unidades
             Categoria categoriaPizza = categoriaService.save(Categoria.builder().denominacion("Pizza").build());
@@ -678,6 +673,13 @@ public class DataLoader implements CommandLineRunner {
                     .nombre("Admin General")
                     .rol(Rol.ADMINISTRADOR)
                     .build());
+            Usuario usuarioCocinero = usuarioService.save(Usuario.builder()
+                    .email("cocinero@buen.com")
+                    .password(passwordEncoder.encode("cocinero123"))
+                    .nombre("Juan Cocinero")
+                    .rol(Rol.COCINERO)
+                    .build());
+
 
         } catch (Exception e) {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());

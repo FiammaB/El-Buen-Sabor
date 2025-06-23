@@ -121,7 +121,6 @@ public class ClienteController extends BaseController<Cliente, Long> {
                     .telefono(dto.getTelefono())
                     .fechaNacimiento(dto.getFechaNacimiento())
                     .usuario(usuarioGuardado)
-                    .baja(false)
                     .build();
 
             if (dto.getImagenId() != null) {

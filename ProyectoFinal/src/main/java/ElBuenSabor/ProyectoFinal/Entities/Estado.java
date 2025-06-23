@@ -9,5 +9,6 @@ public enum Estado {
     CANCELADO,
     RECHAZADO,
     PAGADO,
-    DEVOLUCION
+    DEVOLUCION,
+    EN_PREPARACION
 }

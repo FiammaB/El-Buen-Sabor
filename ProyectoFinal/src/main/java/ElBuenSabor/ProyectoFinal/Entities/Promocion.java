@@ -51,4 +51,5 @@ public class Promocion extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "sucursal_id")
     )
     private List<Sucursal> sucursales;
+
 }

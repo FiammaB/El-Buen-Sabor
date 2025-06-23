@@ -19,5 +19,5 @@ public class ArticuloInsumoDTO extends ArticuloDTO{
     private Long imagenId;
     private Long unidadMedidaId;
     private Long categoriaId;
-
+    private Long sucursalId;
 }

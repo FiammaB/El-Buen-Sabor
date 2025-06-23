@@ -123,7 +123,7 @@ public class MPController {
             // 3. Configurar las URLs de redirección y el webhook
             PreferenceBackUrlsRequest backUrls =
                     PreferenceBackUrlsRequest.builder()
-                            .success("https://localhost:5173/order-confirmation")
+                            .success("https://localhost:5173/order-confirmation?pedido=" + pedidoPersistido.getId())
                             .pending("https://localhost:5173/")
                             .failure("https://localhost:5173/pagoRechazado")
                             .build();

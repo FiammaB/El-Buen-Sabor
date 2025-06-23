@@ -12,11 +12,12 @@ import java.util.List; // Importar List
 @Service
 public class ArticuloManufacturadoServiceImpl extends BaseServiceImpl<ArticuloManufacturado, Long> implements ArticuloManufacturadoService {
 
+    private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
+
     public ArticuloManufacturadoServiceImpl(ArticuloManufacturadoRepository articuloManufacturadoRepository) {
-        super(articuloManufacturadoRepository); // Llama al constructor de la clase base
+        super(articuloManufacturadoRepository);
+        this.articuloManufacturadoRepository = articuloManufacturadoRepository;
     }
-
-
 
     @Override
     @Transactional
@@ -33,22 +34,23 @@ public class ArticuloManufacturadoServiceImpl extends BaseServiceImpl<ArticuloMa
             actual.setUnidadMedida(updated.getUnidadMedida());
             actual.setImagen(updated.getImagen());
 
-            // Limpiar detalles y agregar los nuevos
-            System.out.println("Detalles antes de limpiar: " + actual.getDetalles().size());
             actual.getDetalles().clear();
-            System.out.println("Detalles después de limpiar y antes de agregar nuevos: " + actual.getDetalles().size());
 
             if (updated.getDetalles() != null) {
                 for (ArticuloManufacturadoDetalle detalle : updated.getDetalles()) {
-                    detalle.setArticuloManufacturado(actual); // Relación inversa
+                    detalle.setArticuloManufacturado(actual);
                     actual.getDetalles().add(detalle);
                 }
             }
-            System.out.println("Detalles después de agregar nuevos: " + actual.getDetalles().size());
 
             return baseRepository.save(actual);
         } catch (Exception e) {
             throw new Exception("Error al actualizar el artículo manufacturado: " + e.getMessage());
         }
+    }
+
+    @Override
+    public List<ArticuloManufacturado> filtrar(Long categoriaId, String denominacion, Boolean baja) {
+        return articuloManufacturadoRepository.filtrar(categoriaId, denominacion, baja);
     }
 }

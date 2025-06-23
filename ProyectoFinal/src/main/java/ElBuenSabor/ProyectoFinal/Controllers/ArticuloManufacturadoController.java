@@ -5,10 +5,7 @@ import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturadoDetalle;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloManufacturadoMapper;
-import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
-import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
-import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
-import ElBuenSabor.ProyectoFinal.Repositories.UnidadMedidaRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.ArticuloManufacturadoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +24,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final ImagenRepository imagenRepository;
     private final ArticuloInsumoRepository articuloInsumoRepository;
+    private final ArticuloManufacturadoDetalleRepository articuloManufacturadoDetalleRepository;
 
     // El constructor inyecta el servicio específico de ArticuloManufacturado
     public ArticuloManufacturadoController(
@@ -35,13 +33,15 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             CategoriaRepository categoriaRepository,
             UnidadMedidaRepository unidadMedidaRepository,
             ImagenRepository imagenRepository,
-            ArticuloInsumoRepository articuloInsumoRepository) {
+            ArticuloInsumoRepository articuloInsumoRepository,
+            ArticuloManufacturadoDetalleRepository articuloManufacturadoDetalleRepository) {
         super(articuloManufacturadoService); // Pasa el servicio al constructor del BaseController
         this.mapper = mapper;
         this.categoriaRepository = categoriaRepository;
         this.unidadMedidaRepository = unidadMedidaRepository;
         this.imagenRepository = imagenRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
+        this.articuloManufacturadoDetalleRepository = articuloManufacturadoDetalleRepository;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -115,6 +115,7 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             // Manejar los detalles de manera específica para evitar duplicados
             if (dto.getDetalles() != null) {
 
+                articuloManufacturadoDetalleRepository.deleteByArticuloManufacturadoId(existingEntity.getId());
                 existingEntity.getDetalles().clear();
 
                 // Agregar nuevos detalles
@@ -152,6 +153,28 @@ public class ArticuloManufacturadoController extends BaseController<ArticuloManu
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    // Filtrar
+    @GetMapping("/filtrar")
+    public ResponseEntity<?> filtrarArticulos(
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String denominacion,
+            @RequestParam(required = false) Boolean baja
+    ) {
+        try {
+            List<ArticuloManufacturado> articulos = ((ArticuloManufacturadoService) baseService)
+                    .filtrar(categoriaId, denominacion, baja);
+
+            List<ArticuloManufacturadoDTO> dtos = articulos.stream()
+                    .map(mapper::toDTO)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
 }
 
     // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController

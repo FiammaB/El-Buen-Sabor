@@ -1,0 +1,28 @@
+// En build.gradle (Groovy DSL)
+
+plugins {
+    id 'java' // Para proyectos Java estándar
+    // Si es un proyecto web con Spring Boot, añade esto:
+    // id 'org.springframework.boot' version '3.3.0' // Ajusta a tu versión de Spring Boot
+    // id 'io.spring.dependency-management' version '1.1.5' // Esencial para Spring Boot
+}
+
+repositories {
+    mavenCentral() // El repositorio más común para dependencias
+    // Si usas otros repositorios (ej. JBoss, o un repositorio privado), añádelos aquí:
+    // maven { url 'https://repo.spring.io/milestone' }
+}
+
+group = 'com.tuempresa' // Reemplaza con tu groupId de Maven
+version = '0.0.1-SNAPSHOT' // Reemplaza con la versión de tu proyecto Maven
+
+java {
+    // Configura la versión de Java que usas en tu pom.xml
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17) // Por ejemplo, si usas Java 17
+    }
+}
+
+dependencies {
+    // Aquí es donde irán tus dependencias
+}

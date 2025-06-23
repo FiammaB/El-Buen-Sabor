@@ -18,9 +18,8 @@ public class Empresa extends BaseEntity {
 
     private String nombre;
     private String razonSocial;
-    private Integer cuil;
-
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
+    private int cuil;
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true) // Añadir orphanRemoval si deseas que las sucursales se eliminen con la empresa
     private List<Sucursal> sucursales = new ArrayList<>();
 
 }

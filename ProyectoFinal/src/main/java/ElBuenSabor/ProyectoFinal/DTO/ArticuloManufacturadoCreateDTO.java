@@ -20,6 +20,6 @@ public class ArticuloManufacturadoCreateDTO extends ArticuloDTO {
     private String descripcion;
     private Integer tiempoEstimadoMinutos;
     private String preparacion;
-
+    private Long sucursalId;
     private List<ArticuloManufacturadoDetalleCreateDTO> detalles;
 }

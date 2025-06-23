@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -358,16 +356,49 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
     @GetMapping("/cocinero")
-    public ResponseEntity<?> getPedidosEnPreparacion() {
+    public ResponseEntity<?> getPedidosCocina() {
         try {
-            List<Pedido> pedidosEnPreparacion = pedidoService.findPedidosByEstado(Estado.EN_PREPARACION);
-            List<PedidoDTO> dtos = pedidosEnPreparacion.stream()
+            // Filtrar ambos estados
+            List<Pedido> pedidos = pedidoService.findPedidosByEstados(Arrays.asList(Estado.EN_PREPARACION, Estado.EN_COCINA));
+            List<PedidoDTO> dtos = pedidos.stream()
                     .map(pedidoMapper::toDTO)
                     .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\": \"Error al obtener los pedidos en preparación: " + e.getMessage() + "\"}");
+                    .body("{\"error\": \"Error al obtener los pedidos en cocina/preparacion: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        try {
+            String nuevoEstado = request.get("estado");
+            if (nuevoEstado == null) {
+                return ResponseEntity.badRequest().body("{\"error\": \"El estado es requerido\"}");
+            }
+            Pedido pedido = pedidoService.findById(id);
+            pedido.setEstado(Estado.valueOf(nuevoEstado));
+            Pedido actualizado = pedidoService.save(pedido);
+            return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/hora-estimada")
+    public ResponseEntity<?> actualizarHoraEstimada(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            Pedido pedido = pedidoService.findById(id);
+            String nuevaHora = body.get("horaEstimadaFinalizacion");
+            if (nuevaHora != null) {
+                pedido.setHoraEstimadaFinalizacion(LocalTime.parse(nuevaHora));
+                pedidoService.save(pedido);
+                return ResponseEntity.ok().build();
+            }
+            return ResponseEntity.badRequest().body("Falta horaEstimadaFinalizacion");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 

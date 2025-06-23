@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +29,9 @@ public class DataLoader implements CommandLineRunner {
     private final ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService;
     private final DomicilioService domicilioService;
     private final PasswordEncoder passwordEncoder; // ✅ agregado
+    private final SucursalService sucursalService;
+    private final PedidoService pedidoService;
+    private final FacturaService facturaService;
 
     public DataLoader(PaisService paisService,
                       ProvinciaService provinciaService,
@@ -41,7 +45,10 @@ public class DataLoader implements CommandLineRunner {
                       ArticuloManufacturadoService articuloManufacturadoService,
                       ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService,
                       DomicilioService domicilioService,
-                      PasswordEncoder passwordEncoder) { // ✅ agregado acá también
+                      PasswordEncoder passwordEncoder,
+                      SucursalService sucursalService,
+                      PedidoService pedidoService,
+                      FacturaService facturaService) { // ✅ agregado acá también
         this.paisService = paisService;
         this.provinciaService = provinciaService;
         this.localidadService = localidadService;
@@ -55,6 +62,9 @@ public class DataLoader implements CommandLineRunner {
         this.articuloManufacturadoDetalleService = articuloManufacturadoDetalleService;
         this.domicilioService = domicilioService;
         this.passwordEncoder = passwordEncoder; // ✅ asignación
+        this.sucursalService = sucursalService;
+        this.pedidoService = pedidoService;
+        this.facturaService = facturaService;
     }
 
 
@@ -679,6 +689,120 @@ public class DataLoader implements CommandLineRunner {
                     .nombre("Juan Cocinero")
                     .rol(Rol.COCINERO)
                     .build());
+
+            //Pedido
+
+            Sucursal sucursal = Sucursal.builder()
+                    .nombre("Sucursal Centro")
+                    .horarioApertura(LocalTime.of(10, 0))
+                    .horarioCierre(LocalTime.of(23, 59))
+                    .domicilio(domicilioCliente) // o podés crear otro domicilio si querés
+                    .build();
+
+            sucursal = sucursalService.save(sucursal);
+
+            Factura facturaPedido = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(1250.0)
+                    .anulada(false)
+                    .mpPaymentId(null)         // Dummy, poné un número real si querés simular el ID de MP
+                    .mpMerchantOrderId(null)
+                    .mpPreferenceId(null)
+                    .mpPaymentType("credit_card") // Dummy, o "mercadopago" si querés
+                    .urlPdf(null)              // O poné un link si ya lo generás en test
+                    .build();
+
+            facturaPedido = facturaService.save(facturaPedido);
+
+            Pedido pedido = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(1250.0)
+                    .totalCosto(900.0)
+                    .estado(Estado.EN_COCINA)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente)
+                    .domicilioEntrega(domicilioCliente)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido) // ¡Aca se asigna la factura!
+                    .anulado(false)
+                    .build();
+
+            DetallePedido detalle1a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1250.0)
+                    .articuloManufacturado(hamburguesa)
+                    .pedido(pedido)
+                    .build();
+
+            DetallePedido detalle1b = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(1000.0)
+                    .articuloManufacturado(empanadasCarne)
+                    .pedido(pedido)
+                    .build();
+
+            pedido.setDetallesPedidos(Set.of(detalle1a, detalle1b));
+
+            pedido.setEmpleado(null);
+
+            facturaPedido.setPedido(pedido);
+
+            pedidoService.save(pedido);
+
+
+            Factura facturaPedido1 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(1250.0)
+                    .anulada(false)
+                    .mpPaymentId(null)
+                    .mpMerchantOrderId(null)
+                    .mpPreferenceId(null)
+                    .mpPaymentType("credit_card")
+                    .urlPdf(null)
+                    .build();
+
+            facturaPedido1 = facturaService.save(facturaPedido1);
+
+            Pedido pedido1 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(1250.0)
+                    .totalCosto(900.0)
+                    .estado(Estado.EN_COCINA)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente)
+                    .domicilioEntrega(domicilioCliente)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido1)
+                    .anulado(false)
+                    .build();
+
+            DetallePedido detalle2a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(12350.0)
+                    .articuloManufacturado(hamburguesaPolloSimple)
+                    .pedido(pedido1)
+                    .build();
+
+            DetallePedido detalle2b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(7500.0)
+                    .articuloManufacturado(pizzaMuzzarella)
+                    .pedido(pedido1)
+                    .build();
+
+            pedido1.setDetallesPedidos(Set.of(detalle2a, detalle2b));
+
+            pedido.setEmpleado(null);
+
+            facturaPedido1.setPedido(pedido1);
+
+            pedidoService.save(pedido1);
 
 
         } catch (Exception e) {

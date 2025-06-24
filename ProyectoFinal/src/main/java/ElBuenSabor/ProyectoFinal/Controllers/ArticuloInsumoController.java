@@ -1,24 +1,25 @@
+// Archivo: ElBuenSabor/ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Controllers/ArticuloInsumoController.java
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.ArticuloInsumoDTO;
-
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
+import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.ArticuloInsumoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.CategoriaRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UnidadMedidaRepository;
-import ElBuenSabor.ProyectoFinal.Service.ArticuloInsumoService; // Usar la interfaz específica
-
+import ElBuenSabor.ProyectoFinal.Service.ArticuloInsumoService;
+import ElBuenSabor.ProyectoFinal.Service.SucursalService; // Importar SucursalService
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/articuloInsumo") // Define la URL base para este controlador
-// ArticuloInsumoController ahora extiende BaseController
+@RequestMapping("/api/articuloInsumo")
 public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Long> {
 
     private final ArticuloInsumoMapper articuloInsumoMapper;
@@ -26,130 +27,242 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final ImagenRepository imagenRepository;
     private final ArticuloInsumoService articuloInsumoService;
+    private final SucursalService sucursalService; // Inyectar SucursalService
 
-    // El constructor inyecta el servicio específico de ArticuloInsumo
     public ArticuloInsumoController(
-            ArticuloInsumoService articuloInsumoService, // Servicio específico
+            ArticuloInsumoService articuloInsumoService,
             ArticuloInsumoMapper articuloInsumoMapper,
             CategoriaRepository categoriaRepository,
             UnidadMedidaRepository unidadMedidaRepository,
-            ImagenRepository imagenRepository) {
-        super(articuloInsumoService); // Pasa el servicio al constructor del BaseController
+            ImagenRepository imagenRepository,
+            SucursalService sucursalService) { // Modificar constructor
+        super(articuloInsumoService);
         this.articuloInsumoService = articuloInsumoService;
         this.articuloInsumoMapper = articuloInsumoMapper;
         this.categoriaRepository = categoriaRepository;
         this.unidadMedidaRepository = unidadMedidaRepository;
         this.imagenRepository = imagenRepository;
+        this.sucursalService = sucursalService;
     }
 
-    // Sobrescribir getAll para devolver DTOs y manejar excepciones
-    @GetMapping("/insumos") // Puedes mantener tu endpoint específico si quieres
-    @Override // Sobrescribe el getAll del BaseController
-    public ResponseEntity<?> getAll() {
+    // Nuevo endpoint para obtener todos los artículos insumo de una sucursal específica
+    @GetMapping("/sucursal/{sucursalId}/insumos")
+    public ResponseEntity<?> getAllBySucursal(@PathVariable Long sucursalId) {
         try {
-            List<ArticuloInsumo> insumos = baseService.findAll(); // Llama al findAll del padre
+            List<ArticuloInsumo> insumos = articuloInsumoService.findAllBySucursalId(sucursalId);
             List<ArticuloInsumoDTO> dtos = insumos.stream()
                     .map(articuloInsumoMapper::toDTO)
                     .toList();
-            System.out.println("LISTA DE INSUMOS: " + dtos);
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Sobrescribir getOne para devolver un DTO y manejar excepciones
-    @GetMapping("/{id}") // Puedes mantener tu endpoint específico si quieres
-    @Override // Sobrescribe el getOne del BaseController
+    // Sobrescribir getAll para que, por defecto, pida el sucursalId
+    @GetMapping("/insumos")
+    @Override
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Para obtener artículos insumo, debe especificar un ID de sucursal. Use /api/articuloInsumo/sucursal/{sucursalId}/insumos\"}");
+        // Alternativamente, si quieres mostrar todos los artículos de todas las sucursales (con precaución por rendimiento):
+        // try {
+        //     List<ArticuloInsumo> insumos = articuloInsumoService.findAll();
+        //     List<ArticuloInsumoDTO> dtos = insumos.stream()
+        //             .map(articuloInsumoMapper::toDTO)
+        //             .toList();
+        //     return ResponseEntity.ok(dtos);
+        // } catch (Exception e) {
+        //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        // }
+    }
+
+    // Sobrescribir getOne para que también pueda validar por sucursal (opcional)
+    @GetMapping("/{id}")
+    @Override
     public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            ArticuloInsumo insumo = baseService.findById(id); // Llama al findById del padre
+            ArticuloInsumo insumo = articuloInsumoService.findById(id);
             return ResponseEntity.ok(articuloInsumoMapper.toDTO(insumo));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    @PostMapping(consumes = "application/json")
-
-    public ResponseEntity<?> create(@RequestBody ArticuloInsumoDTO dto) {
+    // Modificado: create ahora requiere un sucursalId en la URL
+    @PostMapping("/sucursal/{sucursalId}")
+    public ResponseEntity<?> create(@RequestBody ArticuloInsumoDTO dto, @PathVariable Long sucursalId) {
         try {
             ArticuloInsumo entity = articuloInsumoMapper.toEntity(dto);
+
+            // Cargar la entidad Sucursal y asignarla al insumo
+            Sucursal sucursal = sucursalService.findById(sucursalId);
+            if (sucursal == null) {
+                throw new ResourceNotFoundException("Sucursal no encontrada con ID: " + sucursalId);
+            }
+            entity.setSucursal(sucursal);
+
+            // Establecer las demás relaciones ManyToOne
+            entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
+            entity.setUnidadMedida(unidadMedidaRepository.findById(dto.getUnidadMedidaId()).orElse(null));
+            entity.setImagen(imagenRepository.findById(dto.getImagenId()).orElse(null));
+            entity.setBaja(false);
+
+            ArticuloInsumo saved = articuloInsumoService.save(entity);
+            return ResponseEntity.status(HttpStatus.CREATED).body(articuloInsumoMapper.toDTO(saved));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al crear el artículo insumo: " + e.getMessage() + "\"}");
+        }
+    }
+
+    // Modificado: update ahora requiere un sucursalId en la URL
+    @PutMapping("/sucursal/{sucursalId}/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticuloInsumoDTO dto, @PathVariable Long sucursalId) {
+        try {
+            ArticuloInsumo existingEntity = articuloInsumoService.findById(id);
+
+            // Validar que el artículo pertenece a la sucursal especificada en la URL
+            if (!existingEntity.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
+
+            ArticuloInsumo entity = articuloInsumoMapper.toEntity(dto);
+
+            // Mantener la sucursal existente
+            entity.setSucursal(existingEntity.getSucursal());
 
             // Establecer las relaciones ManyToOne
             entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
             entity.setUnidadMedida(unidadMedidaRepository.findById(dto.getUnidadMedidaId()).orElse(null));
             entity.setImagen(imagenRepository.findById(dto.getImagenId()).orElse(null));
-            entity.setBaja(false); // Por defecto, un nuevo artículo está activo
 
-            ArticuloInsumo saved = baseService.save(entity); // Llama al save del padre
-            return ResponseEntity.status(HttpStatus.CREATED).body(articuloInsumoMapper.toDTO(saved)); // Convierte a DTO para la respuesta
+            ArticuloInsumo updated = articuloInsumoService.update(id, entity);
+            return ResponseEntity.ok(articuloInsumoMapper.toDTO(updated));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
-    @PutMapping(value = "/{id}", consumes = "application/json")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticuloInsumoDTO dto) {
-        try {
-            ArticuloInsumo entity = articuloInsumoMapper.toEntity(dto);
-
-            // Establecer las relaciones ManyToOne
-            entity.setCategoria(categoriaRepository.findById(dto.getCategoriaId()).orElse(null));
-            entity.setUnidadMedida(unidadMedidaRepository.findById(dto.getUnidadMedidaId()).orElse(null));
-            entity.setImagen(imagenRepository.findById(dto.getImagenId()).orElse(null));
-
-            ArticuloInsumo updated = baseService.update(id, entity); // Llama al update del padre
-            return ResponseEntity.ok(articuloInsumoMapper.toDTO(updated)); // Convierte a DTO para la respuesta
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
-
-    @PutMapping("/{id}/sumar-stock")
+    // Modificado: sumarStock ahora requiere un sucursalId
+    @PutMapping("/sucursal/{sucursalId}/{id}/sumar-stock")
     public ResponseEntity<?> sumarStock(
             @PathVariable Long id,
+            @PathVariable Long sucursalId,
             @RequestParam("cantidad") Integer cantidad
     ) {
         try {
             ArticuloInsumo insumo = articuloInsumoService.findById(id);
+            // Validar que el insumo pertenece a la sucursal especificada
+            if (!insumo.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
             if (insumo.getBaja() != null && insumo.getBaja()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No se puede actualizar stock de un insumo dado de baja.");
             }
             insumo.setStockActual(insumo.getStockActual() + cantidad);
             articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(insumo); // o devolver DTO
+            return ResponseEntity.ok(articuloInsumoMapper.toDTO(insumo)); // Devolver DTO
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
 
-    @PutMapping("/{id}/actualizar-precio")
+    // Modificado: actualizarPrecioCompra ahora requiere un sucursalId
+    @PutMapping("/sucursal/{sucursalId}/{id}/actualizar-precio")
     public ResponseEntity<?> actualizarPrecioCompra(
             @PathVariable Long id,
+            @PathVariable Long sucursalId,
             @RequestParam("precioCompra") Double precioCompra
     ) {
         try {
             ArticuloInsumo insumo = articuloInsumoService.findById(id);
+            // Validar que el insumo pertenece a la sucursal especificada
+            if (!insumo.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
             insumo.setPrecioCompra(precioCompra);
             articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(insumo); // o devolver DTO
+            return ResponseEntity.ok(articuloInsumoMapper.toDTO(insumo)); // Devolver DTO
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
 
-    @PatchMapping("/{id}/baja")
+    // Modificado: toggleBaja ahora requiere un sucursalId en la URL
+    @PatchMapping("/sucursal/{sucursalId}/{id}/baja")
     public ResponseEntity<?> toggleBaja(
             @PathVariable Long id,
+            @PathVariable Long sucursalId,
             @RequestParam boolean baja
     ) {
         try {
-            ArticuloInsumo actualizado = baseService.toggleBaja(id, baja);
+            ArticuloInsumo existingEntity = articuloInsumoService.findById(id);
+            // Validar que el artículo pertenece a la sucursal especificada
+            if (!existingEntity.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
+
+            ArticuloInsumo actualizado = articuloInsumoService.toggleBaja(id, baja);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Nuevo: Endpoint para obtener insumos con stock bajo por sucursal
+    @GetMapping("/sucursal/{sucursalId}/stock-bajo")
+    public ResponseEntity<?> getInsumosConStockBajo(@PathVariable Long sucursalId,
+                                                    @RequestParam("stockMinimo") Double stockMinimo) {
+        try {
+            List<ArticuloInsumo> insumos = articuloInsumoService.findByStockActualLessThanEqualAndSucursalId(stockMinimo, sucursalId);
+            List<ArticuloInsumoDTO> dtos = insumos.stream()
+                    .map(articuloInsumoMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Métodos DELETE, ACTIVATE, DEACTIVATE (si los usas, asegúrate de que también validan la sucursal)
+    @DeleteMapping("/sucursal/{sucursalId}/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id, @PathVariable Long sucursalId) {
+        try {
+            ArticuloInsumo existingEntity = articuloInsumoService.findById(id);
+            if (!existingEntity.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
+            articuloInsumoService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al eliminar el artículo insumo: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/sucursal/{sucursalId}/{id}/activate")
+    public ResponseEntity<?> activate(@PathVariable Long id, @PathVariable Long sucursalId) {
+        try {
+            ArticuloInsumo existingEntity = articuloInsumoService.findById(id);
+            if (!existingEntity.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
+            articuloInsumoService.toggleBaja(id, false); // false = no está dado de baja, es decir, está activo
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al activar el artículo insumo: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/sucursal/{sucursalId}/{id}/deactivate")
+    public ResponseEntity<?> deactivate(@PathVariable Long id, @PathVariable Long sucursalId) {
+        try {
+            ArticuloInsumo existingEntity = articuloInsumoService.findById(id);
+            if (!existingEntity.getSucursal().getId().equals(sucursalId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("{\"error\": \"El artículo insumo no pertenece a la sucursal especificada.\"}");
+            }
+            articuloInsumoService.toggleBaja(id, true); // true = está dado de baja, es decir, está inactivo
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al desactivar el artículo insumo: " + e.getMessage() + "\"}");
         }
     }
 }

@@ -109,7 +109,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
         try {
             Usuario nuevoUsuario = Usuario.builder()
                     .email(dto.getEmail())
-                    .password(dto.getPassword()) // ⚠️ En producción: encriptar con BCrypt
+                    .password(dto.getPassword()) // En producción: encriptar con BCrypt
                     .nombre(dto.getNombre())
                     .rol(Rol.CLIENTE)
                     .build();
@@ -121,7 +121,6 @@ public class ClienteController extends BaseController<Cliente, Long> {
                     .telefono(dto.getTelefono())
                     .fechaNacimiento(dto.getFechaNacimiento())
                     .usuario(usuarioGuardado)
-                    .baja(false)
                     .build();
 
             if (dto.getImagenId() != null) {

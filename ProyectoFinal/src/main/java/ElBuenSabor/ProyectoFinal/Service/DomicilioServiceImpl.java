@@ -14,21 +14,19 @@ public class DomicilioServiceImpl extends BaseServiceImpl<Domicilio, Long> imple
 
 
     public DomicilioServiceImpl(DomicilioRepository domicilioRepository) {
-        super(domicilioRepository); // Llama al constructor de la clase base
+        super(domicilioRepository);
     }
-
-
 
     @Override
     @Transactional
     public Domicilio update(Long id, Domicilio updatedDomicilio) throws Exception {
         try {
-            Domicilio actual = findById(id); //
+            Domicilio actual = findById(id);
 
-            actual.setCalle(updatedDomicilio.getCalle()); //
-            actual.setNumero(updatedDomicilio.getNumero()); //
-            actual.setCp(updatedDomicilio.getCp()); //
-            actual.setLocalidad(updatedDomicilio.getLocalidad()); //
+            actual.setCalle(updatedDomicilio.getCalle());
+            actual.setNumero(updatedDomicilio.getNumero());
+            actual.setCp(updatedDomicilio.getCp());
+            actual.setLocalidad(updatedDomicilio.getLocalidad());
 
 
             return baseRepository.save(actual);

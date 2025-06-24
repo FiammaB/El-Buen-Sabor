@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 public enum Rol {
     CLIENTE,
-    EMPLEADO,
+    CAJERO,
+    COCINERO,
     ADMINISTRADOR
 }

@@ -1,40 +1,40 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import jakarta.mail.internet.MimeMessage; // Importar MimeMessage
-import jakarta.mail.MessagingException; // Importar MessagingException
-import jakarta.activation.DataSource; // Importar DataSource
-import jakarta.mail.util.ByteArrayDataSource; // Importar ByteArrayDataSource
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
+import jakarta.activation.DataSource;
+import jakarta.mail.util.ByteArrayDataSource;
 
 import java.io.ByteArrayOutputStream;
 
 @Service
-public class  EmailServiceImpl implements EmailService {
+public class EmailServiceImpl implements EmailService {
 
     @Autowired
-    private JavaMailSender mailSender; // Spring Boot autoconfigura esto
+    private JavaMailSender mailSender;
 
-    @Value("${mail.from.address}") // Obtenemos la dirección del remitente desde application.properties
+    @Value("${mail.from.address}")
     private String fromAddress;
 
     @Override
     public void sendEmail(String to, String subject, String text, ByteArrayOutputStream attachmentBytes, String attachmentFilename) throws Exception {
         MimeMessage message = mailSender.createMimeMessage();
         try {
-            MimeMessageHelper helper = new MimeMessageHelper(message, attachmentBytes != null); // True para habilitar multipart si hay adjunto
+            boolean tieneAdjunto = attachmentBytes != null && attachmentFilename != null;
+
+            MimeMessageHelper helper = new MimeMessageHelper(message, tieneAdjunto);
             helper.setFrom(fromAddress);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(text, true); // true para habilitar HTML si quieres
+            helper.setText(text, true); // true habilita HTML
 
-            if (attachmentBytes != null && attachmentFilename != null) {
-                DataSource dataSource = new ByteArrayDataSource(attachmentBytes.toByteArray(), "application/pdf"); // Tipo MIME para PDF
+            if (tieneAdjunto) {
+                DataSource dataSource = new ByteArrayDataSource(attachmentBytes.toByteArray(), "application/pdf");
                 helper.addAttachment(attachmentFilename, dataSource);
             }
 

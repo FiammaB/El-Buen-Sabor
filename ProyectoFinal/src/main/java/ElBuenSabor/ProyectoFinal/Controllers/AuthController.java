@@ -7,11 +7,17 @@ import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
+import ElBuenSabor.ProyectoFinal.Service.EmailService;
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,6 +27,9 @@ public class AuthController {
     private final UsuarioService usuarioService;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+
+    private final Map<String, String> codigoRecuperacion = new HashMap<>();
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -43,11 +52,9 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            // 1. Crear Usuario
             Usuario usuario = new Usuario();
             usuario.setEmail(request.getEmail());
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -56,7 +63,6 @@ public class AuthController {
 
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
-            // 2. Crear Cliente vinculado
             Cliente cliente = new Cliente();
             cliente.setNombre(request.getNombre());
             cliente.setApellido(request.getApellido());
@@ -66,7 +72,6 @@ public class AuthController {
             cliente.setBaja(false);
             clienteRepository.save(cliente);
 
-            // 3. Devolver respuesta completa
             UsuarioResponse response = new UsuarioResponse(
                     nuevoUsuario.getId(),
                     cliente.getNombre(),
@@ -83,4 +88,54 @@ public class AuthController {
         }
     }
 
+    // ------------------------------
+    // RECUPERACIÓN DE CONTRASEÑA
+    // ------------------------------
+
+    @PostMapping("/recuperar")
+    public ResponseEntity<?> recuperar(@RequestParam String email) {
+        Usuario usuario = usuarioService.findByEmail(email);
+        if (usuario == null) {
+            return ResponseEntity.status(404).body("No existe un usuario con ese email");
+        }
+
+        String codigo = String.valueOf(new Random().nextInt(900000) + 100000); // 6 dígitos
+        codigoRecuperacion.put(email, codigo);
+
+        String mensaje = "<p>Tu código de recuperación de contraseña es: <strong>" + codigo + "</strong></p>";
+        try {
+            emailService.sendEmail(email, "Código de recuperación", mensaje, null, null);
+            return ResponseEntity.ok("Código enviado al correo");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error al enviar el correo: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verificar-codigo")
+    public ResponseEntity<?> verificarCodigo(@RequestParam String email, @RequestParam String codigo) {
+        String codigoGuardado = codigoRecuperacion.get(email);
+        if (codigoGuardado != null && codigoGuardado.equals(codigo)) {
+            return ResponseEntity.ok("Código válido");
+        }
+        return ResponseEntity.status(400).body("Código inválido o expirado");
+    }
+
+    @PostMapping("/cambiar-password")
+    public ResponseEntity<?> cambiarPassword(@RequestParam String email, @RequestParam String codigo, @RequestParam String nuevaPassword) {
+        String codigoGuardado = codigoRecuperacion.get(email);
+        if (codigoGuardado == null || !codigoGuardado.equals(codigo)) {
+            return ResponseEntity.status(400).body("Código inválido o expirado");
+        }
+
+        Usuario usuario = usuarioService.findByEmail(email);
+        if (usuario == null) {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuarioService.save(usuario);
+        codigoRecuperacion.remove(email); // eliminar el código usado
+
+        return ResponseEntity.ok("Contraseña actualizada correctamente");
+    }
 }

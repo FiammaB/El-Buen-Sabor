@@ -11,8 +11,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoriaShortDTO {
-    //RequestDTO
     private String denominacion;
     private Long categoriaPadreId;
     private List<Long> sucursalIds;
+    public Boolean baja;
 }

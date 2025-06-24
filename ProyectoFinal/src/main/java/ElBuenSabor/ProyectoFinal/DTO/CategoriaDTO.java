@@ -11,5 +11,6 @@ public class CategoriaDTO {
     private Long id;
     private String denominacion;
     private CategoriaDTO categoriaPadre;
+    private Boolean baja;
 
 }

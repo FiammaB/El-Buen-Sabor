@@ -40,5 +40,4 @@ public class CategoriaServiceImpl extends BaseServiceImpl<Categoria, Long> imple
         }
     }
 
-
 }

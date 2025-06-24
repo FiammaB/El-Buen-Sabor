@@ -149,6 +149,8 @@ public class DataLoader implements CommandLineRunner {
             clienteService.save(cliente);
 
             // 6. Categoría y Unidades
+            Categoria categoriaPadre= categoriaService.save(Categoria.builder().denominacion("Manufacturados").build());
+            Categoria categoriaPadre1= categoriaService.save(Categoria.builder().denominacion("Insumos").build());
             Categoria categoriaPizza = categoriaService.save(Categoria.builder().denominacion("Pizza").build());
             Categoria categoriaSanguche = categoriaService.save(Categoria.builder().denominacion("Sanguche").build());
             Categoria categoriaEmpanada = categoriaService.save(Categoria.builder().denominacion("Empanada").build());

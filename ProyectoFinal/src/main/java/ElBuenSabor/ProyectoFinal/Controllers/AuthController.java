@@ -34,11 +34,15 @@ public class AuthController {
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),
                 cliente != null ? cliente.getNombre() : usuario.getNombre(),
+                cliente != null ? cliente.getApellido() : "",
                 usuario.getEmail(),
+                cliente != null ? cliente.getTelefono() : "",
                 usuario.getRol()
         );
+
         return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -62,17 +66,21 @@ public class AuthController {
             cliente.setBaja(false);
             clienteRepository.save(cliente);
 
-            // 3. Devolver respuesta
+            // 3. Devolver respuesta completa
             UsuarioResponse response = new UsuarioResponse(
                     nuevoUsuario.getId(),
                     cliente.getNombre(),
+                    cliente.getApellido(),
                     nuevoUsuario.getEmail(),
+                    cliente.getTelefono(),
                     nuevoUsuario.getRol()
             );
+
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             return ResponseEntity.status(400).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
 }

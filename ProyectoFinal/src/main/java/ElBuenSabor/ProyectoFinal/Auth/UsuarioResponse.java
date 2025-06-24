@@ -13,6 +13,8 @@ import lombok.Setter;
 public class UsuarioResponse {
     private Long id;
     private String nombre;
+    private String apellido;
     private String email;
-    private Rol rol; // ← enum directamente
+    private String telefono;
+    private Rol rol;
 }

@@ -71,7 +71,6 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
     }
 
     @PostMapping(consumes = "application/json")
-
     public ResponseEntity<?> create(@RequestBody ArticuloInsumoDTO dto) {
         try {
             ArticuloInsumo entity = articuloInsumoMapper.toEntity(dto);
@@ -120,6 +119,29 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             insumo.setStockActual(insumo.getStockActual() + cantidad);
             articuloInsumoService.save(insumo);
             return ResponseEntity.ok(insumo); // o devolver DTO
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/restar-stock")
+    public ResponseEntity<?> restarStock(
+            @PathVariable Long id,
+            @RequestParam("cantidad") Integer cantidad
+    ) {
+        try {
+            ArticuloInsumo insumo = articuloInsumoService.findById(id);
+            if (insumo.getBaja() != null && insumo.getBaja()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No se puede actualizar stock de un insumo dado de baja.");
+            }
+            // Validación: No permitir stock negativo
+            double nuevoStock = insumo.getStockActual() - cantidad;
+            if (nuevoStock < 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No se puede dejar el stock en negativo.");
+            }
+            insumo.setStockActual(nuevoStock);
+            ArticuloInsumo actualizado = articuloInsumoService.save(insumo);
+            return ResponseEntity.ok(articuloInsumoMapper.toDTO(actualizado)); // o insumo, como prefieras
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }

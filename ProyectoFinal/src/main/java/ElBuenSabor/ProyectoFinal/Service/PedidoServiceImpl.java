@@ -344,6 +344,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         try {
             Pedido actual = findById(id);
 
+            boolean estadoCambioAPagado = ( updatedPedido.getEstado() == Estado.PAGADO);
+
             actual.setFechaPedido(updatedPedido.getFechaPedido());
             actual.setHoraEstimadaFinalizacion(updatedPedido.getHoraEstimadaFinalizacion());
             actual.setTotal(updatedPedido.getTotal());
@@ -356,6 +358,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             actual.setEmpleado(updatedPedido.getEmpleado());
             actual.setSucursal(updatedPedido.getSucursal());
             actual.setDomicilioEntrega(updatedPedido.getDomicilioEntrega());
+
 
             if (updatedPedido.getFactura() != null) {
                 Factura updatedFactura = updatedPedido.getFactura();
@@ -385,6 +388,44 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             } else {
                 actual.getDetallesPedidos().clear();
             }
+            System.out.println("DEBUG Comparación Estados: actual=" + actual.getEstado() + " | nuevo=" + updatedPedido.getEstado());
+            if (estadoCambioAPagado) {
+                System.out.println("DEBUG Update: Pedido " + id + " cambió a estado PAGADO.");
+                try {
+                    ByteArrayOutputStream pdfBytes = (ByteArrayOutputStream) facturaService.generarFacturaPdf(actual);
+                    String filePathLocal = "factura_" + actual.getId() + ".pdf";
+                    Files.write(Paths.get(filePathLocal), pdfBytes.toByteArray());
+                    System.out.println("PDF de factura generado para Pedido " + actual.getId() + ". Guardado en: " + filePathLocal);
+
+                    String cloudinaryPublicId = "factura_pedido_" + actual.getId();
+                    String generatedPdfUrl = cloudinaryService.uploadByteArray(pdfBytes, cloudinaryPublicId);
+                    System.out.println("PDF subido a Cloudinary: " + generatedPdfUrl);
+
+                    // Asegurarse de que la factura exista
+                    Factura factura = actual.getFactura();
+                    if (factura == null) {
+                        factura = new Factura();
+                        actual.setFactura(factura);
+                    }
+
+                    factura.setUrlPdf(generatedPdfUrl); // Asignar la URL
+
+                    // Enviar email
+                    String recipientEmail = actual.getCliente().getUsuario().getEmail();
+                    String subject = "Factura de tu pedido #" + actual.getId() + " - El Buen Sabor";
+                    String body = "¡Gracias por tu compra, " + actual.getCliente().getUsuario().getNombre()
+                            + "! Adjuntamos la factura de tu pedido #" + actual.getId();
+                    String attachmentFilename = "factura_" + actual.getId() + ".pdf";
+
+                    emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
+                    System.out.println("Correo con factura enviado a " + recipientEmail);
+                } catch (Exception e) {
+                    System.err.println("ERROR al generar y enviar la factura para el pedido: " + actual.getId());
+                    e.printStackTrace();
+                }
+
+            }
+
 
             return baseRepository.save(actual);
         } catch (Exception e) {

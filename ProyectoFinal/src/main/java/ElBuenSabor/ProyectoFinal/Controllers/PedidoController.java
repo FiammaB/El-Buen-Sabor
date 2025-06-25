@@ -230,7 +230,8 @@ public class PedidoController extends BaseController<Pedido, Long> {
             // Actualiza las propiedades básicas
             existingPedido.setFechaPedido(dto.getFechaPedido());
             // No hay hora estimada en PedidoCreateDTO, si la necesitas, agrégala al DTO
-            existingPedido.setEstado(Estado.valueOf(dto.getEstado())); // Convertir String a Enum
+            existingPedido.setEstado(Estado.valueOf(dto.getEstado()));
+            System.out.println(dto.getEstado());//me parece q lo actualizo aca o no ?
             existingPedido.setTipoEnvio(dto.getTipoEnvio()); // Convertir String a Enum
             existingPedido.setFormaPago(dto.getFormaPago()); // Convertir String a Enum
             existingPedido.setTotal(dto.getTotal());
@@ -292,12 +293,15 @@ public class PedidoController extends BaseController<Pedido, Long> {
                     }
                     detalle.setPedido(existingPedido); // Establecer la relación inversa
                     existingPedido.getDetallesPedidos().add(detalle);
+
+
                 }
+
             } else {
                 existingPedido.getDetallesPedidos().clear(); // Si no se envían detalles, limpiar los existentes
             }
 
-
+            System.out.println("CONTROLADOR: Estado en DTO -> " + dto.getEstado());
             Pedido updated = baseService.update(id, existingPedido); // Llama al update del padre con la entidad EXISTENTE
             return ResponseEntity.ok(pedidoMapper.toDTO(updated)); // Convierte a DTO para la respuesta
         } catch (Exception e) {

@@ -125,7 +125,7 @@ public class MPController {
                     PreferenceBackUrlsRequest.builder()
                             .success("https://localhost:5173/order-confirmation?pedido=" + pedidoPersistido.getId())
                             .pending("https://localhost:5173/")
-                            .failure("https://localhost:5173/pagoRechazado")
+                            .failure("https://localhost:5173/order-failed")
                             .build();
 
 

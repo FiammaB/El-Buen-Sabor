@@ -42,6 +42,6 @@ public class DetallePedidoServiceImpl implements DetallePedidoService {
 
     @Override
     public List<ProductoRankingDTO> getRankingProductos(LocalDate desde, LocalDate hasta) {
-        return detallePedidoRepository.obtenerRankingProductos(desde, hasta);
+        return detallePedidoRepository.rankingProductosMasVendidos(desde, hasta);
     }
 }

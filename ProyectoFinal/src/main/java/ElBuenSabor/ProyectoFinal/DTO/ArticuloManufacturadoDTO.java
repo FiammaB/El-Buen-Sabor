@@ -16,6 +16,7 @@ public class ArticuloManufacturadoDTO extends ArticuloDTO {
     private String preparacion;
     private CategoriaDTO categoria;
     private Long categoriaId;
+    private Long sucursalId;
 
     private List<ArticuloManufacturadoDetalleDTO> detalles;
 }

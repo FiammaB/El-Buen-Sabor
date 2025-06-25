@@ -21,9 +21,11 @@ public interface ArticuloManufacturadoMapper {
 
     @Mapping(source = "baja", target = "baja")
     @Mapping(source = "categoria.id", target = "categoriaId")
+    @Mapping(source = "sucursal.id", target = "sucursalId")
     ArticuloManufacturadoDTO toDTO(ArticuloManufacturado entity);
 
     @Mapping(source = "baja", target = "baja")
+    @Mapping(target = "sucursal", ignore = true)
     ArticuloManufacturado toEntity(ArticuloManufacturadoDTO dto);
 
     @Mapping(target = "detalles", source = "detalles")

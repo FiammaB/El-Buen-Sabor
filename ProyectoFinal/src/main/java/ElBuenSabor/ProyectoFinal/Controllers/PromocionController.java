@@ -1,3 +1,4 @@
+// Archivo: ElBuenSabor/ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Controllers/PromocionController.java
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.PromocionCreateDTO;
@@ -10,51 +11,50 @@ import ElBuenSabor.ProyectoFinal.Mappers.PromocionMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.ImagenRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.SucursalRepository;
-import ElBuenSabor.ProyectoFinal.Service.PromocionService; // Usar la interfaz específica
-// Ya no es necesario si se inyecta por constructor explícito al padre
-// import lombok.RequiredArgsConstructor;
+import ElBuenSabor.ProyectoFinal.Service.PromocionService;
+import ElBuenSabor.ProyectoFinal.Service.SucursalService; // Importar SucursalService
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate; // Importar LocalDate si es necesario
-import java.time.LocalTime; // Importar LocalTime si es necesario
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional; // Importar Optional si es necesario
-import java.util.stream.Collectors; // Importar Collectors si es necesario
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/promociones") // Define la URL base para este controlador
-// PromocionController ahora extiende BaseController
+@RequestMapping("/api/promociones")
 public class PromocionController extends BaseController<Promocion, Long> {
 
     private final PromocionMapper promocionMapper;
-
-    // Repositorios necesarios para resolver relaciones en el controlador
     private final ImagenRepository imagenRepository;
     private final ArticuloManufacturadoRepository articuloRepo;
-    private final SucursalRepository sucursalRepository;
+    private final SucursalRepository sucursalRepository; // Usaremos este para buscar Sucursales por ID
+    private final PromocionService promocionService; // Declaración correcta
+    private final SucursalService sucursalService; // Inyectar SucursalService
 
-    // El constructor inyecta el servicio específico de Promocion y todas las dependencias adicionales
     public PromocionController(
-            PromocionService promocionService, // Servicio específico
+            PromocionService promocionService,
             PromocionMapper promocionMapper,
             ImagenRepository imagenRepository,
             ArticuloManufacturadoRepository articuloRepo,
-            SucursalRepository sucursalRepository) {
-        super(promocionService); // Pasa el servicio al constructor del BaseController
+            SucursalRepository sucursalRepository,
+            SucursalService sucursalService) { // Modificar constructor
+        super(promocionService);
+        this.promocionService = promocionService; // Asignación correcta
         this.promocionMapper = promocionMapper;
         this.imagenRepository = imagenRepository;
         this.articuloRepo = articuloRepo;
         this.sucursalRepository = sucursalRepository;
+        this.sucursalService = sucursalService;
     }
 
-    // Sobrescribir getAll para devolver DTOs y manejar excepciones
-    @GetMapping
-    @Override // Sobrescribe el getAll del BaseController
-    public ResponseEntity<?> getAll() {
+    // Nuevo endpoint para obtener todas las promociones de una sucursal específica
+    @GetMapping("/sucursal/{sucursalId}")
+    public ResponseEntity<?> getAllBySucursal(@PathVariable Long sucursalId) {
         try {
-            List<Promocion> promociones = baseService.findAll(); // Llama al findAll del padre
+            List<Promocion> promociones = promocionService.findAllBySucursalId(sucursalId);
             List<PromocionDTO> dtos = promociones.stream()
                     .map(promocionMapper::toDTO)
                     .toList();
@@ -64,24 +64,58 @@ public class PromocionController extends BaseController<Promocion, Long> {
         }
     }
 
+    // Nuevo endpoint para obtener promociones activas por sucursal
+    @GetMapping("/sucursal/{sucursalId}/activas")
+    public ResponseEntity<?> getPromocionesActivasBySucursal(@PathVariable Long sucursalId) {
+        try {
+            List<Promocion> promociones = promocionService.getPromocionesActivas(sucursalId);
+            List<PromocionDTO> dtos = promociones.stream()
+                    .map(promocionMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    @GetMapping
+    @Override
+    public ResponseEntity<?> getAll() {
+        // En un escenario de múltiples sucursales, rara vez querrías todas las promociones de todas las sucursales
+        // sin un filtro. Considera eliminar este método o hacer que requiera un sucursalId.
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Para obtener promociones, debe especificar un ID de sucursal. Use /api/promociones/sucursal/{sucursalId}\"}");
+        // Alternativamente, si quieres mostrar todas las promociones de todas las sucursales:
+        // try {
+        //     List<Promocion> promociones = promocionService.findAll();
+        //     List<PromocionDTO> dtos = promociones.stream()
+        //             .map(promocionMapper::toDTO)
+        //             .toList();
+        //     return ResponseEntity.ok(dtos);
+        // } catch (Exception e) {
+        //     return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        // }
+    }
+
     // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    // Aquí puedes decidir si quieres que el getOne de una promoción también valide que pertenece a una sucursal específica.
+    // Para simplificar, lo mantendremos como una búsqueda global por ID.
     @GetMapping("/{id}")
-    @Override // Sobrescribe el getOne del BaseController
+    @Override
     public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            Promocion promocion = baseService.findById(id); // Llama al findById del padre
+            Promocion promocion = promocionService.findById(id);
             return ResponseEntity.ok(promocionMapper.toDTO(promocion));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+    // Modificado: create ahora podría recibir sucursalIds en el DTO
     @PostMapping(consumes = "application/json")
-    // @Override // <<--- Quitar @Override aquí, ya que la firma del método es diferente (recibe DTO)
     public ResponseEntity<?> create(@RequestBody PromocionCreateDTO dto) {
         try {
-            Promocion promocion = promocionMapper.toEntity(dto); // Mapea el DTO a la entidad Promocion
+            Promocion promocion = promocionMapper.toEntity(dto);
 
             // Asignar relaciones por ID
             if (dto.getImagenId() != null) {
@@ -90,32 +124,37 @@ public class PromocionController extends BaseController<Promocion, Long> {
             }
 
             // Asignar colecciones (ArticulosManufacturados, Sucursales)
-            if (dto.getArticuloManufacturadoIds() != null) {
+            if (dto.getArticuloManufacturadoIds() != null && !dto.getArticuloManufacturadoIds().isEmpty()) {
                 List<ArticuloManufacturado> articulos = articuloRepo.findAllById(dto.getArticuloManufacturadoIds());
                 promocion.setArticulosManufacturados(articulos);
+            } else {
+                promocion.setArticulosManufacturados(List.of()); // Asegura que no sea null
             }
 
-            if (dto.getSucursalIds() != null) {
+            if (dto.getSucursalIds() != null && !dto.getSucursalIds().isEmpty()) {
                 List<Sucursal> sucursales = sucursalRepository.findAllById(dto.getSucursalIds());
+                if (sucursales.isEmpty() && !dto.getSucursalIds().isEmpty()) { // Si se enviaron IDs pero no se encontraron sucursales
+                    throw new ResourceNotFoundException("No se encontraron sucursales para los IDs proporcionados.");
+                }
                 promocion.setSucursales(sucursales);
+            } else {
+                throw new ResourceNotFoundException("Una promoción debe estar asociada al menos a una sucursal.");
             }
             promocion.setBaja(false); // Por defecto, una nueva promoción no está dada de baja
 
-            Promocion saved = baseService.save(promocion); // Llama al save del padre
-            return ResponseEntity.status(HttpStatus.CREATED).body(promocionMapper.toDTO(saved)); // Convierte a DTO para la respuesta
+            Promocion saved = promocionService.save(promocion);
+            return ResponseEntity.status(HttpStatus.CREATED).body(promocionMapper.toDTO(saved));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al crear la promoción: " + e.getMessage() + "\"}");
         }
     }
 
-    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
+    // Modificado: update ahora recibe sucursalIds en el DTO
     @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PromocionCreateDTO dto) {
         try {
-            // Obtener la entidad existente
-            Promocion existingPromocion = baseService.findById(id);
+            Promocion existingPromocion = promocionService.findById(id);
 
-            // Mapear las propiedades del DTO a la entidad existente
             existingPromocion.setDenominacion(dto.getDenominacion());
             existingPromocion.setFechaDesde(dto.getFechaDesde());
             existingPromocion.setFechaHasta(dto.getFechaHasta());
@@ -130,37 +169,83 @@ public class PromocionController extends BaseController<Promocion, Long> {
                 existingPromocion.setImagen(imagenRepository.findById(dto.getImagenId())
                         .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada")));
             } else {
-                existingPromocion.setImagen(null); // Si el DTO no trae imagenId, la eliminamos
+                existingPromocion.setImagen(null);
             }
 
-            // Sincronizar colecciones (ArticulosManufacturados, Sucursales)
+            // Sincronizar colecciones (ArticulosManufacturados)
             if (dto.getArticuloManufacturadoIds() != null) {
                 List<ArticuloManufacturado> articulos = articuloRepo.findAllById(dto.getArticuloManufacturadoIds());
                 existingPromocion.getArticulosManufacturados().clear();
                 existingPromocion.getArticulosManufacturados().addAll(articulos);
             } else {
-                existingPromocion.getArticulosManufacturados().clear(); // Si no se envían IDs, limpiar la colección
+                existingPromocion.getArticulosManufacturados().clear();
             }
 
-            if (dto.getSucursalIds() != null) {
+            // Sincronizar colecciones (Sucursales)
+            if (dto.getSucursalIds() != null && !dto.getSucursalIds().isEmpty()) {
                 List<Sucursal> sucursales = sucursalRepository.findAllById(dto.getSucursalIds());
+                if (sucursales.isEmpty() && !dto.getSucursalIds().isEmpty()) {
+                    throw new ResourceNotFoundException("No se encontraron sucursales para los IDs proporcionados.");
+                }
                 existingPromocion.getSucursales().clear();
                 existingPromocion.getSucursales().addAll(sucursales);
             } else {
-                existingPromocion.getSucursales().clear(); // Si no se envían IDs, limpiar la colección
+                throw new ResourceNotFoundException("Una promoción debe estar asociada al menos a una sucursal.");
             }
 
-            Promocion updated = baseService.update(id, existingPromocion); // Llama al update del padre con la entidad EXISTENTE
-            return ResponseEntity.ok(promocionMapper.toDTO(updated)); // Convierte a DTO para la respuesta
+            Promocion updated = promocionService.update(id, existingPromocion);
+            return ResponseEntity.ok(promocionMapper.toDTO(updated));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
-    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
-    // si la lógica de borrado/activación/desactivación ya implementada en BaseController
-    // es suficiente y no necesitas una respuesta con DTOs específicos.
-    // @DeleteMapping("/{id}") ya está cubierto por BaseController
-    // @PatchMapping("/{id}/activate") ya está cubierto por BaseController
-    // @PatchMapping("/{id}/deactivate") ya está cubierto por BaseController
+    // Modificado: toggleBaja ahora requiere un sucursalId en la URL
+    // (Opcional, dado que Promocion es ManyToMany con Sucursal, la baja podría ser global o por sucursal)
+    // Si la baja es GLOBAL para la promoción, no necesitas sucursalId aquí.
+    // Si la baja es por SUCURSAL, necesitarías una tabla intermedia para el estado de baja por sucursal.
+    // Por simplicidad, asumimos que toggleBaja es global para la Promoción.
+    @PatchMapping("/{id}/baja")
+    public ResponseEntity<?> toggleBaja(
+            @PathVariable Long id,
+            @RequestParam boolean baja
+    ) {
+        try {
+            Promocion actualizado = promocionService.toggleBaja(id, baja);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Métodos DELETE, ACTIVATE, DEACTIVATE (si los usas, asegúrate de que también validan la sucursal)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            promocionService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al eliminar la promoción: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<?> activate(@PathVariable Long id) {
+        try {
+            promocionService.toggleBaja(id, false);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al activar la promoción: " + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivate(@PathVariable Long id) {
+        try {
+            promocionService.toggleBaja(id, true);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al desactivar la promoción: " + e.getMessage() + "\"}");
+        }
+    }
 }

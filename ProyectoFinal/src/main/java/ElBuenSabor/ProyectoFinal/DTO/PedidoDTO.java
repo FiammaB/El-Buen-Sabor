@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.DTO;
 
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -17,6 +18,7 @@ public class PedidoDTO {
     private String formaPago;
     private String observaciones;
     private Double total;
+    private LocalTime horaEstimadaFinalizacion;
 
     private ClienteDTO cliente;
     private DomicilioDTO domicilio;

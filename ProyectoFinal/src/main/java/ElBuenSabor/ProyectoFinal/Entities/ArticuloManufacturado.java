@@ -27,5 +27,7 @@ public class ArticuloManufacturado extends Articulo {
     @OneToMany(mappedBy = "articuloManufacturado", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticuloManufacturadoDetalle> detalles = new ArrayList<>();
 
-
+    @ManyToOne
+    @JoinColumn(name = "sucursal_id") // Columna de clave foránea en la tabla articulo_manufacturado
+    private Sucursal sucursal;
 }

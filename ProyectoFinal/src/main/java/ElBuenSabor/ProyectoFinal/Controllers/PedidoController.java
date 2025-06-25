@@ -14,6 +14,7 @@ import ElBuenSabor.ProyectoFinal.Service.*;
 // import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -369,6 +370,21 @@ public class PedidoController extends BaseController<Pedido, Long> {
                     .body("{\"error\": \"Error al obtener los pedidos en cocina/preparacion: " + e.getMessage() + "\"}");
         }
     }
+    @PreAuthorize("hasRole('CAJERO')")
+    @GetMapping("/cajero")
+    public ResponseEntity<?> getPedidosParaCobrar() {
+        try {
+            List<Pedido> pedidos = pedidoService.findPedidosByEstados(Arrays.asList(Estado.LISTO, Estado.ENTREGADO));
+            List<PedidoDTO> dtos = pedidos.stream()
+                    .map(pedidoMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Error al obtener pedidos para cajero: " + e.getMessage() + "\"}");
+        }
+    }
+
 
     @PatchMapping("/{id}/estado")
     public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> request) {

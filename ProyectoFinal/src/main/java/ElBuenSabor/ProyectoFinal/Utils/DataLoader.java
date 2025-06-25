@@ -678,7 +678,7 @@ public class DataLoader implements CommandLineRunner {
             barrolucoSimple.setDetalles(detallesBarroluco);
             articuloManufacturadoService.save(barrolucoSimple);
 
-
+            //Carga de Usuarios
             Usuario usuarioAdmin = usuarioService.save(Usuario.builder()
                     .email("admin@buen.com")
                     .password(passwordEncoder.encode("admin123")) // asegurate que uses PasswordEncoder
@@ -691,6 +691,13 @@ public class DataLoader implements CommandLineRunner {
                     .nombre("Juan Cocinero")
                     .rol(Rol.COCINERO)
                     .build());
+            Usuario usuarioCajero = usuarioService.save(Usuario.builder()
+                    .email("cajero@buen.com")
+                    .password(passwordEncoder.encode("cajero123"))
+                    .nombre("Carlos Cajero")
+                    .rol(Rol.CAJERO)
+                    .build());
+
 
             //Pedido
 

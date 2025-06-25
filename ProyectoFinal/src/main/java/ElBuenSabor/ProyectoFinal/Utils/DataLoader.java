@@ -151,14 +151,14 @@ public class DataLoader implements CommandLineRunner {
             // 6. Categoría y Unidades
             Categoria categoriaPadre= categoriaService.save(Categoria.builder().denominacion("Manufacturados").build());
             Categoria categoriaPadre1= categoriaService.save(Categoria.builder().denominacion("Insumos").build());
-            Categoria categoriaPizza = categoriaService.save(Categoria.builder().denominacion("Pizza").build());
-            Categoria categoriaSanguche = categoriaService.save(Categoria.builder().denominacion("Sanguche").build());
-            Categoria categoriaEmpanada = categoriaService.save(Categoria.builder().denominacion("Empanada").build());
-            Categoria categoriaPan = categoriaService.save(Categoria.builder().denominacion("Pan").build());
-            Categoria categoriaHamburguesa = categoriaService.save(Categoria.builder().denominacion("Hamburguesa").build());
-            Categoria categoriaQueso = categoriaService.save(Categoria.builder().denominacion("Queso").build());
-            Categoria categoriaComida = categoriaService.save(Categoria.builder().denominacion("Comida").build());
-            Categoria categoriaVerdura = categoriaService.save(Categoria.builder().denominacion("Verdura").build());
+            Categoria categoriaPizza = categoriaService.save(Categoria.builder().denominacion("Pizza").categoriaPadre(categoriaPadre).build());
+            Categoria categoriaSanguche = categoriaService.save(Categoria.builder().denominacion("Sanguche").categoriaPadre(categoriaPadre).build());
+            Categoria categoriaEmpanada = categoriaService.save(Categoria.builder().denominacion("Empanada").categoriaPadre(categoriaPadre).build());
+            Categoria categoriaPan = categoriaService.save(Categoria.builder().denominacion("Pan").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaHamburguesa = categoriaService.save(Categoria.builder().denominacion("Hamburguesa").categoriaPadre(categoriaPadre).build());
+            Categoria categoriaQueso = categoriaService.save(Categoria.builder().denominacion("Queso").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaComida = categoriaService.save(Categoria.builder().denominacion("Comida").categoriaPadre(categoriaPadre).build());
+            Categoria categoriaVerdura = categoriaService.save(Categoria.builder().denominacion("Verdura").categoriaPadre(categoriaPadre1).build());
             UnidadMedida unidadGramos = unidadMedidaService.save(UnidadMedida.builder().denominacion("gramos").build());
             UnidadMedida unidadPorcion = unidadMedidaService.save(UnidadMedida.builder().denominacion("unidad").build());
             UnidadMedida unidadMililitros = unidadMedidaService.save(UnidadMedida.builder().denominacion("mililitros").build());
@@ -422,7 +422,7 @@ public class DataLoader implements CommandLineRunner {
                     .descripcion("Deliciosa hamburguesa con queso y lechuga")
                     .tiempoEstimadoMinutos(20)
                     .preparacion("Preparar la carne, cocinar, armar.")
-                    .categoria(categoriaComida)
+                    .categoria(categoriaHamburguesa)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgHamburguesaSimple)
                     .build();
@@ -433,7 +433,7 @@ public class DataLoader implements CommandLineRunner {
                     .descripcion("Tres jugosos medallones de carne, queso cheddar y lechuga en pan artesanal.")
                     .tiempoEstimadoMinutos(25)
                     .preparacion("Cocinar los tres medallones, apilar con queso cheddar, armar la hamburguesa.")
-                    .categoria(categoriaComida)
+                    .categoria(categoriaHamburguesa)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgHamburguesaTriple)
                     .build();
@@ -444,7 +444,7 @@ public class DataLoader implements CommandLineRunner {
                     .descripcion("Medallón de pollo crujiente con queso cheddar y lechuga fresca.")
                     .tiempoEstimadoMinutos(20)
                     .preparacion("Freír el medallón de pollo, montar con cheddar y lechuga en el pan.")
-                    .categoria(categoriaComida)
+                    .categoria(categoriaHamburguesa)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgHamburguesaPolloSimple)
                     .build();
@@ -455,7 +455,7 @@ public class DataLoader implements CommandLineRunner {
                     .descripcion("Doble medallón de pollo, doble cheddar, lechuga fresca y pan suave.")
                     .tiempoEstimadoMinutos(23)
                     .preparacion("Freír ambos medallones, montar con cheddar y lechuga en el pan.")
-                    .categoria(categoriaComida)
+                    .categoria(categoriaHamburguesa)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgHamburguesaPolloDoble)
                     .build();

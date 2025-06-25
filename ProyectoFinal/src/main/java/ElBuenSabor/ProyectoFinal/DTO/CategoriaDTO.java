@@ -10,7 +10,7 @@ public class CategoriaDTO {
 
     private Long id;
     private String denominacion;
-    private CategoriaDTO categoriaPadre;
+    private Long categoriaPadreId;
     private Boolean baja;
 
 }

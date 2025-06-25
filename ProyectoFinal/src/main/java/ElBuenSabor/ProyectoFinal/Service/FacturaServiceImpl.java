@@ -97,6 +97,8 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
         // Filas de detalles
         double totalArticulos = 0.0;
         if (pedido.getDetallesPedidos() != null) {
+            System.out.println("Detalles del pedido: " + pedido.getDetallesPedidos().size());
+
             for (DetallePedido detalle : pedido.getDetallesPedidos()) {
                 String descripcion = "N/A";
                 double precioUnitario = 0.0;

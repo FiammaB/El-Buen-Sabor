@@ -42,4 +42,8 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
             throw new Exception("Error al actualizar el usuario: " + e.getMessage());
         }
     }
+    @Override
+    public Usuario save(Usuario usuario) {
+        return usuarioRepository.save(usuario);
+    }
 }

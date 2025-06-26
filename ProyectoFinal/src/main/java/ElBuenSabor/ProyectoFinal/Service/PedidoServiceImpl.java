@@ -42,6 +42,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final NotaCreditoService notaCreditoService;
     private final RegistroAnulacionService registroAnulacionService;
     private final ArticuloInsumoService articuloInsumoService;
+    private  final DetallePedidoRepository detallePedidoRepository;
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -56,7 +57,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             CloudinaryService cloudinaryService,
             NotaCreditoService notaCreditoService,
             RegistroAnulacionService registroAnulacionService,
-            ArticuloInsumoService articuloInsumoService) {
+            ArticuloInsumoService articuloInsumoService,
+            DetallePedidoRepository detallePedidoRepository) {
         super(pedidoRepository); // Llama al constructor de la clase base
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
@@ -72,7 +74,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.notaCreditoService = notaCreditoService;
         this.registroAnulacionService = registroAnulacionService;
         this.articuloInsumoService = articuloInsumoService;
-
+        this.detallePedidoRepository = detallePedidoRepository;
     }
 
     // Método para crear un pedido antes de generar la preferencia de MP
@@ -646,20 +648,15 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         }
     }
 
+    //------------------------REPORTE CLIENTES-----------------------------
     @Override
-    public LocalTime calcularHoraEstimadaFinalizacion(Pedido pedido) {
-        int tiempoBase = 20; // Un valor por defecto, por si no hay detalles manufacturados
-        int tiempo = pedido.getDetallesPedidos().stream()
-                .filter(d -> d.getArticuloManufacturado() != null)
-                .mapToInt(d -> {
-                    // Si tu ArticuloManufacturado tiene tiempoEstimadoMinutos:
-                    Integer t = d.getArticuloManufacturado().getTiempoEstimadoMinutos();
-                    return t != null ? t : tiempoBase;
-                })
-                .max()
-                .orElse(tiempoBase);
-
-        return LocalTime.now().plusMinutes(tiempo);
+    public List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden) {
+        return pedidoRepository.obtenerReporteClientes(desde, hasta, orden);
+    }
+    //-----------------------------------------------------------------------------------
+    @Override
+    public List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta) {
+        return detallePedidoRepository.rankingProductosMasVendidos(desde, hasta);
     }
 
   }

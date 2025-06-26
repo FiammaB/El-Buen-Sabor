@@ -12,6 +12,7 @@ import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -420,6 +421,21 @@ public class PedidoController extends BaseController<Pedido, Long> {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+    @GetMapping("/ranking")
+    public List<ProductoRankingDTO> obtenerRanking(@RequestParam LocalDate desde, @RequestParam LocalDate hasta) {
+        return pedidoService.obtenerRankingProductosMasVendidos(desde, hasta);
+    }
+
+    //-------------------------------RANKING PEDIDOS-CLIENTES---------------------------
+    @GetMapping("/reporte/clientes")
+    public ResponseEntity<List<ClienteReporteDTO>> obtenerReporteClientes(
+            @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam("orden") String orden // "cantidad" o "importe"
+    ) {
+        List<ClienteReporteDTO> reporte = pedidoService.obtenerReporteClientes(desde, hasta, orden);
+        return ResponseEntity.ok(reporte);
     }
 
 }

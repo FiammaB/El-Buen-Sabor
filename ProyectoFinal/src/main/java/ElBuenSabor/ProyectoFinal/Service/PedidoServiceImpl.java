@@ -346,7 +346,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         try {
             Pedido actual = findById(id);
 
-            boolean estadoCambioAPagado = ( updatedPedido.getEstado() == Estado.PAGADO);
+            boolean estadoCambioAPagado = (updatedPedido.getEstado() == Estado.PAGADO && updatedPedido.getFormaPago() == FormaPago.EFECTIVO);
 
             actual.setFechaPedido(updatedPedido.getFechaPedido());
             actual.setHoraEstimadaFinalizacion(updatedPedido.getHoraEstimadaFinalizacion());
@@ -381,18 +381,85 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 actual.setFactura(null);
             }
 
+            // --- TU LÓGICA EXISTENTE PARA MANEJAR DETALLES DE PEDIDO ---
             if (updatedPedido.getDetallesPedidos() != null) {
-                actual.getDetallesPedidos().clear();
                 for (DetallePedido detalle : updatedPedido.getDetallesPedidos()) {
-                    detalle.setPedido(actual);
+                    // --- DEBUG PRINTS QUE SOLICITASTE ---
+                    if (detalle.getArticuloInsumo() != null) {
+                        System.out.println("DEBUG: Detalle Pedido ID: " + detalle.getId() + " intentando asociar ArticuloInsumo ID: " + detalle.getArticuloInsumo().getId());
+                    } else if (detalle.getArticuloManufacturado() != null) {
+                        System.out.println("DEBUG: Detalle Pedido ID: " + detalle.getId() + " intentando asociar ArticuloManufacturado ID: " + detalle.getArticuloManufacturado().getId());
+                    } else {
+                        System.out.println("DEBUG: Detalle Pedido ID: " + detalle.getId() + " no tiene ArticuloInsumo ni ArticuloManufacturado asignado.");
+                    }
+                    // --- FIN DEBUG PRINTS ---
+
+                    detalle.setPedido(actual); // Asegura la relación inversa
                     actual.getDetallesPedidos().add(detalle);
                 }
             } else {
                 actual.getDetallesPedidos().clear();
             }
+            // --- FIN DE TU LÓGICA EXISTENTE PARA MANEJAR DETALLES DE PEDIDO ---
+
             System.out.println("DEBUG Comparación Estados: actual=" + actual.getEstado() + " | nuevo=" + updatedPedido.getEstado());
+
             if (estadoCambioAPagado) {
-                System.out.println("DEBUG Update: Pedido " + id + " cambió a estado PAGADO.");
+                System.out.println("DEBUG Update: Pedido " + id + " cambió a estado PAGADO y FormaPago EFECTIVO.");
+
+                // --- LÓGICA DE DESCUENTO DE STOCK INICIAR AQUÍ ---
+                System.out.println("DEBUG Stock (Descuento): Iniciando descuento de stock para Pedido ID: " + actual.getId());
+                if (actual.getDetallesPedidos() != null && !actual.getDetallesPedidos().isEmpty()) {
+                    for (DetallePedido detalle : actual.getDetallesPedidos()) {
+                        if (detalle.getArticuloManufacturado() != null) {
+                            // Descontar insumos de ArticuloManufacturado (por su receta)
+                            ArticuloManufacturado am = detalle.getArticuloManufacturado();
+                            System.out.println("DEBUG Stock (Descuento): Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
+                            // Si am.getDetalles() es lazy y am no está cargado completamente, podría haber LazyInitializationException aquí.
+                            // Considera cargar am con sus detalles si no vienen ya.
+                            // Ejemplo: am = articuloManufacturadoRepository.findById(am.getId()).orElse(null);
+                            if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
+                                for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
+                                    ArticuloInsumo insumo = amd.getArticuloInsumo();
+                                    if (insumo != null && insumo.getEsParaElaborar()) {
+                                        Double cantidadADescontar = amd.getCantidad() * detalle.getCantidad();
+                                        double stockAntes = insumo.getStockActual();
+                                        insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
+                                        articuloInsumoService.save(insumo); // Guardar el insumo actualizado
+                                        System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
+                                                "' (ID: " + insumo.getId() + ") para AM. Cant: " + cantidadADescontar +
+                                                ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
+                                    }
+                                }
+                            } else {
+                                System.out.println("DEBUG Stock (Descuento): AM '" + am.getDenominacion() + "' no tiene detalles de insumo definidos (receta vacía).");
+                            }
+                        } else if (detalle.getArticuloInsumo() != null) {
+                            // Descontar ArticuloInsumo directamente (si se vende como tal)
+                            ArticuloInsumo insumo = detalle.getArticuloInsumo();
+                            if (insumo != null && !insumo.getEsParaElaborar()) {
+                                int cantidadADescontar = detalle.getCantidad();
+                                double stockAntes = insumo.getStockActual();
+                                insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
+                                articuloInsumoService.save(insumo); // Guardar el insumo actualizado
+                                System.out.println("DEBUG Stock (Descuento): Descontado ArticuloInsumo Directo '" + insumo.getDenominacion() +
+                                        "' (ID: " + insumo.getId() + "). Cant: " + cantidadADescontar +
+                                        ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
+                            } else if (insumo != null && insumo.getEsParaElaborar()) {
+                                System.out.println("DEBUG Stock (Descuento): ArticuloInsumo '" + insumo.getDenominacion() + "' es para elaborar. Se espera que sea parte de un AM. No se descuenta directamente de stock de venta.");
+                            } else {
+                                System.out.println("DEBUG Stock (Descuento): ArticuloInsumo en detalle es nulo.");
+                            }
+                        } else {
+                            System.out.println("DEBUG Stock (Descuento): Detalle de pedido sin ArticuloManufacturado ni ArticuloInsumo asociado.");
+                        }
+                    }
+                } else {
+                    System.out.println("DEBUG Stock (Descuento): Pedido no tiene detalles de pedido para descontar stock o colección vacía.");
+                }
+                System.out.println("DEBUG Stock (Descuento): Finalizado descuento de stock.");
+                // --- FIN LÓGICA DE DESCUENTO DE STOCK ---
+
                 try {
                     ByteArrayOutputStream pdfBytes = (ByteArrayOutputStream) facturaService.generarFacturaPdf(actual);
                     String filePathLocal = "factura_" + actual.getId() + ".pdf";
@@ -403,16 +470,13 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     String generatedPdfUrl = cloudinaryService.uploadByteArray(pdfBytes, cloudinaryPublicId);
                     System.out.println("PDF subido a Cloudinary: " + generatedPdfUrl);
 
-                    // Asegurarse de que la factura exista
                     Factura factura = actual.getFactura();
                     if (factura == null) {
                         factura = new Factura();
                         actual.setFactura(factura);
                     }
+                    factura.setUrlPdf(generatedPdfUrl);
 
-                    factura.setUrlPdf(generatedPdfUrl); // Asignar la URL
-
-                    // Enviar email
                     String recipientEmail = actual.getCliente().getUsuario().getEmail();
                     String subject = "Factura de tu pedido #" + actual.getId() + " - El Buen Sabor";
                     String body = "¡Gracias por tu compra, " + actual.getCliente().getUsuario().getNombre()
@@ -424,17 +488,15 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 } catch (Exception e) {
                     System.err.println("ERROR al generar y enviar la factura para el pedido: " + actual.getId());
                     e.printStackTrace();
+                    throw new RuntimeException("Error en la generación de factura o envío de email: " + e.getMessage(), e);
                 }
-
             }
-
 
             return baseRepository.save(actual);
         } catch (Exception e) {
             throw new RuntimeException("Error al actualizar el pedido: " + e.getMessage(), e);
         }
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception {
@@ -446,15 +508,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     }
 
 
-    /**
-     * Anula una factura asociada a un pedido, genera una nota de crédito,
-     * repone el stock de ingredientes y registra la anulación.
-     * @param pedidoId ID del pedido cuya factura se anulará.
-     * @param motivoAnulacion Motivo de la anulación.
-     * @param usuarioAnulador Usuario que realiza la anulación.
-     * @return La NotaCredito generada.
-     * @throws Exception Si el pedido o la factura no se encuentran, o si ocurre un error en el proceso.
-     */
+
     @Override
     @Transactional // Esta operación debe ser transaccional
     public NotaCredito anularFacturaYGenerarNotaCredito(Long pedidoId, String motivoAnulacion, Usuario usuarioAnulador) throws Exception {

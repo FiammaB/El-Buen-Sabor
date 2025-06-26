@@ -18,11 +18,11 @@ public class DetallePedido extends BaseEntity {
     private Double subTotal; // Subtotal de este ítem (cantidad * precio_unitario) [cite: 108]
 
     @ManyToOne
-    @JoinColumn(name = "articulo_manufacturado_id")
+    @JoinColumn(name = "articulo_manufacturado_id",nullable = true)
     private ArticuloManufacturado articuloManufacturado;
 
     @ManyToOne
-    @JoinColumn(name = "id_articulo")
+    @JoinColumn(name = "id_articulo" , nullable = true)
     private ArticuloInsumo articuloInsumo;
 
     @ManyToOne

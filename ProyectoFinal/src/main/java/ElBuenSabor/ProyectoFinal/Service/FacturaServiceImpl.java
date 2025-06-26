@@ -49,114 +49,118 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
     @Override
     public ByteArrayOutputStream generarFacturaPdf(Pedido pedido) throws Exception {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-        // Crear un documento PDF
         PdfWriter writer = new PdfWriter(byteArrayOutputStream);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
 
-        // Título de la factura
-        document.add(new Paragraph("FACTURA DE VENTA")
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(20));
-        document.add(new Paragraph("\n")); // Salto de línea
+        try {
+            // Título de la factura
+            document.add(new Paragraph("FACTURA DE VENTA")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(20));
+            document.add(new Paragraph("\n")); // Salto de línea
 
-        // Información del Pedido y Cliente
-        document.add(new Paragraph("Pedido N°: " + pedido.getId()));
-        document.add(new Paragraph("Fecha: " + pedido.getFechaPedido().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+            // Información del Pedido y Cliente
+            document.add(new Paragraph("Pedido N°: " + pedido.getId()));
+            document.add(new Paragraph("Fecha: " + pedido.getFechaPedido().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
 
-        Cliente cliente = pedido.getCliente();
-        if (cliente != null && cliente.getUsuario() != null) {
-            document.add(new Paragraph("Cliente: "
-                    + cliente.getUsuario().getNombre() + " "
-                    + cliente.getApellido()));
-            document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
+            Cliente cliente = pedido.getCliente();
+            if (cliente != null && cliente.getUsuario() != null) {
+                document.add(new Paragraph("Cliente: "
+                        + cliente.getUsuario().getNombre() + " "
+                        + cliente.getApellido()));
+                document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
 
-            if (pedido.getDomicilioEntrega() != null) {
-                document.add(new Paragraph("Dirección: "
-                        + pedido.getDomicilioEntrega().getCalle() + " "
-                        + pedido.getDomicilioEntrega().getNumero() + ", "
-                        + pedido.getDomicilioEntrega().getLocalidad().getNombre()));
-            }
-        }
-
-        document.add(new Paragraph("\n"));
-
-        // Tabla de detalles del pedido
-        Table table = new Table(UnitValue.createPercentArray(new float[]{1, 4, 1, 1, 1}));
-        table.setWidth(UnitValue.createPercentValue(100)); // Ancho de la tabla al 100%
-
-        // Encabezados de la tabla
-        table.addHeaderCell(new Paragraph("Cant."));
-        table.addHeaderCell(new Paragraph("Descripción"));
-        table.addHeaderCell(new Paragraph("P. Unit."));
-        table.addHeaderCell(new Paragraph("Subtotal"));
-        table.addHeaderCell(new Paragraph("Tiempo Est."));
-
-
-        // Filas de detalles
-        double totalArticulos = 0.0;
-        if (pedido.getDetallesPedidos() != null) {
-            System.out.println("Detalles del pedido: " + pedido.getDetallesPedidos().size());
-
-            for (DetallePedido detalle : pedido.getDetallesPedidos()) {
-                String descripcion = "N/A";
-                double precioUnitario = 0.0;
-                int tiempoEstimado = 0;
-
-                if (detalle.getArticuloManufacturado() != null) {
-                    descripcion = detalle.getArticuloManufacturado().getDenominacion();
-                    precioUnitario = detalle.getArticuloManufacturado().getPrecioVenta();
-                    tiempoEstimado = detalle.getArticuloManufacturado().getTiempoEstimadoMinutos(); // Acceder al campo directamente
-                } else if (detalle.getArticuloInsumo() != null) {
-                    descripcion = detalle.getArticuloInsumo().getDenominacion();
-                    precioUnitario = detalle.getArticuloInsumo().getPrecioVenta();
-                    tiempoEstimado = 0; // Insumos no suelen tener tiempo estimado directo en el detalle
+                if (pedido.getDomicilioEntrega() != null) {
+                    document.add(new Paragraph("Dirección: "
+                            + pedido.getDomicilioEntrega().getCalle() + " "
+                            + pedido.getDomicilioEntrega().getNumero() + ", "
+                            + pedido.getDomicilioEntrega().getLocalidad().getNombre()));
                 }
-                double subtotalDetalle = detalle.getCantidad() * precioUnitario;
-                totalArticulos += subtotalDetalle;
+            }
 
-                table.addCell(new Paragraph(String.valueOf(detalle.getCantidad())));
-                table.addCell(new Paragraph(descripcion));
-                table.addCell(new Paragraph(String.format("%.2f", precioUnitario)));
-                table.addCell(new Paragraph(String.format("%.2f", subtotalDetalle)));
-                table.addCell(new Paragraph(String.valueOf(tiempoEstimado)));
+            document.add(new Paragraph("\n"));
+
+            // Tabla de detalles del pedido
+            // NOTA: Asegúrate que el array de floats coincida con el número de columnas (5 en este caso)
+            Table table = new Table(UnitValue.createPercentArray(new float[]{4, 1, 1, 1, 1})); // Ajuste de anchos para Descripción y Cantidad
+            table.setWidth(UnitValue.createPercentValue(100)); // Ancho de la tabla al 100%
+
+            // Encabezados de la tabla - ORDEN CORREGIDO
+            table.addHeaderCell(new Paragraph("Descripción").setTextAlignment(TextAlignment.CENTER)); //
+            table.addHeaderCell(new Paragraph("Cant.").setTextAlignment(TextAlignment.CENTER)); //
+            table.addHeaderCell(new Paragraph("P. Unit.").setTextAlignment(TextAlignment.CENTER)); //
+            table.addHeaderCell(new Paragraph("Subtotal").setTextAlignment(TextAlignment.CENTER)); //
+            table.addHeaderCell(new Paragraph("Tiempo Est.").setTextAlignment(TextAlignment.CENTER)); //
+
+
+            // Filas de detalles
+            double totalArticulos = 0.0;
+            if (pedido.getDetallesPedidos() != null) {
+                System.out.println("Detalles del pedido: " + pedido.getDetallesPedidos().size());
+
+                for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+                    String descripcion = "N/A";
+                    double precioUnitario = 0.0;
+                    int tiempoEstimado = 0;
+
+                    if (detalle.getArticuloManufacturado() != null) {
+                        descripcion = detalle.getArticuloManufacturado().getDenominacion();
+                        precioUnitario = detalle.getArticuloManufacturado().getPrecioVenta();
+                        tiempoEstimado = detalle.getArticuloManufacturado().getTiempoEstimadoMinutos();
+                    } else if (detalle.getArticuloInsumo() != null) {
+                        descripcion = detalle.getArticuloInsumo().getDenominacion();
+                        precioUnitario = detalle.getArticuloInsumo().getPrecioVenta();
+                        tiempoEstimado = 0; // Insumos no suelen tener tiempo estimado directo en el detalle
+                    }
+                    double subtotalDetalle = detalle.getCantidad() * precioUnitario;
+                    totalArticulos += subtotalDetalle;
+
+                    // Celdas de datos - ORDEN CORREGIDO para coincidir con los encabezados
+                    table.addCell(new Paragraph(descripcion));
+                    table.addCell(new Paragraph(String.valueOf(detalle.getCantidad())).setTextAlignment(TextAlignment.CENTER));
+                    table.addCell(new Paragraph(String.format("%.2f", precioUnitario)).setTextAlignment(TextAlignment.RIGHT));
+                    table.addCell(new Paragraph(String.format("%.2f", subtotalDetalle)).setTextAlignment(TextAlignment.RIGHT));
+                    table.addCell(new Paragraph(String.valueOf(tiempoEstimado)).setTextAlignment(TextAlignment.CENTER));
+                }
+            }
+            document.add(table);
+            document.add(new Paragraph("\n"));
+
+            // Totales de la factura
+            document.add(new Paragraph("Total Artículos: $" + String.format("%.2f", totalArticulos))
+                    .setTextAlignment(TextAlignment.RIGHT));
+
+
+            Factura factura = pedido.getFactura();
+            if (factura != null) {
+                document.add(new Paragraph("Total Venta (MP): $" + String.format("%.2f", factura.getTotalVenta()))
+                        .setTextAlignment(TextAlignment.RIGHT));
+                document.add(new Paragraph("Forma de Pago: " + factura.getFormaPago().name())
+                        .setTextAlignment(TextAlignment.RIGHT));
+                if (factura.getMpPaymentId() != null) {
+                    document.add(new Paragraph("ID Transacción MP: " + factura.getMpPaymentId())
+                            .setTextAlignment(TextAlignment.RIGHT));
+                }
+                if (factura.getMpPreferenceId() != null) {
+                    document.add(new Paragraph("ID Preferencia MP: " + factura.getMpPreferenceId())
+                            .setTextAlignment(TextAlignment.RIGHT));
+                }
+            }
+
+            return byteArrayOutputStream;
+
+        } catch (Exception e) {
+            System.err.println("Error al generar el PDF de la factura: " + e.getMessage());
+            e.printStackTrace();
+            throw new Exception("Error al generar el PDF de la factura", e);
+        } finally {
+            // Asegurarse de que el documento se cierre siempre
+            if (document != null) {
+                document.close();
             }
         }
-        document.add(table);
-        document.add(new Paragraph("\n"));
-
-        // Totales de la factura
-        document.add(new Paragraph("Total Artículos: $" + String.format("%.2f", totalArticulos))
-                .setTextAlignment(TextAlignment.RIGHT));
-
-        Factura factura = pedido.getFactura();
-        if (factura != null) {
-            document.add(new Paragraph("Total Venta (MP): $" + String.format("%.2f", factura.getTotalVenta()))
-                    .setTextAlignment(TextAlignment.RIGHT));
-            document.add(new Paragraph("Forma de Pago: " + factura.getFormaPago().name())
-                    .setTextAlignment(TextAlignment.RIGHT));
-            if (factura.getMpPaymentId() != null) {
-                document.add(new Paragraph("ID Transacción MP: " + factura.getMpPaymentId())
-                        .setTextAlignment(TextAlignment.RIGHT));
-            }
-            if (factura.getMpPreferenceId() != null) {
-                document.add(new Paragraph("ID Preferencia MP: " + factura.getMpPreferenceId())
-                        .setTextAlignment(TextAlignment.RIGHT));
-            }
-        }
-
-        try{
-        document.close();
-        return byteArrayOutputStream;
-
-    } catch (Exception e) {//Unexpected toke
-        System.err.println("Error al generar el PDF de la factura: " + e.getMessage());
-        e.printStackTrace();
-        throw new Exception("Error al generar el PDF de la factura", e);//Unhandled exception: java.lang.Exception
     }
-
-}
 
 
     @Override

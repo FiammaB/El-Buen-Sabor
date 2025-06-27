@@ -438,4 +438,20 @@ public class PedidoController extends BaseController<Pedido, Long> {
         return ResponseEntity.ok(reporte);
     }
 
+    // GET /api/pedidos/estado/{estado}
+    @GetMapping("/estado/{estado}")
+    public ResponseEntity<?> getPedidosByEstado(@PathVariable String estado) {
+        try {
+            Estado estadoEnum = Estado.valueOf(estado); // Convierte string a Enum (A_CONFIRMAR, LISTO, etc.)
+            List<Pedido> pedidos = pedidoService.findPedidosByEstados(Collections.singletonList(estadoEnum));
+            List<PedidoDTO> dtos = pedidos.stream()
+                    .map(pedidoMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"Estado inválido o error al filtrar pedidos: " + e.getMessage() + "\"}");
+        }
+    }
+
 }

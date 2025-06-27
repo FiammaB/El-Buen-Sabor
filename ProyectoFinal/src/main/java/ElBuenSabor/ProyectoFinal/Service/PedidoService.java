@@ -21,8 +21,6 @@ public interface PedidoService extends BaseService<Pedido, Long> {
     NotaCredito anularFacturaYGenerarNotaCredito(Long pedidoId, String motivoAnulacion, Usuario usuarioAnulador) throws Exception;
     LocalTime calcularTiempoEstimadoFinalizacion(Pedido pedido) throws Exception;
     List<Pedido> findPedidosByEstados(List<Estado> estados) throws Exception;
-
     List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta);
-
     List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden);
 }

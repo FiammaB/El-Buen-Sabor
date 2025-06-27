@@ -297,16 +297,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     }
 
                     break;
-                case "pending": pedido.setEstado(Estado.A_CONFIRMAR); break;
-                case "in_process": pedido.setEstado(Estado.EN_COCINA); break;
-                case "rejected": pedido.setEstado(Estado.RECHAZADO); break;
-                case "cancelled": pedido.setEstado(Estado.CANCELADO); break;
-                case "refunded": pedido.setEstado(Estado.DEVOLUCION); break;
-                case "list": pedido.setEstado(Estado.LISTO); break;
-                case "delivery": pedido.setEstado(Estado.EN_DELIVERY); break;
-                case "dedicated": pedido.setEstado(Estado.ENTREGADO); break;
-                case "charged_back": pedido.setEstado(Estado.CANCELADO); break;
-                default: System.out.println("Estado de pago de MP desconocido: " + payment.getStatus());
+
+
             }
 
             // --- LÓGICA: Actualizar campos de FACTURA desde el Webhook (SOBRE LA MISMA INSTANCIA DE FACTURA) ---

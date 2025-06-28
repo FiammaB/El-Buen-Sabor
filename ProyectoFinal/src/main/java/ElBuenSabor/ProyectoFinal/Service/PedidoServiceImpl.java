@@ -130,17 +130,19 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
-                    detalle.setSubTotal(detalleDTO.getSubTotal());
 
                     ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
                     if (insumo != null) {
                         detalle.setArticuloInsumo(insumo);
+                        // Calcular subTotal correctamente
+                        detalle.setSubTotal(insumo.getPrecioVenta() * detalle.getCantidad());
                     } else {
                         ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
                                 .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
                         detalle.setArticuloManufacturado(manufacturado);
+                        // Si querés, podrías recalcular el subtotal o usar el del DTO
+                        detalle.setSubTotal(detalleDTO.getSubTotal());
                     }
-
                     detalle.setPedido(pedido);
                     detalles.add(detalle);
                 }

@@ -158,18 +158,20 @@ public class PedidoController extends BaseController<Pedido, Long> {
                 for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
-                    detalle.setSubTotal(detalleDTO.getSubTotal());
 
                     if (detalleDTO.getArticuloId() != null) {
                         ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
                         if (insumo != null) {
                             detalle.setArticuloInsumo(insumo);
+                            detalle.setSubTotal(insumo.getPrecioVenta() * detalle.getCantidad());
                         } else {
                             ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
                                     .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado"));
                             detalle.setArticuloManufacturado(manufacturado);
+                            detalle.setSubTotal(detalleDTO.getSubTotal());
                         }
                     }
+
 
                     detalle.setPedido(pedidoParaCalculos); // Relación inversa
                     detalles.add(detalle);
@@ -190,16 +192,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
             // --- LÓGICA DE DECISIÓN POR FORMA DE PAGO ---
             if (dto.getFormaPago() == FormaPago.MERCADO_PAGO) {
-                // Ahora, los datos de factura y detalles se pasarán al servicio de MPController
-                // Aquí, el PedidoController llamará al MPController directamente
-                // (Esta delegación es para MP, donde el Pedido lo crea y guarda MPController)
-                // Pasar el DTO con el total y hora estimada ya calculados.
-                // Idealmente, deberíamos pasar el 'pedidoParaCalculos' al servicio de MPController,
-                // y que ese servicio guarde el pedido.
-                // Por simplicidad, adaptaremos el DTO para el MPController.
                 dto.setTotal(pedidoParaCalculos.getTotal());
-                // No podemos pasar horaEstimadaFinalizacion por DTO si no está en PedidoCreateDTO
-                // La lógica de MPController ya crea la Factura inicial.
                 return mpController.crearPreferencia(dto); // Delega al MPController
 
             } else if (dto.getFormaPago() == FormaPago.EFECTIVO) {

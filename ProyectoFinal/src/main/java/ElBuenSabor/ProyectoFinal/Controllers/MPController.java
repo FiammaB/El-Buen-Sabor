@@ -56,6 +56,7 @@ public class MPController {
     @PostMapping("/crear-preferencia")
     public ResponseEntity<?> crearPreferencia(@RequestBody PedidoCreateDTO pedidoDTO) {
         try {
+            System.out.println("crear preferencia mp controller"+pedidoDTO.getFormaPago());
             // 1. Guardar el pedido en la base de datos con un estado inicial
             Pedido pedidoPersistido = pedidoService.crearPedidoPreferenciaMP(pedidoDTO);
 

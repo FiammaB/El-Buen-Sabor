@@ -699,6 +699,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
 
+
             //Pedido
 
             Sucursal sucursal = Sucursal.builder()
@@ -715,11 +716,11 @@ public class DataLoader implements CommandLineRunner {
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .totalVenta(1250.0)
                     .anulada(false)
-                    .mpPaymentId(null)         // Dummy, poné un número real si querés simular el ID de MP
-                    .mpMerchantOrderId(null)
-                    .mpPreferenceId(null)
+                    .mpPaymentId(123456789)         // Dummy, poné un número real si querés simular el ID de MP
+                    .mpMerchantOrderId(987654321)
+                    .mpPreferenceId("PREF-123abc456")
                     .mpPaymentType("credit_card") // Dummy, o "mercadopago" si querés
-                    .urlPdf(null)              // O poné un link si ya lo generás en test
+                    .urlPdf("https://mi-app.com/facturas/99.pdf")              // O poné un link si ya lo generás en test
                     .build();
 
             facturaPedido = facturaService.save(facturaPedido);

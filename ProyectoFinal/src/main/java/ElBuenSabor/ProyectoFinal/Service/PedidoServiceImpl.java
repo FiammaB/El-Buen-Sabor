@@ -83,7 +83,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     public Pedido crearPedidoPreferenciaMP(PedidoCreateDTO dto) throws Exception {
         try {
             Pedido pedido = new Pedido();
-
+            System.out.println("DEBUG Pedido: Creando instancia de Pedido para Mercado Pago: " + pedido.getFormaPago());
             // 🧩 Asignación de relaciones obligatorias
             pedido.setCliente(clienteRepository.findById(dto.getClienteId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
@@ -190,7 +190,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // --- CORRECCIÓN: MOVER LA DEFINICIÓN DE PEDIDO AQUÍ ---
             Long pedidoId = Long.valueOf(payment.getExternalReference());
             Pedido pedido = findById(pedidoId); // <-- 'pedido' se define aquí
-
+            System.out.println("procesar not mp"+pedido.getFormaPago());//aca tambien me da null
             if (pedido == null) {
                 System.err.println("Notificación: Pedido no encontrado en la BD con externalReference: " + payment.getExternalReference());
                 return;
@@ -215,6 +215,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             System.out.println("External Reference (Pedido ID): " + payment.getExternalReference());
             System.out.println("Transaction Amount: " + payment.getTransactionAmount());
             System.out.println("Payment Type ID: " + payment.getPaymentTypeId());
+
+
             System.out.println("--- FIN DEBUG ---");
 
             switch (payment.getStatus()) {
@@ -320,6 +322,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 factura.setFechaFacturacion(payment.getDateCreated().toLocalDate());
             }
 
+            if (factura.getFormaPago() != null) { // Asegurarse de que no sea null antes de asignar
+                pedido.setFormaPago(factura.getFormaPago());
+            } else {
+                // En caso de que factura.getFormaPago() sea null (no debería pasar si se setea arriba)
+                pedido.setFormaPago(FormaPago.MERCADO_PAGO); // Establecer por defecto si es una confirmación de MP
+            }
             // --- DEBUG: Confirmar el valor de urlPdf justo antes del save final ---
             System.out.println("DEBUG FINAL: Valor de urlPdf en factura antes del save: " + (factura != null ? factura.getUrlPdf() : "FACTURA ES NULL"));
             System.out.println("DEBUG FINAL: Llamando a baseRepository.save(pedido) para Pedido ID: " + pedido.getId());

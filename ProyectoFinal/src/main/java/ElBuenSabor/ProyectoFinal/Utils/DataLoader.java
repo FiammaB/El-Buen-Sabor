@@ -697,6 +697,12 @@ public class DataLoader implements CommandLineRunner {
                     .nombre("Carlos Cajero")
                     .rol(Rol.CAJERO)
                     .build());
+            Usuario usuarioDelivery = usuarioService.save(Usuario.builder()
+                    .email("delivery@buen.com")
+                    .password(passwordEncoder.encode("delivery123"))
+                    .nombre("Pepe delivery")
+                    .rol(Rol.DELIVERY)
+                    .build());
 
 
 
@@ -729,9 +735,9 @@ public class DataLoader implements CommandLineRunner {
                     .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
                     .total(1250.0)
                     .totalCosto(900.0)
-                    .estado(Estado.A_CONFIRMAR)
+                    .estado(Estado.EN_DELIVERY)
                     .tipoEnvio(TipoEnvio.DELIVERY)
-                    .formaPago(FormaPago.EFECTIVO)
+                    .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
                     .cliente(cliente)
                     .domicilioEntrega(domicilioCliente)
@@ -781,9 +787,9 @@ public class DataLoader implements CommandLineRunner {
                     .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
                     .total(1250.0)
                     .totalCosto(900.0)
-                    .estado(Estado.LISTO)
+                    .estado(Estado.EN_DELIVERY)
                     .tipoEnvio(TipoEnvio.DELIVERY)
-                    .formaPago(FormaPago.EFECTIVO)
+                    .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
                     .cliente(cliente)
                     .domicilioEntrega(domicilioCliente)
@@ -806,7 +812,14 @@ public class DataLoader implements CommandLineRunner {
                     .pedido(pedido1)
                     .build();
 
-            pedido1.setDetallesPedidos(Set.of(detalle2a, detalle2b));
+            DetallePedido detalle2c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(2500.0)
+                    .articuloInsumo(albahaca)
+                    .pedido(pedido1)
+                    .build();
+
+            pedido1.setDetallesPedidos(Set.of(detalle2a, detalle2b, detalle2c));
 
             pedido.setEmpleado(null);
 

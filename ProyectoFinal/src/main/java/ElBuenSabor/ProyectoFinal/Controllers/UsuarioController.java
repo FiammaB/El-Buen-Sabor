@@ -1,5 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
+import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PerfilDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
@@ -113,6 +114,18 @@ public class UsuarioController extends BaseController<Usuario, Long> {
             usuario.setEmail(datos.getUsuario().getEmail()); // si querés permitir editar el email
             usuarioService.save(usuario);
             return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // -------------------- PERFIL CLIENTE COMPLETO ---------------------
+
+    @PutMapping("/perfil/cliente/{email}")
+    public ResponseEntity<?> actualizarPerfilCliente(@PathVariable String email, @RequestBody ClientePerfilUpdateDTO dto) {
+        try {
+            usuarioService.actualizarPerfilCliente(email, dto);
+            return ResponseEntity.ok("Perfil actualizado correctamente");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }

@@ -447,4 +447,29 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
+    // NUEVO ENDPOINT PARA HISTORIAL DE PEDIDOS POR CLIENTE
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long clienteId) {
+        try {
+            // Asegúrate de que el cliente exista para evitar errores con un ID inexistente
+            Cliente cliente = clienteService.findById(clienteId);
+            if (cliente == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Cliente no encontrado con ID: " + clienteId + "\"}");
+            }
+
+            // Llama al servicio que ya tienes para obtener los pedidos del cliente
+            List<Pedido> pedidos = pedidoService.findPedidosByClienteId(clienteId);
+
+            // Mapea las entidades Pedido a DTOs para la respuesta
+            List<PedidoDTO> dtos = pedidos.stream()
+                    .map(pedidoMapper::toDTO)
+                    .collect(Collectors.toList()); // Usar toList() o collect(Collectors.toList())
+
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener el historial de pedidos: " + e.getMessage() + "\"}");
+        }
+    }
+
+
 }

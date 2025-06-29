@@ -12,8 +12,11 @@ import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
+import com.itextpdf.io.source.ByteArrayOutputStream;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +48,8 @@ public class PedidoController extends BaseController<Pedido, Long> {
     private final ClienteService clienteService;
     private final DomicilioService domicilioService;
     private final SucursalService sucursalService;
+    private final FacturaService facturaService;
+
     // El constructor inyecta el servicio específico de Pedido y todas las dependencias adicionales
     public PedidoController(
             PedidoService pedidoService, // Servicio específico
@@ -61,10 +66,10 @@ public class PedidoController extends BaseController<Pedido, Long> {
             MPController mpController,
             ClienteService clienteService,
             DomicilioService domicilioService,
-            SucursalService sucursalService
+            SucursalService sucursalService,
 
 
-            ) {
+            FacturaService facturaService) {
         super(pedidoService); // Pasa el servicio al constructor del BaseController
         this.pedidoMapper = pedidoMapper;
         this.pedidoService = pedidoService;
@@ -81,6 +86,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.clienteService = clienteService;
         this.domicilioService = domicilioService;
         this.sucursalService = sucursalService;
+        this.facturaService = facturaService;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -471,5 +477,47 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
+    // CAMBIO AQUI: NUEVO ENDPOINT PARA SERVIR EL PDF DIRECTAMENTE
+    @GetMapping(value = "/{id}/descargar-factura", produces = MediaType.APPLICATION_PDF_VALUE) // <-- Nota el nuevo path y produces
+    public ResponseEntity<byte[]> downloadFacturaPdf(@PathVariable Long id) {
+        try {
+            Pedido pedido = pedidoService.findById(id); // Usa el pedidoService para encontrar el pedido
 
+            if (pedido == null) {
+                return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(null); // O un mensaje de error como byte[]
+            }
+            if (pedido.getFactura() == null || pedido.getFactura().getUrlPdf() == null || pedido.getFactura().getUrlPdf().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // O un mensaje de error
+            }
+
+            // AHORA NECESITAMOS DESCARGAR EL PDF DESDE LA URL (ej. Cloudinary) o REGENERARLO
+            // Opción A: Descargar desde la URL (si ya está en Cloudinary)
+            // Necesitarías una instancia de RestTemplate o WebClient para hacer una petición HTTP a la URL del PDF.
+            // O una lógica para que tu CloudinaryService o FacturaService te dé los bytes directamente.
+            // Por ejemplo, si tu CloudinaryService tiene un método como downloadFile(url):
+            // byte[] pdfBytes = cloudinaryService.downloadFile(pedido.getFactura().getUrlPdf());
+
+            // Opción B (Más directa si ya generas el PDF en el backend):
+            // Si FacturaService.generarFacturaPdf(pedido) devuelve un ByteArrayOutputStream:
+            ByteArrayOutputStream pdfStream = (ByteArrayOutputStream) facturaService.generarFacturaPdf(pedido); // <-- Accede a FacturaService a través de PedidoService (o inyéctalo aquí)
+            byte[] pdfBytes = pdfStream.toByteArray();
+
+            HttpHeaders headers = new HttpHeaders();
+            // Esto le dice al navegador que el archivo es un adjunto y sugerirá el nombre de archivo
+            headers.setContentDispositionFormData("attachment", "factura_pedido_" + id + ".pdf");
+            // Para que se abra en una nueva pestaña y ofrezca descarga, puedes probar con 'inline'
+            // headers.setContentDispositionFormData("inline", "factura_pedido_" + id + ".pdf");
+            headers.setContentType(MediaType.APPLICATION_PDF); // Importante: tipo de contenido PDF
+            headers.setContentLength(pdfBytes.length); // Tamaño del archivo
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+
+        } catch (ResourceNotFoundException e) { // Si PedidoService lanza esta excepción
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            System.err.println("Error al servir el PDF de la factura para el pedido " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

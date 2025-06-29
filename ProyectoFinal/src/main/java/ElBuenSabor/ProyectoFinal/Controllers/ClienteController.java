@@ -97,6 +97,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
                 cliente.setDomicilios(domicilios);
             }
 
+
             Cliente saved = baseService.save(cliente);
             return ResponseEntity.status(HttpStatus.CREATED).body(clienteMapper.toDTO(saved));
         } catch (Exception e) {

@@ -3,11 +3,13 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PerfilDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,54 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         this.usuarioMapper = usuarioMapper;
         this.passwordEncoder = passwordEncoder;
     }
+
+    // -------------------- REGISTRO GENERAL ---------------------
+
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<?> create(@RequestBody UsuarioDTO dto) {
+        try {
+            Usuario usuario = usuarioMapper.toEntity(dto);
+            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+            Usuario saved = usuarioService.save(usuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(saved));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // -------------------- REGISTRO COCINERO (SOLO ADMIN) ---------------------
+
+    @PostMapping("/registrar-cocinero")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> registrarCocinero(@RequestBody UsuarioDTO usuarioDTO) {
+        try {
+            Usuario nuevoCocinero = usuarioMapper.toEntity(usuarioDTO);
+            nuevoCocinero.setRol(Rol.COCINERO);
+            nuevoCocinero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            Usuario saved = usuarioService.save(nuevoCocinero);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Cocinero creado con ID: " + saved.getId());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
+    // -------------------- REGISTRO CAJERO (SOLO ADMIN) ---------------------
+
+    @PostMapping("/registrar-cajero")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> registrarCajero(@RequestBody UsuarioDTO usuarioDTO) {
+        try {
+            Usuario nuevoCajero = usuarioMapper.toEntity(usuarioDTO);
+            nuevoCajero.setRol(Rol.CAJERO);
+            nuevoCajero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            Usuario saved = usuarioService.save(nuevoCajero);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Cajero creado con ID: " + saved.getId());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
+    // -------------------- LISTAR Y OBTENER USUARIOS ---------------------
 
     @GetMapping
     @Override
@@ -57,17 +107,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         }
     }
 
-    @PostMapping(consumes = "application/json")
-    public ResponseEntity<?> create(@RequestBody UsuarioDTO dto) {
-        try {
-            Usuario usuario = usuarioMapper.toEntity(dto);
-            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
-            Usuario saved = usuarioService.save(usuario);
-            return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(saved));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
+    // -------------------- ACTUALIZAR USUARIO ---------------------
 
     @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UsuarioDTO dto) {
@@ -95,7 +135,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
 
             PerfilDTO dto = new PerfilDTO();
             dto.setId(usuario.getId());
-            dto.setUsuario(usuarioMapper.toDTO(usuario)); // incluye email y rol
+            dto.setUsuario(usuarioMapper.toDTO(usuario));
 
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
@@ -111,7 +151,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Usuario no encontrado\"}");
             }
 
-            usuario.setEmail(datos.getUsuario().getEmail()); // si querés permitir editar el email
+            usuario.setEmail(datos.getUsuario().getEmail());
             usuarioService.save(usuario);
             return ResponseEntity.ok().build();
         } catch (Exception e) {

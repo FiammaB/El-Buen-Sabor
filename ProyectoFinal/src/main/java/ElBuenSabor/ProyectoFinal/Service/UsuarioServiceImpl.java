@@ -1,8 +1,11 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
+import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,15 +18,18 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UsuarioMapper usuarioMapper;
 
     public UsuarioServiceImpl(
             UsuarioRepository usuarioRepository,
             ClienteRepository clienteRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            UsuarioMapper usuarioMapper) {
         super(usuarioRepository);
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
         this.passwordEncoder = passwordEncoder;
+        this.usuarioMapper = usuarioMapper;
     }
 
     @Override
@@ -56,7 +62,6 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ Método declarado en la interfaz UsuarioService
     @Override
     @Transactional
     public void actualizarPerfilCliente(String email, ClientePerfilUpdateDTO dto) throws Exception {
@@ -88,5 +93,23 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         }
 
         usuarioRepository.save(usuario);
+    }
+
+    // ✅ Método para registrar cocinero
+    @Override
+    public Usuario registrarCocinero(UsuarioDTO usuarioDTO) {
+        Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
+        usuario.setRol(Rol.COCINERO);
+        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        return usuarioRepository.save(usuario);
+    }
+
+    // ✅ Método para registrar cajero
+    @Override
+    public Usuario registrarCajero(UsuarioDTO usuarioDTO) {
+        Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
+        usuario.setRol(Rol.CAJERO);
+        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        return usuarioRepository.save(usuario);
     }
 }

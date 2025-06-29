@@ -1,12 +1,12 @@
-// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/DTO/ClienteDTO.java
 package ElBuenSabor.ProyectoFinal.DTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDate;
-import java.util.List; // Importa List
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,5 +26,4 @@ public class ClienteDTO {
     private UsuarioDTO usuario;
 
     private List<DomicilioDTO> domicilios;
-
 }

@@ -1,6 +1,12 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
+import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Rol;
+import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
+import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
+import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,12 +16,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UsuarioMapper usuarioMapper;
 
-    public UsuarioServiceImpl(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioServiceImpl(
+            UsuarioRepository usuarioRepository,
+            ClienteRepository clienteRepository,
+            PasswordEncoder passwordEncoder,
+            UsuarioMapper usuarioMapper) {
         super(usuarioRepository);
         this.usuarioRepository = usuarioRepository;
+        this.clienteRepository = clienteRepository;
         this.passwordEncoder = passwordEncoder;
+        this.usuarioMapper = usuarioMapper;
     }
 
     @Override
@@ -42,8 +56,60 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
             throw new Exception("Error al actualizar el usuario: " + e.getMessage());
         }
     }
+
     @Override
     public Usuario save(Usuario usuario) {
+        return usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional
+    public void actualizarPerfilCliente(String email, ClientePerfilUpdateDTO dto) throws Exception {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("Usuario no encontrado con email: " + email));
+
+        Cliente cliente = clienteRepository.findByUsuario(usuario)
+                .orElseThrow(() -> new Exception("Cliente no encontrado para el usuario con email: " + email));
+
+        // Actualizar datos personales
+        cliente.setNombre(dto.getNombre());
+        cliente.setApellido(dto.getApellido());
+        cliente.setTelefono(dto.getTelefono());
+        cliente.setFechaNacimiento(dto.getFechaNacimiento());
+        clienteRepository.save(cliente);
+
+        // Actualizar email si cambió
+        usuario.setEmail(dto.getEmail());
+
+        // Validar y cambiar contraseña si corresponde
+        if (dto.getPasswordActual() != null && !dto.getPasswordActual().isBlank()) {
+            if (!passwordEncoder.matches(dto.getPasswordActual(), usuario.getPassword())) {
+                throw new Exception("La contraseña actual es incorrecta.");
+            }
+            if (!dto.getNuevaPassword().equals(dto.getRepetirPassword())) {
+                throw new Exception("Las nuevas contraseñas no coinciden.");
+            }
+            usuario.setPassword(passwordEncoder.encode(dto.getNuevaPassword()));
+        }
+
+        usuarioRepository.save(usuario);
+    }
+
+    // ✅ Método para registrar cocinero
+    @Override
+    public Usuario registrarCocinero(UsuarioDTO usuarioDTO) {
+        Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
+        usuario.setRol(Rol.COCINERO);
+        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        return usuarioRepository.save(usuario);
+    }
+
+    // ✅ Método para registrar cajero
+    @Override
+    public Usuario registrarCajero(UsuarioDTO usuarioDTO) {
+        Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
+        usuario.setRol(Rol.CAJERO);
+        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
         return usuarioRepository.save(usuario);
     }
 }

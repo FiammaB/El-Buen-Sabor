@@ -3,6 +3,7 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PerfilDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
@@ -17,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://localhost:5175")
 public class UsuarioController extends BaseController<Usuario, Long> {
 
     private final UsuarioMapper usuarioMapper;
@@ -114,8 +115,11 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario existente = usuarioService.findById(id);
             existente.setEmail(dto.getEmail());
-            existente.setPassword(passwordEncoder.encode(dto.getPassword()));
+            existente.setNombre(dto.getNombre());
             existente.setRol(dto.getRol());
+            if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+                existente.setPassword(passwordEncoder.encode(dto.getPassword()));
+            }
             Usuario updated = usuarioService.update(id, existente);
             return ResponseEntity.ok(usuarioMapper.toDTO(updated));
         } catch (Exception e) {
@@ -166,6 +170,19 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             usuarioService.actualizarPerfilCliente(email, dto);
             return ResponseEntity.ok("Perfil actualizado correctamente");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/baja")
+    public ResponseEntity<?> toggleBaja(
+            @PathVariable Long id,
+            @RequestParam boolean baja
+    ) {
+        try {
+            Usuario actualizado = baseService.toggleBaja(id, baja);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }

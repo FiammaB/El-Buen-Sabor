@@ -27,10 +27,14 @@ public class Domicilio extends BaseEntity {
     @JoinColumn(name = "localidad_id")
     private Localidad localidad;
 
-    @ManyToMany(mappedBy = "domicilios") // Mapeado por el campo 'domicilios' en la entidad Cliente
-    private Set<Cliente> clientes = new HashSet<>(); // Un domicilio puede pertenecer a muchos clientes
+    @ManyToMany(mappedBy = "domicilios")
+    private Set<Cliente> clientes = new HashSet<>();
 
     @OneToMany(mappedBy = "domicilioEntrega")
     private List<Pedido> pedidos;
+
+    public Cliente getCliente() {
+        return clientes.stream().findFirst().orElse(null);
+    }
 
 }

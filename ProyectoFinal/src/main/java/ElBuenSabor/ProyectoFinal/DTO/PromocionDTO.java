@@ -28,4 +28,5 @@ public class PromocionDTO {
 
     private List<ArticuloManufacturadoDTO> articulosManufacturados;
     private List<SucursalDTO> sucursales;
+    private  boolean baja;
 }

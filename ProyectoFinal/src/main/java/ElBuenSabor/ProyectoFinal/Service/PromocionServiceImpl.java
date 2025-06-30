@@ -1,44 +1,49 @@
+// Archivo: ElBuenSabor/ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Service/PromocionServiceImpl.java
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ArticuloManufacturadoDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ImagenDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PromocionDTO;
-import ElBuenSabor.ProyectoFinal.DTO.SucursalDTO;
-import ElBuenSabor.ProyectoFinal.Entities.*;
-import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException; // Posiblemente ya no sea necesaria
-import ElBuenSabor.ProyectoFinal.Repositories.*;
+import ElBuenSabor.ProyectoFinal.Entities.Promocion;
+import ElBuenSabor.ProyectoFinal.Repositories.PromocionRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.SucursalRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
-// PromocionServiceImpl ahora extiende BaseServiceImpl
-// y la interfaz PromocionService (que debe extender BaseService)
 public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> implements PromocionService {
 
-
-
     private final PromocionRepository promocionRepository;
+    private final SucursalRepository sucursalRepository;
 
-    public PromocionServiceImpl(PromocionRepository promocionRepository) {
+    public PromocionServiceImpl(PromocionRepository promocionRepository,
+                                SucursalRepository sucursalRepository) {
         super(promocionRepository);
         this.promocionRepository = promocionRepository;
+        this.sucursalRepository = sucursalRepository;
     }
 
     @Override
     public List<Promocion> getPromocionesActivas() {
-        return promocionRepository.findAll()
-                .stream()
-                .filter(p -> !p.getBaja())
-                .collect(Collectors.toList());
+        // Implementa la lógica para obtener promociones activas globales si es necesario
+        // Por ahora, devuelve una lista vacía o podrías llamar a promocionRepository.findByBajaFalse()
+        return promocionRepository.findByBajaFalse(); // O el método correcto en tu repositorio
     }
+
+
+
     @Override
     @Transactional
-    public Promocion update(Long id, Promocion updatedPromocion) throws Exception { // <<-- Añadir throws Exception
+    public Promocion save(Promocion newEntity) throws Exception {
+        if (newEntity.getSucursales() == null || newEntity.getSucursales().isEmpty()) {
+            throw new Exception("La Promoción debe estar asociada al menos a una sucursal.");
+        }
+        return super.save(newEntity);
+    }
+
+    @Override
+    @Transactional
+    public Promocion update(Long id, Promocion updatedPromocion) throws Exception {
         try {
             Promocion actual = findById(id);
 
@@ -52,27 +57,38 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
             actual.setTipoPromocion(updatedPromocion.getTipoPromocion());
             actual.setImagen(updatedPromocion.getImagen());
 
-
             if (updatedPromocion.getArticulosManufacturados() != null) {
                 actual.getArticulosManufacturados().clear();
                 actual.getArticulosManufacturados().addAll(updatedPromocion.getArticulosManufacturados());
-
+            } else {
+                actual.getArticulosManufacturados().clear();
             }
 
-            // Sincronizar la colección de Sucursales
             if (updatedPromocion.getSucursales() != null) {
                 actual.getSucursales().clear();
                 actual.getSucursales().addAll(updatedPromocion.getSucursales());
-                // Si la relación es bidireccional, asegura que las Sucursales apunten a esta Promocion
-                actual.getSucursales().forEach(sucursal -> sucursal.getPromociones().add(actual));
+            } else {
+                actual.getSucursales().clear();
             }
 
-
-            // Llamamos a save del baseRepository (heredado del padre) para persistir los cambios
             return baseRepository.save(actual);
         } catch (Exception e) {
-            // Re-lanzamos cualquier excepción, manteniendo la consistencia con BaseService.
             throw new Exception("Error al actualizar la promoción: " + e.getMessage());
+        }
+    }
+
+
+
+    // <-- NUEVA IMPLEMENTACIÓN: toggleBaja
+    @Override
+    @Transactional
+    public Promocion toggleBaja(Long id, boolean baja) throws Exception {
+        try {
+            Promocion promocion = findById(id); // Obtener la promoción por ID
+            promocion.setBaja(baja); // Establecer el nuevo estado de baja
+            return baseRepository.save(promocion); // Guardar la promoción actualizada
+        } catch (Exception e) {
+            throw new Exception("Error al cambiar el estado de baja de la promoción: " + e.getMessage(), e);
         }
     }
 }

@@ -47,6 +47,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID extends Serializa
     @Transactional
     public E save(E entity) throws Exception {
         try {
+            System.out.println("Entidad a guardar:" + entity);
             // Por defecto, al guardar una nueva entidad, no debería estar dada de baja.
             // Si la entidad ya tiene un ID, es una actualización y su estado 'baja' se mantiene.
             if (entity.getId() == null) {

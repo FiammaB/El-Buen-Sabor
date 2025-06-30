@@ -20,4 +20,16 @@ public class ArticuloInsumoDTO extends ArticuloDTO{
     private Long unidadMedidaId;
     private Long categoriaId;
 
+    @Override
+    public String toString() {
+        return "ArticuloInsumoDTO{" +
+                "precioCompra=" + precioCompra +
+                ", stockActual=" + stockActual +
+                ", stockMinimo=" + stockMinimo +
+                ", esParaElaborar=" + esParaElaborar +
+                ", imagenId=" + imagenId +
+                ", unidadMedidaId=" + unidadMedidaId +
+                ", categoriaId=" + categoriaId +
+                '}';
+    }
 }

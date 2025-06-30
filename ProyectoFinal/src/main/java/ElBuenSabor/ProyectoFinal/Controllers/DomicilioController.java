@@ -1,11 +1,13 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.DomicilioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Domicilio;
 import ElBuenSabor.ProyectoFinal.Entities.Localidad; // Importar Localidad
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.DomicilioMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.LocalidadRepository;
+import ElBuenSabor.ProyectoFinal.Service.ClienteService;
 import ElBuenSabor.ProyectoFinal.Service.DomicilioService; // Usar la interfaz específica
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.List;
 
 @RestController
@@ -21,14 +24,19 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
 
     private final DomicilioMapper domicilioMapper;
     private final LocalidadRepository localidadRepository;
+    private final ClienteService clienteService;
+
 
     public DomicilioController(
             DomicilioService domicilioService,
             DomicilioMapper domicilioMapper,
-            LocalidadRepository localidadRepository) {
+            LocalidadRepository localidadRepository,
+            ClienteService clienteService // ⬅️ inyectado
+    ) {
         super(domicilioService);
         this.domicilioMapper = domicilioMapper;
         this.localidadRepository = localidadRepository;
+        this.clienteService = clienteService; // ⬅️ guardado
     }
 
     @GetMapping
@@ -59,8 +67,10 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody DomicilioDTO dto) {
         try {
+            System.out.println("Entra: " + dto.toString());
             Domicilio domicilio = domicilioMapper.toEntity(dto);
 
+            System.out.println("Nuevo dom:" + domicilio);
 
             if (dto.getLocalidad() != null && dto.getLocalidad().getId() != null) {
                 Localidad localidad = localidadRepository.findById(dto.getLocalidad().getId())
@@ -75,6 +85,56 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    // DomicilioController.java
+    @PostMapping("/cliente/{clienteId}")
+    public ResponseEntity<?> createForCliente(@PathVariable Long clienteId, @RequestBody DomicilioDTO dto) {
+        try {
+            System.out.println("DTO recibido: " + dto);
+            System.out.println("DTO localidad: " + dto.getLocalidad());
+
+            Domicilio domicilio = domicilioMapper.toEntity(dto);
+            System.out.println("Entidad domicilio mapeada: " + domicilio);
+
+            if (dto.getLocalidad() != null && dto.getLocalidad().getId() != null) {
+                Localidad localidad = localidadRepository.findById(dto.getLocalidad().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Localidad no encontrada"));
+                domicilio.setLocalidad(localidad);
+            }
+
+            Cliente cliente = clienteService.findById(clienteId);
+            if (domicilio.getClientes() == null) {
+                domicilio.setClientes(new HashSet<>());
+            }
+            domicilio.getClientes().add(cliente);
+            domicilio.setBaja(false);
+
+            Domicilio saved = baseService.save(domicilio);
+            return ResponseEntity.status(HttpStatus.CREATED).body(domicilioMapper.toDTO(saved));
+        } catch (Exception e) {
+            e.printStackTrace(); // 👈 esto mostrará el error real en consola
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<?> getDomiciliosByClienteId(@PathVariable Long clienteId) {
+        try {
+            List<Domicilio> domicilios = baseService.findAll(); // o un método filtrado por cliente
+            List<DomicilioDTO> dtos = domicilios.stream()
+                    .filter(d -> d.getClientes().stream().anyMatch(c -> c.getId().equals(clienteId)))
+                    .map(domicilioMapper::toDTO)
+                    .toList();
+
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+
 
 
     @PutMapping(value = "/{id}", consumes = "application/json")

@@ -33,4 +33,8 @@ public class Domicilio extends BaseEntity {
     @OneToMany(mappedBy = "domicilioEntrega")
     private List<Pedido> pedidos;
 
+    public Cliente getCliente() {
+        return clientes.stream().findFirst().orElse(null);
+    }
+
 }

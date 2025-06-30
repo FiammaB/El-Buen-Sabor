@@ -24,7 +24,7 @@ public class Cliente extends BaseEntity {
     private LocalDate fechaNacimiento;
 
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = CascadeType.PERSIST) // o PERSIST + MERGE
     @JoinTable(
             name = "cliente_domicilio",
             joinColumns = @JoinColumn(name = "cliente_id"),

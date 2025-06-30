@@ -22,6 +22,7 @@ public class LocalidadController extends BaseController<Localidad, Long> {
 
     private final LocalidadMapper localidadMapper;
     private final ProvinciaRepository provinciaRepository;
+    private final LocalidadService localidadService;
 
     public LocalidadController(
             LocalidadService localidadService,
@@ -30,13 +31,14 @@ public class LocalidadController extends BaseController<Localidad, Long> {
         super(localidadService);
         this.localidadMapper = localidadMapper;
         this.provinciaRepository = provinciaRepository;
+        this.localidadService = localidadService;
     }
 
     @GetMapping
     @Override
     public ResponseEntity<?> getAll() {
         try {
-            List<Localidad> localidades = baseService.findAll();
+            List<Localidad> localidades = localidadService.findAll();
             List<LocalidadDTO> dtos = localidades.stream()
                     .map(localidadMapper::toDTO)
                     .toList();

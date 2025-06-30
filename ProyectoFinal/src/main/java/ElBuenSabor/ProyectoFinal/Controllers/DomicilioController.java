@@ -25,6 +25,7 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
     private final DomicilioMapper domicilioMapper;
     private final LocalidadRepository localidadRepository;
     private final ClienteService clienteService;
+    private final DomicilioService domicilioService;
 
 
     public DomicilioController(
@@ -32,11 +33,12 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
             DomicilioMapper domicilioMapper,
             LocalidadRepository localidadRepository,
             ClienteService clienteService // ⬅️ inyectado
-    ) {
+) {
         super(domicilioService);
         this.domicilioMapper = domicilioMapper;
         this.localidadRepository = localidadRepository;
         this.clienteService = clienteService; // ⬅️ guardado
+        this.domicilioService = domicilioService;
     }
 
     @GetMapping
@@ -79,7 +81,7 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
             }
             domicilio.setBaja(false);
 
-            Domicilio saved = baseService.save(domicilio);
+            Domicilio saved = domicilioService.save(domicilio);
             return ResponseEntity.status(HttpStatus.CREATED).body(domicilioMapper.toDTO(saved));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -103,13 +105,16 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
             }
 
             Cliente cliente = clienteService.findById(clienteId);
+
             if (domicilio.getClientes() == null) {
                 domicilio.setClientes(new HashSet<>());
             }
+
+            cliente.getDomicilios().add(domicilio);
             domicilio.getClientes().add(cliente);
             domicilio.setBaja(false);
 
-            Domicilio saved = baseService.save(domicilio);
+            Domicilio saved = domicilioService.save(domicilio);
             return ResponseEntity.status(HttpStatus.CREATED).body(domicilioMapper.toDTO(saved));
         } catch (Exception e) {
             e.printStackTrace(); // 👈 esto mostrará el error real en consola

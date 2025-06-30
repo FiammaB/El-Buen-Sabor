@@ -27,7 +27,7 @@ import java.util.stream.Collectors; // Importar Collectors si es necesario
 @RequestMapping("/api/promociones") // Define la URL base para este controlador
 // PromocionController ahora extiende BaseController
 public class PromocionController extends BaseController<Promocion, Long> {
-
+    private final PromocionService promocionService;
     private final PromocionMapper promocionMapper;
 
     // Repositorios necesarios para resolver relaciones en el controlador
@@ -47,6 +47,8 @@ public class PromocionController extends BaseController<Promocion, Long> {
         this.imagenRepository = imagenRepository;
         this.articuloRepo = articuloRepo;
         this.sucursalRepository = sucursalRepository;
+        this.promocionService = promocionService;
+
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -95,9 +97,20 @@ public class PromocionController extends BaseController<Promocion, Long> {
                 promocion.setArticulosManufacturados(articulos);
             }
 
-            if (dto.getSucursalIds() != null) {
+            // <-- CAMBIO IMPORTANTE AQUÍ para SucursalIds en CREATE
+            if (dto.getSucursalIds() != null && !dto.getSucursalIds().isEmpty()) {
                 List<Sucursal> sucursales = sucursalRepository.findAllById(dto.getSucursalIds());
+                if (sucursales.isEmpty() && !dto.getSucursalIds().isEmpty()) {
+                    throw new ResourceNotFoundException("No se encontraron sucursales para los IDs proporcionados.");
+                }
                 promocion.setSucursales(sucursales);
+            } else {
+                // Si no se envían sucursalIds, asignar a una sucursal por defecto.
+                // ¡IMPORTANTE! Reemplaza 1L con el ID de una sucursal válida y que siempre exista en tu DB.
+                // Si no hay sucursal por defecto y es un error no enviarla, esto debería ser un error.
+                Sucursal defaultSucursal = sucursalRepository.findById(1L)
+                        .orElseThrow(() -> new ResourceNotFoundException("No se encontró la sucursal por defecto (ID 1L)."));
+                promocion.setSucursales(List.of(defaultSucursal)); // Asigna a la sucursal por defecto
             }
             promocion.setBaja(false); // Por defecto, una nueva promoción no está dada de baja
 
@@ -142,12 +155,20 @@ public class PromocionController extends BaseController<Promocion, Long> {
                 existingPromocion.getArticulosManufacturados().clear(); // Si no se envían IDs, limpiar la colección
             }
 
-            if (dto.getSucursalIds() != null) {
+            // <-- CAMBIO IMPORTANTE AQUÍ para SucursalIds en UPDATE
+            if (dto.getSucursalIds() != null && !dto.getSucursalIds().isEmpty()) {
                 List<Sucursal> sucursales = sucursalRepository.findAllById(dto.getSucursalIds());
+                if (sucursales.isEmpty() && !dto.getSucursalIds().isEmpty()) {
+                    throw new ResourceNotFoundException("No se encontraron sucursales para los IDs proporcionados.");
+                }
                 existingPromocion.getSucursales().clear();
                 existingPromocion.getSucursales().addAll(sucursales);
             } else {
-                existingPromocion.getSucursales().clear(); // Si no se envían IDs, limpiar la colección
+                // Si no se envían sucursalIds, asignar a una sucursal por defecto.
+                Sucursal defaultSucursal = sucursalRepository.findById(1L)
+                        .orElseThrow(() -> new ResourceNotFoundException("No se encontró la sucursal por defecto (ID 1L)."));
+                existingPromocion.getSucursales().clear(); // Limpia las que tenía
+                existingPromocion.getSucursales().add(defaultSucursal); // Asigna la por defecto
             }
 
             Promocion updated = baseService.update(id, existingPromocion); // Llama al update del padre con la entidad EXISTENTE
@@ -157,10 +178,26 @@ public class PromocionController extends BaseController<Promocion, Long> {
         }
     }
 
-    // Los métodos DELETE, ACTIVATE, DEACTIVATE pueden heredarse directamente de BaseController
-    // si la lógica de borrado/activación/desactivación ya implementada en BaseController
-    // es suficiente y no necesitas una respuesta con DTOs específicos.
-    // @DeleteMapping("/{id}") ya está cubierto por BaseController
-    // @PatchMapping("/{id}/activate") ya está cubierto por BaseController
-    // @PatchMapping("/{id}/deactivate") ya está cubierto por BaseController
+
+
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<?> activate(@PathVariable Long id) {
+        try {
+            promocionService.toggleBaja(id, false);//Cannot resolve symbol 'promocionService
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivate(@PathVariable Long id) {
+        try {
+            promocionService.toggleBaja(id, true);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
 }

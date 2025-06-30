@@ -543,7 +543,7 @@ public class DataLoader implements CommandLineRunner {
             Categoria categoriaHamburguesa = categoriaService.save(Categoria.builder().denominacion("Hamburguesa").categoriaPadre(categoriaPadre).build());
             Categoria categoriaComida = categoriaService.save(Categoria.builder().denominacion("Comida").categoriaPadre(categoriaPadre).build());
             Categoria categoriaPapasFritas = categoriaService.save(Categoria.builder().denominacion("Papas fritas").categoriaPadre(categoriaPadre).build());
-            
+
             Categoria categoriaPan = categoriaService.save(Categoria.builder().denominacion("Pan").categoriaPadre(categoriaPadre1).build());
             Categoria categoriaQueso = categoriaService.save(Categoria.builder().denominacion("Queso").categoriaPadre(categoriaPadre1).build());
             Categoria categoriaVerdura = categoriaService.save(Categoria.builder().denominacion("Verdura").categoriaPadre(categoriaPadre1).build());

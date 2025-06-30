@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -31,6 +30,7 @@ public class AuthController {
 
     private final Map<String, String> codigoRecuperacion = new HashMap<>();
 
+    // 🔐 LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Usuario usuario = usuarioService.findByEmail(request.getEmail());
@@ -52,17 +52,29 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    // 🧾 REGISTRO DE CLIENTE con validación de email duplicado y contraseña segura
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
+            // 🛑 Verificar que no exista otro usuario con el mismo email
+            if (usuarioService.findByEmail(request.getEmail()) != null) {
+                return ResponseEntity.status(400).body("{\"error\": \"Ya existe un usuario con ese email.\"}");
+            }
+
+            // 🛑 Validar formato de contraseña segura
+            if (!esPasswordSegura(request.getPassword())) {
+                return ResponseEntity.status(400).body("{\"error\": \"La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un símbolo.\"}");
+            }
+
+            // ✅ Crear y guardar usuario
             Usuario usuario = new Usuario();
             usuario.setEmail(request.getEmail());
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
             usuario.setNombre(request.getNombre());
             usuario.setRol(Rol.CLIENTE);
-
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
+            // ✅ Crear y guardar cliente asociado
             Cliente cliente = new Cliente();
             cliente.setNombre(request.getNombre());
             cliente.setApellido(request.getApellido());
@@ -72,6 +84,7 @@ public class AuthController {
             cliente.setBaja(false);
             clienteRepository.save(cliente);
 
+            // ✅ Devolver datos del nuevo usuario
             UsuarioResponse response = new UsuarioResponse(
                     nuevoUsuario.getId(),
                     cliente.getNombre(),
@@ -88,10 +101,7 @@ public class AuthController {
         }
     }
 
-    // ------------------------------
-    // RECUPERACIÓN DE CONTRASEÑA
-    // ------------------------------
-
+    // 🔁 RECUPERACIÓN DE CONTRASEÑA
     @PostMapping("/recuperar")
     public ResponseEntity<?> recuperar(@RequestParam String email) {
         Usuario usuario = usuarioService.findByEmail(email);
@@ -132,10 +142,23 @@ public class AuthController {
             return ResponseEntity.status(404).body("Usuario no encontrado");
         }
 
+        // ✅ Validar contraseña segura
+        if (!esPasswordSegura(nuevaPassword)) {
+            return ResponseEntity.status(400).body("La nueva contraseña no cumple con los requisitos de seguridad");
+        }
+
         usuario.setPassword(passwordEncoder.encode(nuevaPassword));
         usuarioService.save(usuario);
         codigoRecuperacion.remove(email); // eliminar el código usado
 
         return ResponseEntity.ok("Contraseña actualizada correctamente");
+    }
+
+    // 🔐 Método reutilizable para validar contraseñas seguras
+    private boolean esPasswordSegura(String password) {
+        return password.length() >= 8 &&
+                password.matches(".*[A-Z].*") &&     // al menos una mayúscula
+                password.matches(".*[a-z].*") &&     // al menos una minúscula
+                password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*"); // al menos un símbolo
     }
 }

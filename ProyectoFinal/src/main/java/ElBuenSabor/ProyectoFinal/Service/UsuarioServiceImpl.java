@@ -95,18 +95,42 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         usuarioRepository.save(usuario);
     }
 
-    // ✅ Método para registrar cocinero
+    // 🔒 Validación de contraseña segura
+    private boolean esPasswordSegura(String password) {
+        return password.length() >= 8 &&
+                password.matches(".*[A-Z].*") &&     // al menos una letra mayúscula
+                password.matches(".*[a-z].*") &&     // al menos una letra minúscula
+                password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*"); // al menos un símbolo
+    }
+
+    // ✅ Método para registrar cocinero con validación de email y contraseña segura
     @Override
     public Usuario registrarCocinero(UsuarioDTO usuarioDTO) {
+        if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario registrado con ese email.");
+        }
+
+        if (!esPasswordSegura(usuarioDTO.getPassword())) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un símbolo.");
+        }
+
         Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
         usuario.setRol(Rol.COCINERO);
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ Método para registrar cajero
+    // ✅ Método para registrar cajero con validación de email y contraseña segura
     @Override
     public Usuario registrarCajero(UsuarioDTO usuarioDTO) {
+        if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario registrado con ese email.");
+        }
+
+        if (!esPasswordSegura(usuarioDTO.getPassword())) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un símbolo.");
+        }
+
         Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
         usuario.setRol(Rol.CAJERO);
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));

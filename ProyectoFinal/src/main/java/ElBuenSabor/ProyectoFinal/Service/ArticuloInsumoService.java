@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface ArticuloInsumoService extends BaseService<ArticuloInsumo, Long>{
 
+    ArticuloInsumo actualizarPrecioYPropagar(Long id, Double nuevoPrecioCompra) throws Exception;
 
 }

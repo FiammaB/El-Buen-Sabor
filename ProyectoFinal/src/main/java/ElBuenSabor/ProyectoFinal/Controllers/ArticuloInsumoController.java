@@ -153,14 +153,13 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
             @RequestParam("precioCompra") Double precioCompra
     ) {
         try {
-            ArticuloInsumo insumo = articuloInsumoService.findById(id);
-            insumo.setPrecioCompra(precioCompra);
-            articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(insumo); // o devolver DTO
+            ArticuloInsumo actualizado = articuloInsumoService.actualizarPrecioYPropagar(id, precioCompra);
+            return ResponseEntity.ok(actualizado); // o devolver DTO
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
+
 
     @PatchMapping("/{id}/baja")
     public ResponseEntity<?> toggleBaja(

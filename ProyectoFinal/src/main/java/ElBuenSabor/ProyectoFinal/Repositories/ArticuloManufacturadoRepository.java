@@ -20,4 +20,5 @@ public interface ArticuloManufacturadoRepository extends JpaRepository<ArticuloM
             @Param("denominacion") String denominacion,
             @Param("baja") Boolean baja
     );
+    List<ArticuloManufacturado> findAllByDetalles_ArticuloInsumo_Id(Long articuloInsumoId);
 }

@@ -148,6 +148,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 }
                 pedido.setDetallesPedidos(detalles);
             }
+            // --- ¡NUEVO!: CALCULAR Y ASIGNAR EL totalCosto AQUÍ ---
+            Double costoCalculado = calcularTotalCostoPedido(pedido); // Llama al nuevo método
+            pedido.setTotalCosto(costoCalculado); // <-- Asignar el totalCosto al pedido
+            System.out.println("DEBUG Costo: Total Costo del Pedido asignado: " + costoCalculado);
+            // ----------------------------------------------------
+
             // --- LÓGICA: APLICAR DESCUENTO DEL 10% SI ES RETIRO EN LOCAL ---
             Double totalCalculado = dto.getTotal(); // Usamos el total que viene del DTO inicialmente
 
@@ -723,5 +729,61 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     public List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta) {
         return detallePedidoRepository.rankingProductosMasVendidos(desde, hasta);
     }
+    // --- NUEVA FUNCIÓN: calcularTotalCostoPedido ---
+    // @Transactional // Podría ser necesario si se llama fuera de una transacción existente
+    private Double calcularTotalCostoPedido(Pedido pedido) {
+        double totalCosto = 0.0;
+        System.out.println("DEBUG Costo: Iniciando cálculo de totalCosto para Pedido ID: " + (pedido.getId() != null ? pedido.getId() : "nuevo"));
 
+        if (pedido.getDetallesPedidos() == null || pedido.getDetallesPedidos().isEmpty()) {
+            System.out.println("DEBUG Costo: Pedido no tiene detalles de pedido o colección vacía. Costo = 0.");
+            return 0.0;
+        }
+
+        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+            double costoDetalle = 0.0;
+            // Caso 1: El detalle es un ArticuloInsumo (se vende como tal)
+            if (detalle.getArticuloInsumo() != null) {
+                ArticuloInsumo insumo = detalle.getArticuloInsumo();
+                if (insumo.getPrecioCompra() != null) {
+                    costoDetalle = insumo.getPrecioCompra() * detalle.getCantidad();
+                    System.out.println("DEBUG Costo: Insumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") - Cant: " + detalle.getCantidad() + " x Precio Compra: " + insumo.getPrecioCompra() + " = " + costoDetalle);
+                } else {
+                    System.err.println("ADVERTENCIA Costo: ArticuloInsumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") no tiene precio de compra definido. No se suma al costo.");
+                }
+            }
+            // Caso 2: El detalle es un ArticuloManufacturado (costo basado en receta)
+            else if (detalle.getArticuloManufacturado() != null) {
+                ArticuloManufacturado am = detalle.getArticuloManufacturado();
+                System.out.println("DEBUG Costo: Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
+
+                double costoManufacturadoUnitario = 0.0;
+                // Asegúrate de que los detalles del AM (receta) estén cargados (LAZY por defecto)
+                // Si esto causa LazyInitializationException, necesitarás un JOIN FETCH en la consulta del Pedido
+                // o cargar el AM explícitamente con sus detalles dentro de esta transacción.
+                if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
+                    for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
+                        ArticuloInsumo insumoReceta = amd.getArticuloInsumo();
+                        if (insumoReceta != null && insumoReceta.getPrecioCompra() != null) {
+                            double costoInsumoReceta = insumoReceta.getPrecioCompra() * amd.getCantidad();
+                            costoManufacturadoUnitario += costoInsumoReceta;
+                            System.out.println("DEBUG Costo:  - Receta Insumo '" + insumoReceta.getDenominacion() + "' (ID: " + insumoReceta.getId() + ") - Cant: " + amd.getCantidad() + " x Precio Compra: " + insumoReceta.getPrecioCompra() + " = " + costoInsumoReceta);
+                        } else {
+                            System.err.println("ADVERTENCIA Costo: Insumo en receta (ID: " + (insumoReceta != null ? insumoReceta.getId() : "N/A") + ") no tiene precio de compra o es nulo. No se suma al costo del AM.");
+                        }
+                    }
+                    costoDetalle = costoManufacturadoUnitario * detalle.getCantidad(); // Multiplicar por la cantidad del AM en el pedido
+                    System.out.println("DEBUG Costo:  - Costo Unitario AM '" + am.getDenominacion() + "': " + costoManufacturadoUnitario + " x Cant. Pedido: " + detalle.getCantidad() + " = " + costoDetalle);
+                } else {
+                    System.err.println("ADVERTENCIA Costo: ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") no tiene receta (detalles) definida. Costo = 0 para este AM.");
+                }
+            } else {
+                System.err.println("ADVERTENCIA Costo: Detalle de pedido sin ArticuloInsumo ni ArticuloManufacturado asociado. Se ignora para el costo.");
+            }
+            totalCosto += costoDetalle;
+        }
+        System.out.println("DEBUG Costo: Cálculo totalCosto finalizado. Costo total del pedido: " + totalCosto);
+        return totalCosto;
+    }
+    // ---------------------------------------------
   }

@@ -159,4 +159,18 @@ public class ClienteController extends BaseController<Cliente, Long> {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener pedidos del cliente: " + e.getMessage() + "\"}");
         }
     }
+
+    @PatchMapping("/{id}/baja")
+    public ResponseEntity<?> toggleBaja(
+            @PathVariable Long id,
+            @RequestParam boolean baja // O usa 'estaDadoDeBaja' según tu naming preferido
+    ) {
+        try {
+            Cliente actualizado = baseService.toggleBaja(id, baja);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
 }

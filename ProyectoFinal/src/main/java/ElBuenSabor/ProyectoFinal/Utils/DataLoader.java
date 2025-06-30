@@ -81,6 +81,22 @@ public class DataLoader implements CommandLineRunner {
 
             // 2. Imágenes
             Imagen imgCliente = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente1 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente2 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente3 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente4 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente5 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente6 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente7 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente8 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente9 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente10 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente11 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente12 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente13 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente14 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+            Imagen imgCliente15 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
+
             Imagen imgHarina = imagenService.save(Imagen.builder().denominacion("https://example.com/harina.jpg").build());
             Imagen imgHamburguesaSimple = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1750351235/ijf0zghvaie0iagbgupo.jpg").build());
             Imagen imgHamburguesaTriple = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1750351426/xhxg6jpqpzalncutfdm3.jpg").build());
@@ -119,46 +135,427 @@ public class DataLoader implements CommandLineRunner {
             Imagen imgPanBarroluco = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1750355148/gwina3myqo2gk4rkssew.jpg").build());
             Imagen imgCarneMolida = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1750355095/lhrwno1xb3qpfub5wt2t.jpg").build());
             Imagen imgBifeCarne = imagenService.save(Imagen.builder().denominacion("https://cmorres.com.ar/wp-content/uploads/2021/08/30072020-fotografia-sin-titulo-4883.jpg").build());
+            Imagen imgPapasFritas = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238697/zzrbf39eez7j40wifjfz.jpg").build());
+            Imagen imgPapasCheddarBacon = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238729/qx0z9lausf5f5nv9q98z.jpg").build());
+            Imagen imgEmpanadaCuchillo = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238711/t4znioamg9tpn4l3bajv.jpg").build());
+            Imagen imgEmpanadaHumita = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238684/gwoxenaymp42zsgqz3hs.jpg").build());
 
             // 3. Domicilio
             Domicilio domicilioCliente = domicilioService.save(Domicilio.builder()
                     .calle("Calle Falsa")
                     .numero(123)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad)//Siempre misma localidad
                     .build());
 
-// 4. Usuario CLIENTE
+            // 4. Usuario CLIENTE
             Usuario usuarioCliente = usuarioService.save(Usuario.builder()
-                    .email("faustinovinolo@gmail.com") // ✅ usar email como identificador
-                    .password(passwordEncoder.encode("cliente123")) // ✅ contraseña encriptada
-                    .rol(Rol.CLIENTE)
-                    .nombre("Fiamma") // ✅ nombre real
+                    .email("faustinovinolo@gmail.com") //Inventados (ej: cliente@buen.com)
+                    .password(passwordEncoder.encode("cliente123")) // Mismas contraseñas cliente123
+                    .rol(Rol.CLIENTE)//Siempre rol CLIENTE
+                    .nombre("Fiamma") //Nombre inventado
                     .build());
 
-// 5. Cliente asociado al Usuario
+            // 5. Cliente asociado al Usuario
             Cliente cliente = Cliente.builder()
-                    .apellido("Brizuela")
-                    .telefono("2615551234")
-                    .fechaNacimiento(LocalDate.of(1990, 5, 15))
-                    .imagen(imgCliente)
-                    .usuario(usuarioCliente) // ✅ relación con el usuario ya creado
-                    .domicilios(Set.of(domicilioCliente))
+                    .apellido("Brizuela")//Apellido inventado
+                    .telefono("2615551234")//telefono inventado
+                    .fechaNacimiento(LocalDate.of(1990, 5, 15))//Nacimiento inventado
+                    .imagen(imgCliente)//imagen siempre la misma de stock
+                    .usuario(usuarioCliente)//relación con el usuario ya creado
+                    .domicilios(Set.of(domicilioCliente))//Domicilio creado individualmente para el cliente
                     .build();
 
             clienteService.save(cliente);
 
+            // Cliente 1
+            Domicilio domicilioCliente1 = domicilioService.save(Domicilio.builder()
+                    .calle("Av. Belgrano")
+                    .numero(456)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente1 = usuarioService.save(Usuario.builder()
+                    .email("cliente1@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Camila")
+                    .build());
+
+            Cliente cliente1 = Cliente.builder()
+                    .apellido("Rodríguez")
+                    .telefono("2611112233")
+                    .fechaNacimiento(LocalDate.of(1993, 3, 10))
+                    .imagen(imgCliente1)
+                    .usuario(usuarioCliente1)
+                    .domicilios(Set.of(domicilioCliente1))
+                    .build();
+
+            clienteService.save(cliente1);
+
+// Cliente 2
+            Domicilio domicilioCliente2 = domicilioService.save(Domicilio.builder()
+                    .calle("Calle Las Heras")
+                    .numero(789)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente2 = usuarioService.save(Usuario.builder()
+                    .email("cliente2@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Lucas")
+                    .build());
+
+            Cliente cliente2 = Cliente.builder()
+                    .apellido("Fernández")
+                    .telefono("2614445566")
+                    .fechaNacimiento(LocalDate.of(1988, 7, 22))
+                    .imagen(imgCliente2)
+                    .usuario(usuarioCliente2)
+                    .domicilios(Set.of(domicilioCliente2))
+                    .build();
+
+            clienteService.save(cliente2);
+
+            // Cliente 3
+            Domicilio domicilioCliente3 = domicilioService.save(Domicilio.builder()
+                    .calle("San Martín")
+                    .numero(321)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente3 = usuarioService.save(Usuario.builder()
+                    .email("cliente3@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Valentina")
+                    .build());
+
+            Cliente cliente3 = Cliente.builder()
+                    .apellido("Gómez")
+                    .telefono("2617778899")
+                    .fechaNacimiento(LocalDate.of(1995, 11, 5))
+                    .imagen(imgCliente3)
+                    .usuario(usuarioCliente3)
+                    .domicilios(Set.of(domicilioCliente3))
+                    .build();
+
+            clienteService.save(cliente3);
+
+// Cliente 4
+            Domicilio domicilioCliente4 = domicilioService.save(Domicilio.builder()
+                    .calle("Patricias Mendocinas")
+                    .numero(654)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente4 = usuarioService.save(Usuario.builder()
+                    .email("cliente4@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Bruno")
+                    .build());
+
+            Cliente cliente4 = Cliente.builder()
+                    .apellido("López")
+                    .telefono("2613334455")
+                    .fechaNacimiento(LocalDate.of(1985, 1, 18))
+                    .imagen(imgCliente4)
+                    .usuario(usuarioCliente4)
+                    .domicilios(Set.of(domicilioCliente4))
+                    .build();
+
+            clienteService.save(cliente4);
+
+            // Cliente 5
+            Domicilio domicilioCliente5 = domicilioService.save(Domicilio.builder()
+                    .calle("Godoy Cruz")
+                    .numero(88)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente5 = usuarioService.save(Usuario.builder()
+                    .email("cliente5@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Martina")
+                    .build());
+
+            Cliente cliente5 = Cliente.builder()
+                    .apellido("Fernández")
+                    .telefono("2611122334")
+                    .fechaNacimiento(LocalDate.of(1993, 3, 22))
+                    .imagen(imgCliente5)
+                    .usuario(usuarioCliente5)
+                    .domicilios(Set.of(domicilioCliente5))
+                    .build();
+
+            clienteService.save(cliente5);
+
+// Cliente 6
+            Domicilio domicilioCliente6 = domicilioService.save(Domicilio.builder()
+                    .calle("Maipú")
+                    .numero(456)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente6 = usuarioService.save(Usuario.builder()
+                    .email("cliente6@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Ezequiel")
+                    .build());
+
+            Cliente cliente6 = Cliente.builder()
+                    .apellido("Sánchez")
+                    .telefono("2616677889")
+                    .fechaNacimiento(LocalDate.of(1988, 6, 10))
+                    .imagen(imgCliente6)
+                    .usuario(usuarioCliente6)
+                    .domicilios(Set.of(domicilioCliente6))
+                    .build();
+
+            clienteService.save(cliente6);
+
+            // Cliente 7
+            Domicilio domicilioCliente7 = domicilioService.save(Domicilio.builder()
+                    .calle("25 de Mayo")
+                    .numero(1025)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente7 = usuarioService.save(Usuario.builder()
+                    .email("cliente7@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Valentina")
+                    .build());
+
+            Cliente cliente7 = Cliente.builder()
+                    .apellido("Moreno")
+                    .telefono("2613004567")
+                    .fechaNacimiento(LocalDate.of(1997, 11, 12))
+                    .imagen(imgCliente7)
+                    .usuario(usuarioCliente7)
+                    .domicilios(Set.of(domicilioCliente7))
+                    .build();
+
+            clienteService.save(cliente7);
+
+// Cliente 8
+            Domicilio domicilioCliente8 = domicilioService.save(Domicilio.builder()
+                    .calle("Tucumán")
+                    .numero(731)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente8 = usuarioService.save(Usuario.builder()
+                    .email("cliente8@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Benjamín")
+                    .build());
+
+            Cliente cliente8 = Cliente.builder()
+                    .apellido("Quiroga")
+                    .telefono("2619801234")
+                    .fechaNacimiento(LocalDate.of(1991, 4, 27))
+                    .imagen(imgCliente8)
+                    .usuario(usuarioCliente8)
+                    .domicilios(Set.of(domicilioCliente8))
+                    .build();
+
+            clienteService.save(cliente8);
+
+            // Cliente 9
+            Domicilio domicilioCliente9 = domicilioService.save(Domicilio.builder()
+                    .calle("Av. San Martín")
+                    .numero(856)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente9 = usuarioService.save(Usuario.builder()
+                    .email("cliente9@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Sofía")
+                    .build());
+
+            Cliente cliente9 = Cliente.builder()
+                    .apellido("Montoya")
+                    .telefono("2613407890")
+                    .fechaNacimiento(LocalDate.of(1993, 2, 18))
+                    .imagen(imgCliente9)
+                    .usuario(usuarioCliente9)
+                    .domicilios(Set.of(domicilioCliente9))
+                    .build();
+
+            clienteService.save(cliente9);
+
+// Cliente 10
+            Domicilio domicilioCliente10 = domicilioService.save(Domicilio.builder()
+                    .calle("España")
+                    .numero(1290)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente10 = usuarioService.save(Usuario.builder()
+                    .email("cliente10@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Tomás")
+                    .build());
+
+            Cliente cliente10 = Cliente.builder()
+                    .apellido("Sánchez")
+                    .telefono("2614109876")
+                    .fechaNacimiento(LocalDate.of(1990, 10, 5))
+                    .imagen(imgCliente10)
+                    .usuario(usuarioCliente10)
+                    .domicilios(Set.of(domicilioCliente10))
+                    .build();
+
+            clienteService.save(cliente10);
+
+            // Cliente 11
+            Domicilio domicilioCliente11 = domicilioService.save(Domicilio.builder()
+                    .calle("Av. Libertador")
+                    .numero(707)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente11 = usuarioService.save(Usuario.builder()
+                    .email("cliente11@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Guadalupe")
+                    .build());
+
+            Cliente cliente11 = Cliente.builder()
+                    .apellido("Carrizo")
+                    .telefono("2613004567")
+                    .fechaNacimiento(LocalDate.of(1988, 4, 22))
+                    .imagen(imgCliente11)
+                    .usuario(usuarioCliente11)
+                    .domicilios(Set.of(domicilioCliente11))
+                    .build();
+
+            clienteService.save(cliente11);
+
+// Cliente 12
+            Domicilio domicilioCliente12 = domicilioService.save(Domicilio.builder()
+                    .calle("Av. Godoy Cruz")
+                    .numero(315)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente12 = usuarioService.save(Usuario.builder()
+                    .email("cliente12@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Luciano")
+                    .build());
+
+            Cliente cliente12 = Cliente.builder()
+                    .apellido("Nieto")
+                    .telefono("2613901234")
+                    .fechaNacimiento(LocalDate.of(1995, 9, 9))
+                    .imagen(imgCliente12)
+                    .usuario(usuarioCliente12)
+                    .domicilios(Set.of(domicilioCliente12))
+                    .build();
+
+            clienteService.save(cliente12);
+
+// Cliente 13
+            Domicilio domicilioCliente13 = domicilioService.save(Domicilio.builder()
+                    .calle("Ituzaingó")
+                    .numero(444)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente13 = usuarioService.save(Usuario.builder()
+                    .email("cliente13@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Martina")
+                    .build());
+
+            Cliente cliente13 = Cliente.builder()
+                    .apellido("Toledo")
+                    .telefono("2613809876")
+                    .fechaNacimiento(LocalDate.of(1997, 6, 17))
+                    .imagen(imgCliente13)
+                    .usuario(usuarioCliente13)
+                    .domicilios(Set.of(domicilioCliente13))
+                    .build();
+
+            clienteService.save(cliente13);
+
+// Cliente 14
+            Domicilio domicilioCliente14 = domicilioService.save(Domicilio.builder()
+                    .calle("José Ingenieros")
+                    .numero(672)
+                    .cp(5515)
+                    .localidad(localidad)
+                    .build());
+
+            Usuario usuarioCliente14 = usuarioService.save(Usuario.builder()
+                    .email("cliente14@buen.com")
+                    .password(passwordEncoder.encode("cliente123"))
+                    .rol(Rol.CLIENTE)
+                    .nombre("Alejo")
+                    .build());
+
+            Cliente cliente14 = Cliente.builder()
+                    .apellido("Herrera")
+                    .telefono("2613211122")
+                    .fechaNacimiento(LocalDate.of(1989, 8, 12))
+                    .imagen(imgCliente14)
+                    .usuario(usuarioCliente14)
+                    .domicilios(Set.of(domicilioCliente14))
+                    .build();
+
+            clienteService.save(cliente14);
+
+
             // 6. Categoría y Unidades
             Categoria categoriaPadre= categoriaService.save(Categoria.builder().denominacion("Manufacturados").build());
             Categoria categoriaPadre1= categoriaService.save(Categoria.builder().denominacion("Insumos").build());
+
             Categoria categoriaPizza = categoriaService.save(Categoria.builder().denominacion("Pizza").categoriaPadre(categoriaPadre).build());
             Categoria categoriaSanguche = categoriaService.save(Categoria.builder().denominacion("Sanguche").categoriaPadre(categoriaPadre).build());
             Categoria categoriaEmpanada = categoriaService.save(Categoria.builder().denominacion("Empanada").categoriaPadre(categoriaPadre).build());
-            Categoria categoriaPan = categoriaService.save(Categoria.builder().denominacion("Pan").categoriaPadre(categoriaPadre1).build());
             Categoria categoriaHamburguesa = categoriaService.save(Categoria.builder().denominacion("Hamburguesa").categoriaPadre(categoriaPadre).build());
-            Categoria categoriaQueso = categoriaService.save(Categoria.builder().denominacion("Queso").categoriaPadre(categoriaPadre1).build());
             Categoria categoriaComida = categoriaService.save(Categoria.builder().denominacion("Comida").categoriaPadre(categoriaPadre).build());
+            Categoria categoriaPapasFritas = categoriaService.save(Categoria.builder().denominacion("Papas fritas").categoriaPadre(categoriaPadre).build());
+            
+            Categoria categoriaPan = categoriaService.save(Categoria.builder().denominacion("Pan").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaQueso = categoriaService.save(Categoria.builder().denominacion("Queso").categoriaPadre(categoriaPadre1).build());
             Categoria categoriaVerdura = categoriaService.save(Categoria.builder().denominacion("Verdura").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaCarne = categoriaService.save(Categoria.builder().denominacion("Carne").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaCondimentosYHierbas = categoriaService.save(Categoria.builder().denominacion("Condimento").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaSalsasYAderezos = categoriaService.save(Categoria.builder().denominacion("Aderezo y Salsas").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaLacteosYDerivados = categoriaService.save(Categoria.builder().denominacion("Lácteo").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaMasasYTapas = categoriaService.save(Categoria.builder().denominacion("Masa y Tapas").categoriaPadre(categoriaPadre1).build());
+            Categoria categoriaConservasYOtros = categoriaService.save(Categoria.builder().denominacion("Conservas").categoriaPadre(categoriaPadre1).build());
+
+            Categoria categoriaBebida = categoriaService.save(Categoria.builder().denominacion("Bebida").build());
+            Categoria categoriaPostre = categoriaService.save(Categoria.builder().denominacion("Postre").build());
             UnidadMedida unidadGramos = unidadMedidaService.save(UnidadMedida.builder().denominacion("gramos").build());
             UnidadMedida unidadPorcion = unidadMedidaService.save(UnidadMedida.builder().denominacion("unidad").build());
             UnidadMedida unidadMililitros = unidadMedidaService.save(UnidadMedida.builder().denominacion("mililitros").build());
@@ -171,7 +568,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(1000.0)
                     .stockMinimo(200.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaComida)
+                    .categoria(categoriaMasasYTapas)
                     .unidadMedida(unidadGramos)
                     .imagen(imgHarina)
                     .build());
@@ -187,6 +584,7 @@ public class DataLoader implements CommandLineRunner {
                     .unidadMedida(unidadGramos)
                     .imagen(imgTomate)
                     .build());
+
             ArticuloInsumo masaPrepizza = articuloInsumoService.save(ArticuloInsumo.builder()
                     .denominacion("Masa Prepizza")
                     .precioVenta(200.0)
@@ -194,7 +592,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(300.0)
                     .stockMinimo(50.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaPizza)
+                    .categoria(categoriaMasasYTapas)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgPrepizza)
                     .build());
@@ -254,7 +652,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(600.0)
                     .stockMinimo(100.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaComida)
+                    .categoria(categoriaSalsasYAderezos)
                     .unidadMedida(unidadMililitros)
                     .imagen(imgSalsaTomate)
                     .build());
@@ -278,7 +676,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(100.0)
                     .stockMinimo(20.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaComida)
+                    .categoria(categoriaCondimentosYHierbas)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgAlbahaca)
                     .build());
@@ -290,7 +688,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(800.0)
                     .stockMinimo(150.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaComida)
+                    .categoria(categoriaCarne)
                     .unidadMedida(unidadGramos)
                     .imagen(imgJamonCocido)
                     .build());
@@ -326,7 +724,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(250.0)
                     .stockMinimo(50.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaHamburguesa)
+                    .categoria(categoriaCarne)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgMedallonCarne)
                     .build());
@@ -338,7 +736,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(200.0)
                     .stockMinimo(50.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaHamburguesa)
+                    .categoria(categoriaCarne)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgMedallonPollo)
                     .build());
@@ -362,7 +760,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(500.0)
                     .stockMinimo(100.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaEmpanada)
+                    .categoria(categoriaMasasYTapas)
                     .unidadMedida(unidadPorcion) // cada tapa se considera una unidad
                     .imagen(imgTapasEmpanada)
                     .build());
@@ -398,7 +796,7 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(400.0)
                     .stockMinimo(100.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaComida)
+                    .categoria(categoriaCarne)
                     .unidadMedida(unidadGramos)
                     .imagen(imgCarneMolida)
                     .build());
@@ -410,9 +808,435 @@ public class DataLoader implements CommandLineRunner {
                     .stockActual(200.0)
                     .stockMinimo(50.0)
                     .esParaElaborar(true)
-                    .categoria(categoriaComida)
+                    .categoria(categoriaCarne)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgBifeCarne)
+                    .build());
+
+            ArticuloInsumo morronRojo = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Morrón Rojo")
+                    .precioVenta(90.0)
+                    .precioCompra(60.0)
+                    .stockActual(300.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/morron.jpg").build()))
+                    .build());
+
+            ArticuloInsumo huevo = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Huevo")
+                    .precioVenta(70.0)
+                    .precioCompra(50.0)
+                    .stockActual(400.0)
+                    .stockMinimo(100.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaConservasYOtros)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/huevo.jpg").build()))
+                    .build());
+
+            ArticuloInsumo mayonesa = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Mayonesa")
+                    .precioVenta(50.0)
+                    .precioCompra(30.0)
+                    .stockActual(500.0)
+                    .stockMinimo(80.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaSalsasYAderezos)
+                    .unidadMedida(unidadMililitros)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/mayonesa.jpg").build()))
+                    .build());
+
+            ArticuloInsumo mostaza = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Mostaza")
+                    .precioVenta(50.0)
+                    .precioCompra(30.0)
+                    .stockActual(500.0)
+                    .stockMinimo(80.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaSalsasYAderezos)
+                    .unidadMedida(unidadMililitros)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/mostaza.jpg").build()))
+                    .build());
+
+            ArticuloInsumo ketchup = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Ketchup")
+                    .precioVenta(50.0)
+                    .precioCompra(30.0)
+                    .stockActual(500.0)
+                    .stockMinimo(80.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaSalsasYAderezos)
+                    .unidadMedida(unidadMililitros)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ketchup.jpg").build()))
+                    .build());
+
+            ArticuloInsumo ajo = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Ajo")
+                    .precioVenta(40.0)
+                    .precioCompra(20.0)
+                    .stockActual(300.0)
+                    .stockMinimo(60.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaCondimentosYHierbas)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ajo.jpg").build()))
+                    .build());
+
+            ArticuloInsumo champiñones = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Champiñones")
+                    .precioVenta(300.0)
+                    .precioCompra(200.0)
+                    .stockActual(200.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/champinones.jpg").build()))
+                    .build());
+
+            ArticuloInsumo zanahoria = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Zanahoria")
+                    .precioVenta(70.0)
+                    .precioCompra(50.0)
+                    .stockActual(300.0)
+                    .stockMinimo(70.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/zanahoria.jpg").build()))
+                    .build());
+
+            ArticuloInsumo quesoProvolone = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Queso Provolone")
+                    .precioVenta(950.0)
+                    .precioCompra(750.0)
+                    .stockActual(250.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaQueso)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/provolone.jpg").build()))
+                    .build());
+
+            ArticuloInsumo salame = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Salame")
+                    .precioVenta(850.0)
+                    .precioCompra(700.0)
+                    .stockActual(300.0)
+                    .stockMinimo(80.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaCarne)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/salame.jpg").build()))
+                    .build());
+
+            ArticuloInsumo cremaLeche = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Crema de Leche")
+                    .precioVenta(250.0)
+                    .precioCompra(150.0)
+                    .stockActual(300.0)
+                    .stockMinimo(60.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaLacteosYDerivados)
+                    .unidadMedida(unidadMililitros)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/crema.jpg").build()))
+                    .build());
+
+            ArticuloInsumo oregano = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Orégano")
+                    .precioVenta(30.0)
+                    .precioCompra(20.0)
+                    .stockActual(150.0)
+                    .stockMinimo(30.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaCondimentosYHierbas)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/oregano.jpg").build()))
+                    .build());
+
+            ArticuloInsumo aceitunas = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Aceitunas")
+                    .precioVenta(180.0)
+                    .precioCompra(120.0)
+                    .stockActual(250.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaConservasYOtros)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/aceitunas.jpg").build()))
+                    .build());
+
+            ArticuloInsumo perejil = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Perejil")
+                    .precioVenta(25.0)
+                    .precioCompra(15.0)
+                    .stockActual(150.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaCondimentosYHierbas)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/perejil.jpg").build()))
+                    .build());
+
+            ArticuloInsumo panceta = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Panceta")
+                    .precioVenta(950.0)
+                    .precioCompra(750.0)
+                    .stockActual(300.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaCarne)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/panceta.jpg").build()))
+                    .build());
+
+            ArticuloInsumo arvejas = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Arvejas")
+                    .precioVenta(120.0)
+                    .precioCompra(90.0)
+                    .stockActual(300.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/arvejas.jpg").build()))
+                    .build());
+
+            ArticuloInsumo ciboulette = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Ciboulette")
+                    .precioVenta(30.0)
+                    .precioCompra(20.0)
+                    .stockActual(100.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ciboulette.jpg").build()))
+                    .build());
+
+            ArticuloInsumo ajimolido = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Ají molido")
+                    .precioVenta(35.0)
+                    .precioCompra(20.0)
+                    .stockActual(200.0)
+                    .stockMinimo(50.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaCondimentosYHierbas)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ajimolido.jpg").build()))
+                    .build());
+
+            ArticuloInsumo papas = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Papas")
+                    .precioVenta(40.0)
+                    .precioCompra(25.0)
+                    .stockActual(1500.0)
+                    .stockMinimo(500.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/papas.jpg").build()))
+                    .build());
+
+            ArticuloInsumo choclo = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Choclo")
+                    .precioVenta(100.0)
+                    .precioCompra(45.0)
+                    .stockActual(1000.0)
+                    .stockMinimo(200.0)
+                    .esParaElaborar(true)
+                    .categoria(categoriaVerdura)
+                    .unidadMedida(unidadGramos)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/choclo.jpg").build()))
+                    .build());
+
+            //7.1 Insumos de venta al publico
+            ArticuloInsumo cocaCola = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Coca-Cola 500ml")
+                    .precioVenta(800.0)
+                    .precioCompra(500.0)
+                    .stockActual(100.0)
+                    .stockMinimo(20.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/CocaCola.png").build()))
+                    .build());
+
+            ArticuloInsumo cocaCola1L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Coca-Cola 1L")
+                    .precioVenta(1200.0)
+                    .precioCompra(750.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/CocaCola1L.png").build()))
+                    .build());
+
+            ArticuloInsumo cocaCola15L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Coca-Cola 1.5L")
+                    .precioVenta(1500.0)
+                    .precioCompra(1000.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/CocaCola15L.png").build()))
+                    .build());
+
+            ArticuloInsumo pepsi = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Pepsi 500ml")
+                    .precioVenta(800.0)
+                    .precioCompra(500.0)
+                    .stockActual(100.0)
+                    .stockMinimo(20.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Pepsi.png").build()))
+                    .build());
+            ArticuloInsumo pepsi1L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Pepsi 1L")
+                    .precioVenta(1200.0)
+                    .precioCompra(750.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Pepsi1L.png").build()))
+                    .build());
+
+            ArticuloInsumo pepsi15L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Pepsi 1.5L")
+                    .precioVenta(1500.0)
+                    .precioCompra(1000.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Pepsi15L.png").build()))
+                    .build());
+
+            ArticuloInsumo sprite = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Sprite 500ml")
+                    .precioVenta(800.0)
+                    .precioCompra(500.0)
+                    .stockActual(100.0)
+                    .stockMinimo(20.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Sprite.png").build()))
+                    .build());
+
+            ArticuloInsumo sprite1L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Sprite 1L")
+                    .precioVenta(1200.0)
+                    .precioCompra(750.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Sprite1L.png").build()))
+                    .build());
+
+            ArticuloInsumo sprite15L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Sprite 1.5L")
+                    .precioVenta(1500.0)
+                    .precioCompra(1000.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Sprite15L.png").build()))
+                    .build());
+
+            ArticuloInsumo fanta = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Fanta 500ml")
+                    .precioVenta(800.0)
+                    .precioCompra(500.0)
+                    .stockActual(100.0)
+                    .stockMinimo(20.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Fanta.png").build()))
+                    .build());
+
+            ArticuloInsumo fanta1L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Fanta 1L")
+                    .precioVenta(1200.0)
+                    .precioCompra(750.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Fanta1L.png").build()))
+                    .build());
+
+            ArticuloInsumo fanta15L = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Fanta 1.5L")
+                    .precioVenta(1500.0)
+                    .precioCompra(1000.0)
+                    .stockActual(80.0)
+                    .stockMinimo(15.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaBebida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Fanta15L.png").build()))
+                    .build());
+
+            ArticuloInsumo bombonHeladoSopelsa = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Bombón Helado Sopelsa")
+                    .precioVenta(1200.0)
+                    .precioCompra(800.0)
+                    .stockActual(50.0)
+                    .stockMinimo(10.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaPostre)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder()
+                            .denominacion("https://i.imgur.com/yAlqK97.jpg") // imagen genérica tipo bombón
+                            .build()))
+                    .build());
+
+            ArticuloInsumo bombonEscocesSopelsa = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Bombón Escocés Sopelsa")
+                    .precioVenta(1300.0)
+                    .precioCompra(850.0)
+                    .stockActual(50.0)
+                    .stockMinimo(10.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaPostre)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder()
+                            .denominacion("https://i.imgur.com/VS5qHuN.jpg") // imagen escocés genérica
+                            .build()))
+                    .build());
+
+            ArticuloInsumo bombonSuizoSopelsa = articuloInsumoService.save(ArticuloInsumo.builder()
+                    .denominacion("Bombón Suizo Sopelsa")
+                    .precioVenta(1400.0)
+                    .precioCompra(900.0)
+                    .stockActual(50.0)
+                    .stockMinimo(10.0)
+                    .esParaElaborar(false)
+                    .categoria(categoriaPostre)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imagenService.save(Imagen.builder()
+                            .denominacion("https://i.imgur.com/qFaUYZD.jpg") // imagen suizo genérica
+                            .build()))
                     .build());
 //
             // 8. Artículo Manufacturado
@@ -559,6 +1383,51 @@ public class DataLoader implements CommandLineRunner {
                     .imagen(imgBarroluco)
                     .build();
 
+            ArticuloManufacturado papasFritas = ArticuloManufacturado.builder()
+                    .denominacion("Papas Fritas")
+                    .precioVenta(3200.0)
+                    .descripcion("Clásicas papas fritas doradas y crujientes.")
+                    .tiempoEstimadoMinutos(15)
+                    .preparacion("Freír las papas en aceite caliente hasta dorar.")
+                    .categoria(categoriaComida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imgPapasFritas)
+                    .build();
+
+            ArticuloManufacturado papasCheddarBacon = ArticuloManufacturado.builder()
+                    .denominacion("Papas con Cheddar y Bacon")
+                    .precioVenta(4200.0)
+                    .descripcion("Papas fritas cubiertas con queso cheddar fundido y crujiente bacon.")
+                    .tiempoEstimadoMinutos(18)
+                    .preparacion("Freír las papas, cubrir con cheddar derretido y bacon crujiente.")
+                    .categoria(categoriaComida)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imgPapasCheddarBacon)
+                    .build();
+
+            ArticuloManufacturado empanadasCarneCuchillo = ArticuloManufacturado.builder()
+                    .denominacion("Empanadas de Carne a Cuchillo")
+                    .precioVenta(600.0)
+                    .descripcion("Empanadas tradicionales rellenas con carne cortada a cuchillo.")
+                    .tiempoEstimadoMinutos(30)
+                    .preparacion("Preparar el relleno con carne cortada a cuchillo, rellenar las tapas y hornear.")
+                    .categoria(categoriaEmpanada)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imgEmpanadaCuchillo)
+                    .build();
+
+            ArticuloManufacturado empanadasHumita = ArticuloManufacturado.builder()
+                    .denominacion("Empanadas de Humita")
+                    .precioVenta(580.0)
+                    .descripcion("Empanadas con relleno suave de humita (choclo y salsa blanca).")
+                    .tiempoEstimadoMinutos(25)
+                    .preparacion("Preparar relleno de humita, rellenar las tapas y hornear.")
+                    .categoria(categoriaEmpanada)
+                    .unidadMedida(unidadPorcion)
+                    .imagen(imgEmpanadaHumita)
+                    .build();
+
+
 
             List<ArticuloManufacturadoDetalle> detalles = new ArrayList<>();
             detalles.add(ArticuloManufacturadoDetalle.builder().cantidad(200.0).articuloInsumo(insumoHarina).articuloManufacturado(hamburguesa).build());
@@ -678,6 +1547,39 @@ public class DataLoader implements CommandLineRunner {
             barrolucoSimple.setDetalles(detallesBarroluco);
             articuloManufacturadoService.save(barrolucoSimple);
 
+            List<ArticuloManufacturadoDetalle> detallesPapasFritas = new ArrayList<>();
+            detallesPapasFritas.add(ArticuloManufacturadoDetalle.builder().cantidad(250.0).articuloInsumo(papas).articuloManufacturado(papasFritas).build());
+
+            papasFritas.setDetalles(detallesPapasFritas);
+            articuloManufacturadoService.save(papasFritas);
+
+            List<ArticuloManufacturadoDetalle> detallesPapasCheddarBacon = new ArrayList<>();
+            detallesPapasCheddarBacon.add(ArticuloManufacturadoDetalle.builder().cantidad(250.0).articuloInsumo(papas).articuloManufacturado(papasCheddarBacon).build());
+            detallesPapasCheddarBacon.add(ArticuloManufacturadoDetalle.builder().cantidad(80.0).articuloInsumo(cheddar).articuloManufacturado(papasCheddarBacon).build());
+            detallesPapasCheddarBacon.add(ArticuloManufacturadoDetalle.builder().cantidad(50.0).articuloInsumo(panceta).articuloManufacturado(papasCheddarBacon).build());
+
+            papasCheddarBacon.setDetalles(detallesPapasCheddarBacon);
+            articuloManufacturadoService.save(papasCheddarBacon);
+
+            List<ArticuloManufacturadoDetalle> detallesEmpCarneCuchillo = new ArrayList<>();
+            detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(1.0).articuloInsumo(tapasEmpanada).articuloManufacturado(empanadasCarneCuchillo).build());
+            detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(80.0).articuloInsumo(bifeCarne).articuloManufacturado(empanadasCarneCuchillo).build());
+            detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(20.0).articuloInsumo(cebolla).articuloManufacturado(empanadasCarneCuchillo).build());
+
+            empanadasCarneCuchillo.setDetalles(detallesEmpCarneCuchillo);
+            articuloManufacturadoService.save(empanadasCarneCuchillo);
+
+            List<ArticuloManufacturadoDetalle> detallesEmpHumita = new ArrayList<>();
+            detallesEmpHumita.add(ArticuloManufacturadoDetalle.builder().cantidad(1.0).articuloInsumo(tapasEmpanada).articuloManufacturado(empanadasHumita).build());
+            detallesEmpHumita.add(ArticuloManufacturadoDetalle.builder().cantidad(80.0).articuloInsumo(choclo).articuloManufacturado(empanadasHumita).build());
+            detallesEmpHumita.add(ArticuloManufacturadoDetalle.builder().cantidad(30.0).articuloInsumo(cremaLeche).articuloManufacturado(empanadasHumita).build());
+            detallesEmpHumita.add(ArticuloManufacturadoDetalle.builder().cantidad(10.0).articuloInsumo(quesoMuzzarella).articuloManufacturado(empanadasHumita).build());
+
+            empanadasHumita.setDetalles(detallesEmpHumita);
+            articuloManufacturadoService.save(empanadasHumita);
+
+
+
             //Carga de Usuarios
             Usuario usuarioAdmin = usuarioService.save(Usuario.builder()
                     .email("admin@buen.com")
@@ -719,14 +1621,14 @@ public class DataLoader implements CommandLineRunner {
 
             Factura facturaPedido = Factura.builder()
                     .fechaFacturacion(LocalDate.now())
-                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .formaPago(FormaPago.MERCADO_PAGO)//O EFECTIVO
                     .totalVenta(1250.0)
                     .anulada(false)
-                    .mpPaymentId(123456789)         // Dummy, poné un número real si querés simular el ID de MP
-                    .mpMerchantOrderId(987654321)
-                    .mpPreferenceId("PREF-123abc456")
-                    .mpPaymentType("credit_card") // Dummy, o "mercadopago" si querés
-                    .urlPdf("https://mi-app.com/facturas/99.pdf")              // O poné un link si ya lo generás en test
+                    .mpPaymentId(123456789)//Dummy
+                    .mpMerchantOrderId(987654321)//Dummy
+                    .mpPreferenceId("PREF-123abc456")//Dummy
+                    .mpPaymentType("credit_card") //Dummy
+                    .urlPdf("https://mi-app.com/facturas/99.pdf")//Dummy
                     .build();
 
             facturaPedido = facturaService.save(facturaPedido);
@@ -734,15 +1636,15 @@ public class DataLoader implements CommandLineRunner {
             Pedido pedido = Pedido.builder()
                     .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
                     .total(1250.0)
-                    .totalCosto(900.0)
-                    .estado(Estado.EN_DELIVERY)
-                    .tipoEnvio(TipoEnvio.DELIVERY)
-                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalCosto(900.0)//Total y total costo dependiendo del detalle usado
+                    .estado(Estado.EN_DELIVERY)//Variar entre: A_CONFIRMAR, PAGADO, EN_COCINA, EN_PREPARACION, LISTO, EN_DELIVERY, ENTREGADO, CANCELADO, RECHAZADO, DEVOLUCION
+                    .tipoEnvio(TipoEnvio.DELIVERY)//Variar entre: DELIVERY y RETIRO_EN_LOCAL (DELIVERY solo disponible para pago con mercado_pago)
+                    .formaPago(FormaPago.MERCADO_PAGO)//Variar entre: MERCADO_PAGO Y EFECTIVO
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente)
-                    .domicilioEntrega(domicilioCliente)
-                    .sucursal(sucursal)
-                    .factura(facturaPedido) // ¡Aca se asigna la factura!
+                    .cliente(cliente)//Variar entre clientes creados anteriormente
+                    .domicilioEntrega(domicilioCliente)//Variar dependiendo el cliente seleccionado en el campo anterior
+                    .sucursal(sucursal)//Misma sucursal
+                    .factura(facturaPedido) //Asignar factura
                     .anulado(false)
                     .build();
 
@@ -774,9 +1676,9 @@ public class DataLoader implements CommandLineRunner {
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .totalVenta(1250.0)
                     .anulada(false)
-                    .mpPaymentId(null)
-                    .mpMerchantOrderId(null)
-                    .mpPreferenceId(null)
+                    .mpPaymentId(43523452)
+                    .mpMerchantOrderId(23545234)
+                    .mpPreferenceId("MPREF-13-87812339")
                     .mpPaymentType("credit_card")
                     .urlPdf(null)
                     .build();
@@ -826,6 +1728,1701 @@ public class DataLoader implements CommandLineRunner {
             facturaPedido1.setPedido(pedido1);
 
             pedidoService.save(pedido1);
+
+            // Pedido 1 - Hamburguesa Clásica + Coca-Cola 500ml
+
+// 1. Crear la factura
+            Factura factura1 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(2050.0) // 1250 (hamburguesa) + 800 (coca)
+                    .anulada(false)
+                    .mpPaymentId(8373032)
+                    .mpMerchantOrderId(16568309)
+                    .mpPreferenceId("MPREF-13-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/1.pdf")
+                    .build();
+
+            factura1 = facturaService.save(factura1);
+
+// 2. Crear el pedido
+            Pedido pedido1a = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(2050.0)
+                    .totalCosto(1400.0) // Ejemplo: 900 (hamburguesa) + 500 (coca)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente)
+                    .domicilioEntrega(null) // No se necesita para retiro
+                    .sucursal(sucursal)
+                    .factura(factura1)
+                    .anulado(false)
+                    .build();
+
+// 3. Crear los detalles
+            DetallePedido detalle11a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1250.0)
+                    .articuloManufacturado(hamburguesa)
+                    .pedido(pedido1a)
+                    .build();
+
+            DetallePedido detalle11b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(800.0)
+                    .articuloInsumo(cocaCola)
+                    .pedido(pedido1a)
+                    .build();
+
+// 4. Asignar detalles y guardar
+            pedido1.setDetallesPedidos(Set.of(detalle11a, detalle11b));
+            pedido1.setEmpleado(null);
+            factura1.setPedido(pedido1a);
+            pedidoService.save(pedido1a);
+
+            // Pedido 2 - Empanadas de Carne a Cuchillo + Sprite 500ml
+
+// 1. Crear la factura
+            Factura factura2 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(1400.0) // 600 (empanadas) + 800 (sprite)
+                    .anulada(false)
+                    .mpPaymentId(987654321)
+                    .mpMerchantOrderId(54321)
+                    .mpPreferenceId("pref_002")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/2.pdf")
+                    .build();
+
+            factura2 = facturaService.save(factura2);
+
+// 2. Crear el pedido
+            Pedido pedido2 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(25))
+                    .total(1400.0)
+                    .totalCosto(1050.0) // 550 (empanadas) + 500 (sprite)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente2) // ← Cambiar al segundo cliente
+                    .domicilioEntrega(cliente2.getDomicilios().stream().findFirst().orElse(null))
+                    .sucursal(sucursal)
+                    .factura(factura2)
+                    .anulado(false)
+                    .build();
+
+// 3. Crear los detalles
+            DetallePedido detalle22a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(600.0)
+                    .articuloManufacturado(empanadasCarneCuchillo)
+                    .pedido(pedido2)
+                    .build();
+
+            DetallePedido detalle22b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(800.0)
+                    .articuloInsumo(sprite)
+                    .pedido(pedido2)
+                    .build();
+
+// 4. Asignar detalles y guardar
+            pedido2.setDetallesPedidos(Set.of(detalle22a, detalle22b));
+            pedido2.setEmpleado(null);
+            factura2.setPedido(pedido2);
+            pedidoService.save(pedido2);
+
+
+            // Pedido 3 - Papas con Cheddar y Bacon + Pepsi 1L
+
+// 1. Crear la factura
+            Factura factura3 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(5100.0) // 4200 (papas cheddar bacon) + 900 (pepsi 1L)
+                    .anulada(false)
+                    .mpPaymentId(90330386)
+                    .mpMerchantOrderId(213129011)
+                    .mpPreferenceId("MPREF-12-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/3.pdf")
+                    .build();
+
+            factura3 = facturaService.save(factura3);
+
+// 2. Crear el pedido
+            Pedido pedido3 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(20))
+                    .total(5100.0)
+                    .totalCosto(3500.0) // 2600 (papas cheddar bacon) + 900 (pepsi 1L)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente3) // ← Tercer cliente
+                    .domicilioEntrega(cliente3.getDomicilios().stream().findFirst().orElse(null))
+                    .sucursal(sucursal)
+                    .factura(factura3)
+                    .anulado(false)
+                    .build();
+
+// 3. Crear los detalles
+            DetallePedido detalle33a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido3)
+                    .build();
+
+            DetallePedido detalle33b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(900.0)
+                    .articuloInsumo(pepsi1L)
+                    .pedido(pedido3)
+                    .build();
+
+// 4. Asignar detalles y guardar
+            pedido3.setDetallesPedidos(Set.of(detalle33a, detalle33b));
+            pedido3.setEmpleado(null);
+            factura3.setPedido(pedido3);
+            pedidoService.save(pedido3);
+
+
+// Pedido 4 - Empanadas JyQ (2 unidades) + Coca-Cola 500ml
+
+// 1. Crear la factura
+            Factura factura4 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(1900.0) // 2 * 550 (empanadas JyQ) + 800 (coca 500ml)
+                    .anulada(false)
+                    .mpPaymentId(121233331)
+                    .mpMerchantOrderId(201203010)
+                    .mpPreferenceId("MPREF-11-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/4.pdf")
+                    .build();
+
+            factura4 = facturaService.save(factura4);
+
+// 2. Crear el pedido
+            Pedido pedido4 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(20))
+                    .total(1900.0)
+                    .totalCosto(1300.0) // 2 * 400 (empanadas JyQ) + 500 (coca 500ml)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente4) // ← Cuarto cliente
+                    .domicilioEntrega(cliente4.getDomicilios().stream().findFirst().orElse(null))
+                    .sucursal(sucursal)
+                    .factura(factura4)
+                    .anulado(false)
+                    .build();
+
+// 3. Crear los detalles
+            DetallePedido detalle4a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(1100.0)
+                    .articuloManufacturado(empanadasJyQ)
+                    .pedido(pedido4)
+                    .build();
+
+            DetallePedido detalle4b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(800.0)
+                    .articuloInsumo(cocaCola)
+                    .pedido(pedido4)
+                    .build();
+
+// 4. Asignar detalles y guardar
+            pedido4.setDetallesPedidos(Set.of(detalle4a, detalle4b));
+            pedido4.setEmpleado(null);
+            factura4.setPedido(pedido4);
+            pedidoService.save(pedido4);
+
+
+            // Pedido 5 - Papas con Cheddar y Bacon + Sprite 1L
+
+// 1. Crear la factura
+            Factura factura5 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(5200.0) // 4200 (papas cheddar y bacon) + 1000 (sprite 1L)
+                    .anulada(false)
+                    .mpPaymentId(30343305)
+                    .mpMerchantOrderId(400342335)
+                    .mpPreferenceId("pref_005")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/5.pdf")
+                    .build();
+
+            factura5 = facturaService.save(factura5);
+
+// 2. Crear el pedido
+            Pedido pedido5 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(20))
+                    .total(5200.0)
+                    .totalCosto(3700.0) // 2700 (papas cheddar y bacon) + 1000 (sprite 1L)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente5) // ← Quinto cliente
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(factura5)
+                    .anulado(false)
+                    .build();
+
+// 3. Crear los detalles
+            DetallePedido detalle5a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido5)
+                    .build();
+
+            DetallePedido detalle5b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1000.0)
+                    .articuloInsumo(sprite1L)
+                    .pedido(pedido5)
+                    .build();
+
+// 4. Asignar detalles y guardar
+            pedido5.setDetallesPedidos(Set.of(detalle5a, detalle5b));
+            pedido5.setEmpleado(null);
+            factura5.setPedido(pedido5);
+            pedidoService.save(pedido5);
+
+
+            // Pedido 6 - Empanadas de Humita x2 + Coca-Cola 1.5L
+
+// 1. Crear la factura
+            Factura factura6 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(1960.0) // 580 * 2 + 800 (Coca 1.5L)
+                    .anulada(false)
+                    .mpPaymentId(303434306)
+                    .mpMerchantOrderId(400434346)
+                    .mpPreferenceId("pref_006")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/6.pdf")
+                    .build();
+
+            factura6 = facturaService.save(factura6);
+
+// 2. Crear el pedido
+            Pedido pedido6 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(25))
+                    .total(1960.0)
+                    .totalCosto(1300.0) // 2x empanadas humita (2 * 580 costo estimado ~ 800) + coca 1.5L (500)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente6) // ← Sexto cliente
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(factura6)
+                    .anulado(false)
+                    .build();
+
+// 3. Crear los detalles
+            DetallePedido detalle6a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(1160.0)
+                    .articuloManufacturado(empanadasHumita)
+                    .pedido(pedido6)
+                    .build();
+
+            DetallePedido detalle6b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(800.0)
+                    .articuloInsumo(cocaCola15L)
+                    .pedido(pedido6)
+                    .build();
+
+// 4. Asignar detalles y guardar
+            pedido6.setDetallesPedidos(Set.of(detalle6a, detalle6b));
+            pedido6.setEmpleado(null);
+            factura6.setPedido(pedido6);
+            pedidoService.save(pedido6);
+
+
+// Crear la factura
+            Factura factura7 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(1800.0)
+                    .anulada(false)
+                    .mpPaymentId(234134865)
+                    .mpMerchantOrderId(234563798)
+                    .mpPreferenceId("MPREF-11-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/107.pdf")
+                    .build();
+
+            factura7 = facturaService.save(factura7);
+
+// Crear el pedido
+            Pedido pedido7 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(25))
+                    .total(1800.0)
+                    .totalCosto(1000.0)
+                    .estado(Estado.ENTREGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente)
+                    .domicilioEntrega(null) // Retiro en local
+                    .sucursal(sucursal)
+                    .factura(factura7)
+                    .anulado(false)
+                    .build();
+
+// Crear los detalles
+            DetallePedido detalle7a = DetallePedido.builder()
+                    .cantidad(3)
+                    .subTotal(1800.0) // 3 * 600
+                    .articuloManufacturado(empanadasCarneCuchillo)
+                    .pedido(pedido7)
+                    .build();
+
+// Asignar detalles al pedido
+            pedido7.setDetallesPedidos(Set.of(detalle7a));
+
+// Asignar empleado si aplica
+            pedido7.setEmpleado(null);
+
+// Relacionar la factura con el pedido
+            factura7.setPedido(pedido7);
+
+// Guardar el pedido
+            pedidoService.save(pedido7);
+
+
+// Crear la factura
+            Factura factura8 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(6200.0)
+                    .anulada(false)
+                    .mpPaymentId(3080012)
+                    .mpMerchantOrderId(7800123)
+                    .mpPreferenceId("PREF8")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/108.pdf")
+                    .build();
+
+            factura8 = facturaService.save(factura8);
+
+// Crear el pedido
+            Pedido pedido8 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(18))
+                    .total(6200.0)
+                    .totalCosto(3700.0)
+                    .estado(Estado.ENTREGADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente2)
+                    .domicilioEntrega(cliente2.getDomicilios().stream().findFirst().orElse(null))
+                    .sucursal(sucursal)
+                    .factura(factura8)
+                    .anulado(false)
+                    .build();
+
+// Crear los detalles
+            DetallePedido detalle8a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido8)
+                    .build();
+
+            DetallePedido detalle8b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(2000.0)
+                    .articuloInsumo(fanta15L)
+                    .pedido(pedido8)
+                    .build();
+
+// Asignar detalles al pedido
+            pedido8.setDetallesPedidos(Set.of(detalle8a, detalle8b));
+
+// Relacionar la factura con el pedido
+            factura8.setPedido(pedido8);
+
+// Guardar el pedido
+            pedidoService.save(pedido8);
+
+
+            // Crear la factura
+            Factura factura9 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(1700.0)
+                    .anulada(false)
+                    .mpPaymentId(23777227)
+                    .mpMerchantOrderId(324111423)
+                    .mpPreferenceId("MPREF-16-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/109.pdf")
+                    .build();
+
+            factura9 = facturaService.save(factura9);
+
+// Crear el pedido
+            Pedido pedido9 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(25))
+                    .total(1700.0)
+                    .totalCosto(1100.0)
+                    .estado(Estado.EN_COCINA)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente3)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(factura9)
+                    .anulado(false)
+                    .build();
+
+// Crear los detalles
+            DetallePedido detalle9a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(1160.0) // 2 x 580.0
+                    .articuloManufacturado(empanadasHumita)
+                    .pedido(pedido9)
+                    .build();
+
+            DetallePedido detalle9b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(540.0)
+                    .articuloInsumo(sprite1L)
+                    .pedido(pedido9)
+                    .build();
+
+// Asignar detalles al pedido
+            pedido9.setDetallesPedidos(Set.of(detalle9a, detalle9b));
+
+// Relacionar la factura con el pedido
+            factura9.setPedido(pedido9);
+
+// Guardar el pedido
+            pedidoService.save(pedido9);
+
+
+            // Crear la factura
+            Factura factura10 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(5600.0)
+                    .anulada(false)
+                    .mpPaymentId(100010)
+                    .mpMerchantOrderId(500010)
+                    .mpPreferenceId("MPREF010")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/110.pdf")
+                    .build();
+
+            factura10 = facturaService.save(factura10);
+
+// Crear el pedido
+            Pedido pedido10 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(18))
+                    .total(5600.0)
+                    .totalCosto(3600.0)
+                    .estado(Estado.EN_PREPARACION)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente4)
+                    .domicilioEntrega(cliente4.getDomicilios().stream().findFirst().orElse(null))
+                    .sucursal(sucursal)
+                    .factura(factura10)
+                    .anulado(false)
+                    .build();
+
+// Crear los detalles
+            DetallePedido detalle10a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido10)
+                    .build();
+
+            DetallePedido detalle10b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1400.0)
+                    .articuloInsumo(fanta15L)
+                    .pedido(pedido10)
+                    .build();
+
+// Asignar detalles al pedido
+            pedido10.setDetallesPedidos(Set.of(detalle10a, detalle10b));
+
+// Relacionar la factura con el pedido
+            factura10.setPedido(pedido10);
+
+// Guardar el pedido
+            pedidoService.save(pedido10);
+
+
+            // Crear la factura
+            Factura factura11 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(9500.0)
+                    .anulada(false)
+                    .mpPaymentId(11342566)
+                    .mpMerchantOrderId(64646112)
+                    .mpPreferenceId("MPREF-17-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/111.pdf")
+                    .build();
+
+            factura11 = facturaService.save(factura11);
+
+// Crear el pedido
+            Pedido pedido11 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(20))
+                    .total(9500.0)
+                    .totalCosto(6100.0)
+                    .estado(Estado.ENTREGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente5)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(factura11)
+                    .anulado(false)
+                    .build();
+
+// Crear los detalles
+            DetallePedido detalle111a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(8500.0)
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido11)
+                    .build();
+
+            DetallePedido detalle111b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1000.0)
+                    .articuloInsumo(cocaCola1L)
+                    .pedido(pedido11)
+                    .build();
+
+// Asignar detalles al pedido
+            pedido11.setDetallesPedidos(Set.of(detalle111a, detalle111b));
+
+// Relacionar la factura con el pedido
+            factura11.setPedido(pedido11);
+
+// Guardar el pedido
+            pedidoService.save(pedido11);
+
+
+            // FACTURA
+            Factura facturaPedido12 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(1200.0)
+                    .anulada(false)
+                    .mpPaymentId(9999823)
+                    .mpMerchantOrderId(99992382)
+                    .mpPreferenceId("MPREF-18-87812339")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/112.pdf")
+                    .build();
+
+            facturaPedido12 = facturaService.save(facturaPedido12);
+
+// PEDIDO
+            Pedido pedido12 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(20))
+                    .total(1200.0)
+                    .totalCosto(850.0)
+                    .estado(Estado.ENTREGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente2) // Usar cliente existente
+                    .domicilioEntrega(null) // Su domicilio
+                    .sucursal(sucursal)
+                    .factura(facturaPedido12)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle12a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(600.0)
+                    .articuloManufacturado(empanadasCarneCuchillo)
+                    .pedido(pedido12)
+                    .build();
+
+            DetallePedido detalle12b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(600.0)
+                    .articuloInsumo(cocaCola1L)
+                    .pedido(pedido12)
+                    .build();
+
+            pedido12.setDetallesPedidos(Set.of(detalle12a, detalle12b));
+            pedido12.setEmpleado(null); // No asignado
+            facturaPedido12.setPedido(pedido12);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido12);
+
+
+            // FACTURA
+            Factura facturaPedido13 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(9800.0)
+                    .anulada(false)
+                    .mpPaymentId(94837218)
+                    .mpMerchantOrderId(2738119)
+                    .mpPreferenceId("MPREF-13-87281239")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/113.pdf")
+                    .build();
+
+            facturaPedido13 = facturaService.save(facturaPedido13);
+
+// PEDIDO
+            Pedido pedido13 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(9800.0)
+                    .totalCosto(7150.0)
+                    .estado(Estado.EN_COCINA)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente3)
+                    .domicilioEntrega(domicilioCliente3)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido13)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle13a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(5600.0)
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido13)
+                    .build();
+
+            DetallePedido detalle13b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido13)
+                    .build();
+
+            pedido13.setDetallesPedidos(Set.of(detalle13a, detalle13b));
+            pedido13.setEmpleado(null);
+            facturaPedido13.setPedido(pedido13);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido13);
+
+
+// FACTURA
+            Factura facturaPedido14 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(1800.0)
+                    .anulada(false)
+                    .mpPaymentId(94837219)
+                    .mpMerchantOrderId(2738120)
+                    .mpPreferenceId("MPREF-14-87281240")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/114.pdf")
+                    .build();
+
+            facturaPedido14 = facturaService.save(facturaPedido14);
+
+// PEDIDO
+            Pedido pedido14 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(25))
+                    .total(1800.0)
+                    .totalCosto(1240.0)
+                    .estado(Estado.ENTREGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente4)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido14)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle14a = DetallePedido.builder()
+                    .cantidad(3)
+                    .subTotal(1800.0)
+                    .articuloManufacturado(empanadasHumita)
+                    .pedido(pedido14)
+                    .build();
+
+            pedido14.setDetallesPedidos(Set.of(detalle14a));
+            pedido14.setEmpleado(null);
+            facturaPedido14.setPedido(pedido14);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido14);
+
+
+            // FACTURA
+            Factura facturaPedido15 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(8200.0)
+                    .anulada(false)
+                    .mpPaymentId(94837220)
+                    .mpMerchantOrderId(2738121)
+                    .mpPreferenceId("MPREF-15-87281241")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/115.pdf")
+                    .build();
+
+            facturaPedido15 = facturaService.save(facturaPedido15);
+
+// PEDIDO
+            Pedido pedido15 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(20))
+                    .total(8200.0)
+                    .totalCosto(6100.0)
+                    .estado(Estado.EN_PREPARACION)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente5)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido15)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle15a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(8200.0)
+                    .articuloManufacturado(barrolucoSimple)
+                    .pedido(pedido15)
+                    .build();
+
+            pedido15.setDetallesPedidos(Set.of(detalle15a));
+            pedido15.setEmpleado(null);
+            facturaPedido15.setPedido(pedido15);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido15);
+
+
+// FACTURA
+            Factura facturaPedido16 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(5800.0)
+                    .anulada(false)
+                    .mpPaymentId(94837221)
+                    .mpMerchantOrderId(2738122)
+                    .mpPreferenceId("MPREF-16-87281242")
+                    .mpPaymentType("debit_card")
+                    .urlPdf("https://mi-app.com/facturas/116.pdf")
+                    .build();
+
+            facturaPedido16 = facturaService.save(facturaPedido16);
+
+// PEDIDO
+            Pedido pedido16 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(5800.0)
+                    .totalCosto(4300.0)
+                    .estado(Estado.A_CONFIRMAR)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente6)
+                    .domicilioEntrega(domicilioCliente6)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido16)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle16a = DetallePedido.builder()
+                    .cantidad(10)
+                    .subTotal(5800.0)
+                    .articuloManufacturado(empanadasHumita)
+                    .pedido(pedido16)
+                    .build();
+
+            pedido16.setDetallesPedidos(Set.of(detalle16a));
+            pedido16.setEmpleado(null);
+            facturaPedido16.setPedido(pedido16);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido16);
+
+
+            // FACTURA
+            Factura facturaPedido17 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(12600.0)
+                    .anulada(false)
+                    .mpPaymentId(94837222)
+                    .mpMerchantOrderId(2738123)
+                    .mpPreferenceId("MPREF-17-87281243")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/117.pdf")
+                    .build();
+
+            facturaPedido17 = facturaService.save(facturaPedido17);
+
+// PEDIDO
+            Pedido pedido17 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(25))
+                    .total(12600.0)
+                    .totalCosto(9200.0)
+                    .estado(Estado.CANCELADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente7)
+                    .domicilioEntrega(domicilioCliente7)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido17)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle17a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(8400.0)
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido17)
+                    .build();
+
+            DetallePedido detalle17b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido17)
+                    .build();
+
+            pedido17.setDetallesPedidos(Set.of(detalle17a, detalle17b));
+            pedido17.setEmpleado(null);
+            facturaPedido17.setPedido(pedido17);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido17);
+
+
+            // FACTURA
+            Factura facturaPedido18 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(17600.0)
+                    .anulada(false)
+                    .mpPaymentId(94837223)
+                    .mpMerchantOrderId(2738124)
+                    .mpPreferenceId("MPREF-18-87281244")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/118.pdf")
+                    .build();
+
+            facturaPedido18 = facturaService.save(facturaPedido18);
+
+// PEDIDO
+            Pedido pedido18 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(17600.0)
+                    .totalCosto(12600.0)
+                    .estado(Estado.EN_DELIVERY)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente8)
+                    .domicilioEntrega(domicilioCliente8)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido18)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle18a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(11000.0)
+                    .articuloManufacturado(hamburguesaTriple)
+                    .pedido(pedido18)
+                    .build();
+
+            DetallePedido detalle18b = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(6600.0)
+                    .articuloManufacturado(papasFritas)
+                    .pedido(pedido18)
+                    .build();
+
+            pedido18.setDetallesPedidos(Set.of(detalle18a, detalle18b));
+            pedido18.setEmpleado(null);
+            facturaPedido18.setPedido(pedido18);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido18);
+
+
+// FACTURA
+            Factura facturaPedido19 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(18200.0)
+                    .anulada(false)
+                    .mpPaymentId(94837224)
+                    .mpMerchantOrderId(2738125)
+                    .mpPreferenceId("MPREF-19-87281245")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/119.pdf")
+                    .build();
+
+            facturaPedido19 = facturaService.save(facturaPedido19);
+
+// PEDIDO
+            Pedido pedido19 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(35))
+                    .total(18200.0)
+                    .totalCosto(12900.0)
+                    .estado(Estado.CANCELADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente10)
+                    .domicilioEntrega(domicilioCliente10)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido19)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle19a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(8500.0)
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido19)
+                    .build();
+
+            DetallePedido detalle19b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(8200.0)
+                    .articuloManufacturado(barrolucoSimple)
+                    .pedido(pedido19)
+                    .build();
+
+            DetallePedido detalle19c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1500.0)
+                    .articuloInsumo(cocaCola)
+                    .pedido(pedido19)
+                    .build();
+
+            pedido19.setDetallesPedidos(Set.of(detalle19a, detalle19b, detalle19c));
+            pedido19.setEmpleado(null);
+            facturaPedido19.setPedido(pedido19);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido19);
+
+
+// FACTURA
+            Factura facturaPedido20 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(11030.0)
+                    .anulada(false)
+                    .mpPaymentId(94837225)
+                    .mpMerchantOrderId(2738126)
+                    .mpPreferenceId("MPREF-20-87281246")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/120.pdf")
+                    .build();
+
+            facturaPedido20 = facturaService.save(facturaPedido20);
+
+// PEDIDO
+            Pedido pedido20 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(30))
+                    .total(11030.0)
+                    .totalCosto(7450.0)
+                    .estado(Estado.EN_COCINA)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente11)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido20)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle20a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(6400.0)
+                    .articuloManufacturado(empanadasCarneCuchillo)
+                    .pedido(pedido20)
+                    .build();
+
+            DetallePedido detalle20b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(4200.0)
+                    .articuloManufacturado(papasCheddarBacon)
+                    .pedido(pedido20)
+                    .build();
+
+            DetallePedido detalle20c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(800.0)
+                    .articuloInsumo(sprite)
+                    .pedido(pedido20)
+                    .build();
+
+            pedido20.setDetallesPedidos(Set.of(detalle20a, detalle20b, detalle20c));
+            pedido20.setEmpleado(null);
+            facturaPedido20.setPedido(pedido20);
+
+// GUARDAR PEDIDO
+            pedidoService.save(pedido20);
+
+
+            // FACTURA
+            Factura facturaPedido202 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(12300.0)
+                    .anulada(false)
+                    .mpPaymentId(587934120)
+                    .mpMerchantOrderId(782145600)
+                    .mpPreferenceId("PREF-z9y8x7w6-20")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/20.pdf")
+                    .build();
+
+            facturaPedido202 = facturaService.save(facturaPedido202);
+
+// PEDIDO
+            Pedido pedido202 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(28))
+                    .total(12300.0)
+                    .totalCosto(8600.0)
+                    .estado(Estado.LISTO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente) // Usa cliente previamente cargado
+                    .domicilioEntrega(domicilioCliente)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido202)
+                    .anulado(false)
+                    .build();
+
+// DETALLES DEL PEDIDO
+            DetallePedido detalle202a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(6000.0)
+                    .articuloManufacturado(empanadasCarneCuchillo)
+                    .pedido(pedido202)
+                    .build();
+
+            DetallePedido detalle202b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(5000.0)
+                    .articuloManufacturado(empanadasJyQ)
+                    .pedido(pedido202)
+                    .build();
+
+            DetallePedido detalle202c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1300.0)
+                    .articuloInsumo(mostaza)
+                    .pedido(pedido202)
+                    .build();
+
+            pedido202.setDetallesPedidos(Set.of(detalle202a, detalle202b, detalle202c));
+
+// Relación bidireccional
+            facturaPedido20.setPedido(pedido202);
+            pedido202.setEmpleado(null);
+
+            pedidoService.save(pedido202);
+
+
+// FACTURA
+            Factura facturaPedido21 = Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(10500.0)
+                    .anulada(false)
+                    .mpPaymentId(687245139)
+                    .mpMerchantOrderId(888456710)
+                    .mpPreferenceId("PREF-a1b2c3d4-21")
+                    .mpPaymentType("debit_card")
+                    .urlPdf("https://mi-app.com/facturas/21.pdf")
+                    .build();
+
+            facturaPedido21 = facturaService.save(facturaPedido21);
+
+// PEDIDO
+            Pedido pedido21 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(22))
+                    .total(10500.0)
+                    .totalCosto(7200.0)
+                    .estado(Estado.A_CONFIRMAR)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente) // Usa cliente previamente cargado
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido21)
+                    .anulado(false)
+                    .build();
+
+// DETALLES DEL PEDIDO
+            DetallePedido detalle21a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(5800.0)
+                    .articuloManufacturado(empanadasHumita)
+                    .pedido(pedido21)
+                    .build();
+
+            DetallePedido detalle21b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(3500.0)
+                    .articuloInsumo(cocaCola)
+                    .pedido(pedido21)
+                    .build();
+
+            DetallePedido detalle21c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(1200.0)
+                    .articuloInsumo(bombonSuizoSopelsa)
+                    .pedido(pedido21)
+                    .build();
+
+            pedido21.setDetallesPedidos(Set.of(detalle21a, detalle21b, detalle21c));
+
+// Relación bidireccional
+            facturaPedido21.setPedido(pedido21);
+            pedido21.setEmpleado(null);
+
+            pedidoService.save(pedido21);
+
+
+// FACTURA
+            Factura facturaPedido22 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(8800.0) // 1 Hamburguesa Clásica (1250) + 1 CocaCola 1.5L (1500) + 2 Empanadas JyQ (550*2)
+                    .anulada(false)
+                    .mpPaymentId(565564789)
+                    .mpMerchantOrderId(198764321)
+                    .mpPreferenceId("PREF-22abc456")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/22.pdf")
+                    .build());
+
+            // PEDIDO
+            Pedido pedido22 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(40))
+                    .total(8800.0)
+                    .totalCosto(5700.0) // 500 (costo hamburguesa) + 1000 (cocaCola1.5L) + 2*600 (JyQ insumo aprox)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente10) // por ejemplo, décimo cliente cargado
+                    .domicilioEntrega(cliente10.getDomicilios().iterator().next())
+                    .sucursal(sucursal)
+                    .factura(facturaPedido22)
+                    .anulado(false)
+                    .build();
+
+// DETALLES
+            DetallePedido detalle1 = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(hamburguesa.getPrecioVenta() * 1) // 1250.0
+                    .articuloManufacturado(hamburguesa)
+                    .pedido(pedido22)
+                    .build();
+
+            DetallePedido detalle2 = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(cocaCola15L.getPrecioVenta() * 1) // 1500.0
+                    .articuloInsumo(cocaCola15L)
+                    .pedido(pedido22)
+                    .build();
+
+            DetallePedido detalle3 = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(empanadasJyQ.getPrecioVenta() * 2) // 550 * 2 = 1100.0
+                    .articuloManufacturado(empanadasJyQ)
+                    .pedido(pedido22)
+                    .build();
+
+            pedido22.setDetallesPedidos(Set.of(detalle1, detalle2, detalle3));
+            pedido22.setEmpleado(null); // Opcionalmente se puede dejar null
+
+// Relación inversa
+            facturaPedido22.setPedido(pedido22);
+
+// Guardar el pedido (esto guarda en cascada la factura si está bien mapeada)
+            pedidoService.save(pedido22);
+
+
+// 1. FACTURA
+            Factura facturaPedido23 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(11600.0) // 1 Hamburguesa de Pollo Doble (10500.0) + 1 Pepsi 500ml (800.0) + 1 Bombón Escocés (1300.0)
+                    .anulada(false)
+                    .mpPaymentId(565564790)
+                    .mpMerchantOrderId(198764322)
+                    .mpPreferenceId("PREF-23abc456")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/23.pdf")
+                    .build());
+
+// 2. PEDIDO
+            Pedido pedido23 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(35))
+                    .total(11600.0)
+                    .totalCosto(8650.0) // 6500 (pollo doble) + 500 (pepsi) + 850 (bombón escocés)
+                    .estado(Estado.EN_DELIVERY)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente3) // Cliente previamente creado
+                    .domicilioEntrega(cliente3.getDomicilios().iterator().next()) // Primer domicilio asociado
+                    .sucursal(sucursal)
+                    .factura(facturaPedido23)
+                    .anulado(false)
+                    .build();
+
+// 3. DETALLES
+            DetallePedido detalle23a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(hamburguesaPolloDoble.getPrecioVenta() * 1) // 10500.0
+                    .articuloManufacturado(hamburguesaPolloDoble)
+                    .pedido(pedido23)
+                    .build();
+
+            DetallePedido detalle23b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(pepsi.getPrecioVenta() * 1) // 800.0
+                    .articuloInsumo(pepsi)
+                    .pedido(pedido23)
+                    .build();
+
+            DetallePedido detalle23c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(bombonEscocesSopelsa.getPrecioVenta() * 1) // 1300.0
+                    .articuloInsumo(bombonEscocesSopelsa)
+                    .pedido(pedido23)
+                    .build();
+
+// 4. RELACIONES Y GUARDADO
+            pedido23.setDetallesPedidos(Set.of(detalle23a, detalle23b, detalle23c));
+            pedido23.setEmpleado(null); // No asignado
+            facturaPedido23.setPedido(pedido23);
+            pedidoService.save(pedido23);
+
+
+            // 1. FACTURA
+            Factura facturaPedido24 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(12800.0) // 1 Pizza Margarita (8000.0) + 1 Fanta 1.5L (1500.0) + 2 Bombón Helado Sopelsa (2 x 1200.0)
+                    .anulada(false)
+                    .mpPaymentId(112233445)
+                    .mpMerchantOrderId(998877665)
+                    .mpPreferenceId("PREF-24abc789")
+                    .mpPaymentType("cash")
+                    .urlPdf("https://mi-app.com/facturas/24.pdf")
+                    .build());
+
+// 2. PEDIDO
+            Pedido pedido24 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(45))
+                    .total(12800.0)
+                    .totalCosto(9700.0) // 6000 (pizza) + 1000 (fanta) + 2 x 850 (bombón helado)
+                    .estado(Estado.PAGADO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente4)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido24)
+                    .anulado(false)
+                    .build();
+
+// 3. DETALLES
+            DetallePedido detalle24a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(pizzaMargarita.getPrecioVenta() * 1) // 8000.0
+                    .articuloManufacturado(pizzaMargarita)
+                    .pedido(pedido24)
+                    .build();
+
+            DetallePedido detalle24b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(fanta15L.getPrecioVenta() * 1) // 1500.0
+                    .articuloInsumo(fanta15L)
+                    .pedido(pedido24)
+                    .build();
+
+            DetallePedido detalle24c = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(bombonHeladoSopelsa.getPrecioVenta() * 2) // 2 x 1200.0 = 2400.0
+                    .articuloInsumo(bombonHeladoSopelsa)
+                    .pedido(pedido24)
+                    .build();
+
+// 4. RELACIONES Y GUARDADO
+            pedido24.setDetallesPedidos(Set.of(detalle24a, detalle24b, detalle24c));
+            pedido24.setEmpleado(null);
+            facturaPedido24.setPedido(pedido24);
+            pedidoService.save(pedido24);
+
+
+// 1. FACTURA
+            Factura facturaPedido25 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(13300.0) // 1 Lomito Simple (8500.0) + 1 Sprite 1L (1200.0) + 3 Empanadas de Humita (3 x 580.0)
+                    .anulada(false)
+                    .mpPaymentId(192837465)
+                    .mpMerchantOrderId(564738291)
+                    .mpPreferenceId("PREF-25xyz321")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/25.pdf")
+                    .build());
+
+// 2. PEDIDO
+            Pedido pedido25 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(35))
+                    .total(13300.0)
+                    .totalCosto(9800.0) // 6200 (lomito) + 750 (sprite1L) + 3 x 950 (empanadas humita)
+                    .estado(Estado.LISTO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente5)
+                    .domicilioEntrega(cliente5.getDomicilios().iterator().next())
+                    .sucursal(sucursal)
+                    .factura(facturaPedido25)
+                    .anulado(false)
+                    .build();
+
+// 3. DETALLES
+            DetallePedido detalle25a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(lomitoSimple.getPrecioVenta()) // 8500.0
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido25)
+                    .build();
+
+            DetallePedido detalle25b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(sprite1L.getPrecioVenta()) // 1200.0
+                    .articuloInsumo(sprite1L)
+                    .pedido(pedido25)
+                    .build();
+
+            DetallePedido detalle25c = DetallePedido.builder()
+                    .cantidad(3)
+                    .subTotal(empanadasHumita.getPrecioVenta() * 3) // 3 x 580.0 = 1740.0
+                    .articuloManufacturado(empanadasHumita)
+                    .pedido(pedido25)
+                    .build();
+
+// 4. RELACIONES Y GUARDADO
+            pedido25.setDetallesPedidos(Set.of(detalle25a, detalle25b, detalle25c));
+            pedido25.setEmpleado(null);
+            facturaPedido25.setPedido(pedido25);
+            pedidoService.save(pedido25);
+
+
+// 1. FACTURA
+            Factura facturaPedido26 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(11050.0) // 1 Pizza Especial (8800) + 1 Bombón Escocés Sopelsa (1300) + 1 Sprite 500ml (800)
+                    .anulada(false)
+                    .mpPaymentId(293847561)
+                    .mpMerchantOrderId(675849302)
+                    .mpPreferenceId("PREF-26xyz321")
+                    .mpPaymentType("cash")
+                    .urlPdf("https://mi-app.com/facturas/26.pdf")
+                    .build());
+
+// 2. PEDIDO
+            Pedido pedido26 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(40))
+                    .total(11050.0)
+                    .totalCosto(7850.0) // 5900 (pizza especial) + 850 (bombón escocés) + 1100 (sprite 500ml)
+                    .estado(Estado.EN_COCINA)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente6)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(facturaPedido26)
+                    .anulado(false)
+                    .build();
+
+// 3. DETALLES
+            DetallePedido detalle26a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(pizzaEspecial.getPrecioVenta()) // 8800.0
+                    .articuloManufacturado(pizzaEspecial)
+                    .pedido(pedido26)
+                    .build();
+
+            DetallePedido detalle26b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(bombonEscocesSopelsa.getPrecioVenta()) // 1300.0
+                    .articuloInsumo(bombonEscocesSopelsa)
+                    .pedido(pedido26)
+                    .build();
+
+            DetallePedido detalle26c = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(sprite.getPrecioVenta()) // 800.0
+                    .articuloInsumo(sprite)
+                    .pedido(pedido26)
+                    .build();
+
+// 4. RELACIONES Y GUARDADO
+            pedido26.setDetallesPedidos(Set.of(detalle26a, detalle26b, detalle26c));
+            pedido26.setEmpleado(null);
+            facturaPedido26.setPedido(pedido26);
+            pedidoService.save(pedido26);
+
+
+// 1. FACTURA
+            Factura facturaPedido27 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(11800.0) // 2 Lomito Simple (2×8500 = 17000) + 1 Fanta 500ml (800) - Descuento ficticio = 11800
+                    .anulada(false)
+                    .mpPaymentId(192837465)
+                    .mpMerchantOrderId(786452301)
+                    .mpPreferenceId("PREF-27abc987")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/27.pdf")
+                    .build());
+
+// 2. PEDIDO
+            Pedido pedido27 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(45))
+                    .total(11800.0)
+                    .totalCosto(8650.0) // (2 × 6000 del lomito) + 650 fanta
+                    .estado(Estado.A_CONFIRMAR)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente12)
+                    .domicilioEntrega(cliente12.getDomicilios().iterator().next())
+                    .sucursal(sucursal)
+                    .factura(facturaPedido27)
+                    .anulado(false)
+                    .build();
+
+// 3. DETALLES
+            DetallePedido detalle27a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(lomitoSimple.getPrecioVenta() * 2) // 8500 * 2 = 17000
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido27)
+                    .build();
+
+            DetallePedido detalle27b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(fanta.getPrecioVenta()) // 800.0
+                    .articuloInsumo(fanta)
+                    .pedido(pedido27)
+                    .build();
+
+// 4. RELACIONES Y GUARDADO
+            pedido27.setDetallesPedidos(Set.of(detalle27a, detalle27b));
+            pedido27.setEmpleado(null);
+            facturaPedido27.setPedido(pedido27);
+            pedidoService.save(pedido27);
+
+
+            // Factura
+            Factura factura28 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.EFECTIVO)
+                    .totalVenta(8700.0)
+                    .anulada(false)
+                    .mpPaymentId(987654325)
+                    .mpMerchantOrderId(123456785)
+                    .mpPreferenceId("PREF-828abc456")
+                    .mpPaymentType("cash")
+                    .urlPdf("https://mi-app.com/facturas/128.pdf")
+                    .build());
+
+// Pedido
+            Pedido pedido28 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(35))
+                    .total(8700.0)
+                    .totalCosto(6200.0)
+                    .estado(Estado.LISTO)
+                    .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
+                    .formaPago(FormaPago.EFECTIVO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente5)
+                    .domicilioEntrega(null)
+                    .sucursal(sucursal)
+                    .factura(factura28)
+                    .anulado(false)
+                    .build();
+
+// Detalles
+            DetallePedido d28a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(hamburguesaPolloSimple.getPrecioVenta() * 1)
+                    .articuloManufacturado(hamburguesaPolloSimple)
+                    .pedido(pedido28)
+                    .build();
+
+            DetallePedido d28b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(pepsi1L.getPrecioVenta() * 1)
+                    .articuloInsumo(pepsi1L)
+                    .pedido(pedido28)
+                    .build();
+
+            pedido28.setDetallesPedidos(Set.of(d28a, d28b));
+            factura28.setPedido(pedido28);
+            pedido28.setEmpleado(null);
+            pedidoService.save(pedido28);
+
+
+            Factura factura29 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(17300.0)
+                    .anulada(false)
+                    .mpPaymentId(876543210)
+                    .mpMerchantOrderId(210987654)
+                    .mpPreferenceId("PREF-829def789")
+                    .mpPaymentType("credit_card")
+                    .urlPdf("https://mi-app.com/facturas/129.pdf")
+                    .build());
+
+            Pedido pedido29 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(50))
+                    .total(17300.0)
+                    .totalCosto(12900.0)
+                    .estado(Estado.ENTREGADO)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente9)
+                    .domicilioEntrega(domicilioCliente9)
+                    .sucursal(sucursal)
+                    .factura(factura29)
+                    .anulado(false)
+                    .build();
+
+            DetallePedido d29a = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(pizzaMargarita.getPrecioVenta() * 2)
+                    .articuloManufacturado(pizzaMargarita)
+                    .pedido(pedido29)
+                    .build();
+
+            DetallePedido d29b = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(fanta15L.getPrecioVenta())
+                    .articuloInsumo(fanta15L)
+                    .pedido(pedido29)
+                    .build();
+
+            pedido29.setDetallesPedidos(Set.of(d29a, d29b));
+            factura29.setPedido(pedido29);
+            pedido29.setEmpleado(null);
+            pedidoService.save(pedido29);
+
+
+            Factura factura30 = facturaService.save(Factura.builder()
+                    .fechaFacturacion(LocalDate.now())
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .totalVenta(11500.0)
+                    .anulada(false)
+                    .mpPaymentId(112233445)
+                    .mpMerchantOrderId(998877665)
+                    .mpPreferenceId("PREF-830ghi123")
+                    .mpPaymentType("debit_card")
+                    .urlPdf("https://mi-app.com/facturas/130.pdf")
+                    .build());
+
+            Pedido pedido30 = Pedido.builder()
+                    .horaEstimadaFinalizacion(LocalTime.now().plusMinutes(40))
+                    .total(11500.0)
+                    .totalCosto(8000.0)
+                    .estado(Estado.EN_PREPARACION)
+                    .tipoEnvio(TipoEnvio.DELIVERY)
+                    .formaPago(FormaPago.MERCADO_PAGO)
+                    .fechaPedido(LocalDate.now())
+                    .cliente(cliente13)
+                    .domicilioEntrega(domicilioCliente13)
+                    .sucursal(sucursal)
+                    .factura(factura30)
+                    .anulado(false)
+                    .build();
+
+            DetallePedido d30a = DetallePedido.builder()
+                    .cantidad(1)
+                    .subTotal(lomitoSimple.getPrecioVenta())
+                    .articuloManufacturado(lomitoSimple)
+                    .pedido(pedido30)
+                    .build();
+
+            DetallePedido d30b = DetallePedido.builder()
+                    .cantidad(2)
+                    .subTotal(bombonHeladoSopelsa.getPrecioVenta() * 2)
+                    .articuloInsumo(bombonHeladoSopelsa)
+                    .pedido(pedido30)
+                    .build();
+
+            pedido30.setDetallesPedidos(Set.of(d30a, d30b));
+            factura30.setPedido(pedido30);
+            pedido30.setEmpleado(null);
+            pedidoService.save(pedido30);
 
 
         } catch (Exception e) {

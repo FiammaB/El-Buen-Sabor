@@ -15,15 +15,17 @@ import java.util.List;
 public class ClienteDTO {
 
     private Long id;
-    private String nombre;
+    private String nombreUsuario;
     private String apellido;
     private String telefono;
-    private String email;
-    private LocalDate fechaNacimiento;
-    private boolean baja;
+    private String emailUsuario;
+    private Boolean baja;
 
     private ImagenDTO imagen;
     private UsuarioDTO usuario;
 
+    private LocalDate fechaNacimiento;
+
     private List<DomicilioDTO> domicilios;
+
 }

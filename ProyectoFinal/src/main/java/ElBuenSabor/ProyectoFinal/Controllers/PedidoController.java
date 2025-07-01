@@ -421,6 +421,23 @@ public class PedidoController extends BaseController<Pedido, Long> {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+    //Metodo para el delivery
+    @PreAuthorize("hasRole('DELIVERY')")
+    @GetMapping("/delivery")
+    public ResponseEntity<?> getPedidosParaDelivery() {
+        try {
+            List<Pedido> pedidos = pedidoService.findPedidosByEstados(List.of(Estado.LISTO));
+            List<PedidoDTO> dtos = pedidos.stream()
+                    .map(pedidoMapper::toDTO)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Error al obtener pedidos para delivery: " + e.getMessage() + "\"}");
+        }
+    }
+
+
     @GetMapping("/ranking")
     public List<ProductoRankingDTO> obtenerRanking(@RequestParam LocalDate desde, @RequestParam LocalDate hasta) {
         return pedidoService.obtenerRankingProductosMasVendidos(desde, hasta);

@@ -15,4 +15,6 @@ public interface UsuarioService extends BaseService<Usuario, Long> {
     Usuario registrarCocinero(UsuarioDTO usuarioDTO);
 
     Usuario registrarCajero(UsuarioDTO usuarioDTO);
+
+    Usuario registrarDelivery(UsuarioDTO usuarioDTO);
 }

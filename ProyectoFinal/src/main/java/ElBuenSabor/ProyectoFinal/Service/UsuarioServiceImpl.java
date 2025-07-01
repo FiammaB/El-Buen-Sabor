@@ -136,4 +136,22 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
         return usuarioRepository.save(usuario);
     }
+
+    @Override
+    public Usuario registrarDelivery(UsuarioDTO usuarioDTO) {
+        if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario registrado con ese email.");
+        }
+
+        if (!esPasswordSegura(usuarioDTO.getPassword())) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un símbolo.");
+        }
+
+        Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
+        usuario.setRol(Rol.DELIVERY);
+        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        return usuarioRepository.save(usuario);
+    }
+
+
 }

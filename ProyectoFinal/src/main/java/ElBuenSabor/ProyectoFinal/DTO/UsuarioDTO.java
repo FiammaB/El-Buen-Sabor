@@ -14,4 +14,6 @@ public class UsuarioDTO {
     private String nombre;
     private Rol rol;
     private Boolean baja;
+    private Boolean primerIngreso;
+
 }

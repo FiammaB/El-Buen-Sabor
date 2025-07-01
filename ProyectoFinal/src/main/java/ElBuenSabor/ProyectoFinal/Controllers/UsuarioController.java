@@ -58,12 +58,15 @@ public class UsuarioController extends BaseController<Usuario, Long> {
             Usuario nuevoCocinero = usuarioMapper.toEntity(usuarioDTO);
             nuevoCocinero.setRol(Rol.COCINERO);
             nuevoCocinero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            nuevoCocinero.setPrimerIngreso(usuarioDTO.getPrimerIngreso() != null ? usuarioDTO.getPrimerIngreso() : true); // ✅ línea clave
+
             Usuario saved = usuarioService.save(nuevoCocinero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cocinero creado con ID: " + saved.getId());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
+
 
     // -------------------- REGISTRO CAJERO (SOLO ADMIN) ---------------------
 
@@ -74,12 +77,33 @@ public class UsuarioController extends BaseController<Usuario, Long> {
             Usuario nuevoCajero = usuarioMapper.toEntity(usuarioDTO);
             nuevoCajero.setRol(Rol.CAJERO);
             nuevoCajero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            nuevoCajero.setPrimerIngreso(usuarioDTO.getPrimerIngreso() != null ? usuarioDTO.getPrimerIngreso() : true);
+
             Usuario saved = usuarioService.save(nuevoCajero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cajero creado con ID: " + saved.getId());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
     }
+
+    // -------------------- REGISTRO DELIVERY (SOLO ADMIN) ---------------------
+    @PostMapping("/registrar-delivery")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> registrarDelivery(@RequestBody UsuarioDTO usuarioDTO) {
+        try {
+            Usuario nuevoDelivery = usuarioMapper.toEntity(usuarioDTO);
+            nuevoDelivery.setRol(Rol.DELIVERY);
+            nuevoDelivery.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            nuevoDelivery.setPrimerIngreso(usuarioDTO.getPrimerIngreso() != null ? usuarioDTO.getPrimerIngreso() : true);
+
+            Usuario saved = usuarioService.save(nuevoDelivery);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Delivery creado con ID: " + saved.getId());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
+
 
     // -------------------- LISTAR Y OBTENER USUARIOS ---------------------
 

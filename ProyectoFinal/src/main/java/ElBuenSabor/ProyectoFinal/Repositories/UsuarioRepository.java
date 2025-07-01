@@ -1,5 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Repositories;
 
+import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,5 +11,7 @@ import java.util.Optional;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
     boolean existsByEmail(String email);
+
+
 
 }

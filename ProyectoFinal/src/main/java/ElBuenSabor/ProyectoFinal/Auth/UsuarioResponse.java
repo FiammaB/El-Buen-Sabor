@@ -17,4 +17,6 @@ public class UsuarioResponse {
     private String email;
     private String telefono;
     private Rol rol;
+    private Boolean primerIngreso;
+
 }

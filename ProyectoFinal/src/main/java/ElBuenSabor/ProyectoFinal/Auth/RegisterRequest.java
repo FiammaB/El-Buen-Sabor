@@ -14,4 +14,5 @@ public class RegisterRequest {
     private String password;
     private String telefono;
     private LocalDate fechaNacimiento;
+    private Boolean primerIngreso = true;
 }

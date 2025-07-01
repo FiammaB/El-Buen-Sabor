@@ -24,4 +24,7 @@ public class Usuario extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
+
+    @Column(name = "primer_ingreso", nullable = false)
+    private Boolean primerIngreso = true;
 }

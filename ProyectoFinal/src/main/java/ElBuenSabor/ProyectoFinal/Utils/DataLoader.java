@@ -170,6 +170,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123")) // Mismas contraseñas cliente123
                     .rol(Rol.CLIENTE)//Siempre rol CLIENTE
                     .nombre("Fiamma") //Nombre inventado
+                    .primerIngreso(false)
                     .build());
 
             // 5. Cliente asociado al Usuario
@@ -197,6 +198,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Camila")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente1 = Cliente.builder()
@@ -223,6 +225,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Lucas")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente2 = Cliente.builder()
@@ -249,6 +252,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Valentina")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente3 = Cliente.builder()
@@ -275,6 +279,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Bruno")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente4 = Cliente.builder()
@@ -301,6 +306,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Martina")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente5 = Cliente.builder()
@@ -327,6 +333,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Ezequiel")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente6 = Cliente.builder()
@@ -353,6 +360,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Valentina")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente7 = Cliente.builder()
@@ -379,6 +387,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Benjamín")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente8 = Cliente.builder()
@@ -405,6 +414,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Sofía")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente9 = Cliente.builder()
@@ -431,6 +441,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Tomás")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente10 = Cliente.builder()
@@ -457,6 +468,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Guadalupe")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente11 = Cliente.builder()
@@ -483,6 +495,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Luciano")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente12 = Cliente.builder()
@@ -509,6 +522,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Martina")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente13 = Cliente.builder()
@@ -535,6 +549,7 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .nombre("Alejo")
+                    .primerIngreso(false)
                     .build());
 
             Cliente cliente14 = Cliente.builder()
@@ -1595,6 +1610,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("admin@buen.com")
                     .password(passwordEncoder.encode("admin123")) // asegurate que uses PasswordEncoder
                     .nombre("Admin General")
+                    .primerIngreso(false)
                     .rol(Rol.ADMINISTRADOR)
                     .build());
             Usuario usuarioCocinero = usuarioService.save(Usuario.builder()
@@ -1602,19 +1618,25 @@ public class DataLoader implements CommandLineRunner {
                     .password(passwordEncoder.encode("cocinero123"))
                     .nombre("Juan Cocinero")
                     .rol(Rol.COCINERO)
+                    .primerIngreso(true)
                     .build());
+
             Usuario usuarioCajero = usuarioService.save(Usuario.builder()
                     .email("cajero@buen.com")
                     .password(passwordEncoder.encode("cajero123"))
                     .nombre("Carlos Cajero")
                     .rol(Rol.CAJERO)
+                    .primerIngreso(true)
                     .build());
+
             Usuario usuarioDelivery = usuarioService.save(Usuario.builder()
                     .email("delivery@buen.com")
                     .password(passwordEncoder.encode("delivery123"))
                     .nombre("Pepe delivery")
                     .rol(Rol.DELIVERY)
+                    .primerIngreso(true)
                     .build());
+
 
 
 

@@ -1,5 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
+import ElBuenSabor.ProyectoFinal.Auth.CambiarPasswordRequest;
 import ElBuenSabor.ProyectoFinal.Auth.LoginRequest;
 import ElBuenSabor.ProyectoFinal.Auth.RegisterRequest;
 import ElBuenSabor.ProyectoFinal.Auth.UsuarioResponse;
@@ -18,7 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import java.security.GeneralSecurityException;
+
 import java.util.*;
 
 @RestController
@@ -36,19 +37,22 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Usuario usuario = usuarioService.findByEmail(request.getEmail());
+
         if (usuario == null || !passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
 
         Cliente cliente = clienteRepository.findByUsuario(usuario).orElse(null);
 
+        // 🧾 Devolvemos también si es primer ingreso
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),
                 cliente != null ? cliente.getNombre() : usuario.getNombre(),
                 cliente != null ? cliente.getApellido() : "",
                 usuario.getEmail(),
                 cliente != null ? cliente.getTelefono() : "",
-                usuario.getRol()
+                usuario.getRol(),
+                usuario.getPrimerIngreso() // ✅ agregado
         );
 
         return ResponseEntity.ok(response);
@@ -71,6 +75,7 @@ public class AuthController {
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
             usuario.setNombre(request.getNombre());
             usuario.setRol(Rol.CLIENTE);
+            usuario.setPrimerIngreso(false); // ❗ los clientes no necesitan cambiar password al iniciar
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
             Cliente cliente = new Cliente();
@@ -88,7 +93,8 @@ public class AuthController {
                     cliente.getApellido(),
                     nuevoUsuario.getEmail(),
                     cliente.getTelefono(),
-                    nuevoUsuario.getRol()
+                    nuevoUsuario.getRol(),
+                    nuevoUsuario.getPrimerIngreso() // ✅ agregado
             );
 
             return ResponseEntity.ok(response);
@@ -118,6 +124,7 @@ public class AuthController {
         }
     }
 
+    // 🔒 Verificar código de recuperación
     @PostMapping("/verificar-codigo")
     public ResponseEntity<?> verificarCodigo(@RequestParam String email, @RequestParam String codigo) {
         String codigoGuardado = codigoRecuperacion.get(email);
@@ -127,6 +134,7 @@ public class AuthController {
         return ResponseEntity.status(400).body("Código inválido o expirado");
     }
 
+    // 🔑 Cambiar contraseña después de recuperación
     @PostMapping("/cambiar-password")
     public ResponseEntity<?> cambiarPassword(@RequestParam String email, @RequestParam String codigo, @RequestParam String nuevaPassword) {
         String codigoGuardado = codigoRecuperacion.get(email);
@@ -149,8 +157,27 @@ public class AuthController {
 
         return ResponseEntity.ok("Contraseña actualizada correctamente");
     }
+    //Cambiar contraseña primera vez empleado
+    @PostMapping("/cambiar-password-primer-ingreso")
+    public ResponseEntity<?> cambiarPasswordPrimerIngreso(@RequestBody CambiarPasswordRequest request) {
+        if (!esPasswordSegura(request.getNuevaPassword())) {
+            return ResponseEntity.badRequest().body("La contraseña no cumple con los requisitos.");
+        }
 
-    // ✅ LOGIN CON GOOGLE
+        Usuario usuario = usuarioService.findByEmail(request.getEmail());
+        if (usuario == null) {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(request.getNuevaPassword()));
+        usuario.setPrimerIngreso(false);
+        usuarioService.save(usuario);
+
+        return ResponseEntity.ok("Contraseña actualizada correctamente");
+    }
+
+
+    // 🔐 LOGIN CON GOOGLE
     @PostMapping("/google")
     public ResponseEntity<?> loginConGoogle(@RequestBody Map<String, String> body) {
         String token = body.get("token");
@@ -183,6 +210,7 @@ public class AuthController {
                     usuario.setNombre(nombre);
                     usuario.setRol(Rol.CLIENTE);
                     usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // clave aleatoria
+                    usuario.setPrimerIngreso(false); // ❗ usuarios de Google no necesitan forzar cambio
                     usuario = usuarioService.save(usuario);
 
                     cliente = new Cliente();
@@ -197,11 +225,12 @@ public class AuthController {
 
                 UsuarioResponse response = new UsuarioResponse(
                         usuario.getId(),
-                        cliente != null ? cliente.getNombre() : nombre,
-                        cliente != null ? cliente.getApellido() : apellido,
-                        email,
+                        cliente != null ? cliente.getNombre() : usuario.getNombre(),
+                        cliente != null ? cliente.getApellido() : "",
+                        usuario.getEmail(),
                         cliente != null ? cliente.getTelefono() : "",
-                        usuario.getRol()
+                        usuario.getRol(),
+                        usuario.getPrimerIngreso() // ✅ agregado
                 );
 
                 return ResponseEntity.ok(response);
@@ -215,7 +244,7 @@ public class AuthController {
         }
     }
 
-    // 🔐 Validación de contraseñas seguras
+    // ✅ Validación de contraseñas seguras (usado en register y cambiar password)
     private boolean esPasswordSegura(String password) {
         return password.length() >= 8 &&
                 password.matches(".*[A-Z].*") &&

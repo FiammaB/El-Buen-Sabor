@@ -9,14 +9,17 @@ import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
 import ElBuenSabor.ProyectoFinal.Service.EmailService;
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.security.GeneralSecurityException;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,10 +30,9 @@ public class AuthController {
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-
     private final Map<String, String> codigoRecuperacion = new HashMap<>();
 
-    // 🔐 LOGIN
+    // 🔐 LOGIN manual (email + password)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Usuario usuario = usuarioService.findByEmail(request.getEmail());
@@ -52,21 +54,18 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // 🧾 REGISTRO DE CLIENTE con validación de email duplicado y contraseña segura
+    // 🧾 REGISTRO de cliente común
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            // 🛑 Verificar que no exista otro usuario con el mismo email
             if (usuarioService.findByEmail(request.getEmail()) != null) {
                 return ResponseEntity.status(400).body("{\"error\": \"Ya existe un usuario con ese email.\"}");
             }
 
-            // 🛑 Validar formato de contraseña segura
             if (!esPasswordSegura(request.getPassword())) {
                 return ResponseEntity.status(400).body("{\"error\": \"La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un símbolo.\"}");
             }
 
-            // ✅ Crear y guardar usuario
             Usuario usuario = new Usuario();
             usuario.setEmail(request.getEmail());
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -74,7 +73,6 @@ public class AuthController {
             usuario.setRol(Rol.CLIENTE);
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
-            // ✅ Crear y guardar cliente asociado
             Cliente cliente = new Cliente();
             cliente.setNombre(request.getNombre());
             cliente.setApellido(request.getApellido());
@@ -84,7 +82,6 @@ public class AuthController {
             cliente.setBaja(false);
             clienteRepository.save(cliente);
 
-            // ✅ Devolver datos del nuevo usuario
             UsuarioResponse response = new UsuarioResponse(
                     nuevoUsuario.getId(),
                     cliente.getNombre(),
@@ -109,7 +106,7 @@ public class AuthController {
             return ResponseEntity.status(404).body("No existe un usuario con ese email");
         }
 
-        String codigo = String.valueOf(new Random().nextInt(900000) + 100000); // 6 dígitos
+        String codigo = String.valueOf(new Random().nextInt(900000) + 100000);
         codigoRecuperacion.put(email, codigo);
 
         String mensaje = "<p>Tu código de recuperación de contraseña es: <strong>" + codigo + "</strong></p>";
@@ -142,23 +139,87 @@ public class AuthController {
             return ResponseEntity.status(404).body("Usuario no encontrado");
         }
 
-        // ✅ Validar contraseña segura
         if (!esPasswordSegura(nuevaPassword)) {
             return ResponseEntity.status(400).body("La nueva contraseña no cumple con los requisitos de seguridad");
         }
 
         usuario.setPassword(passwordEncoder.encode(nuevaPassword));
         usuarioService.save(usuario);
-        codigoRecuperacion.remove(email); // eliminar el código usado
+        codigoRecuperacion.remove(email);
 
         return ResponseEntity.ok("Contraseña actualizada correctamente");
     }
 
-    // 🔐 Método reutilizable para validar contraseñas seguras
+    // ✅ LOGIN CON GOOGLE
+    @PostMapping("/google")
+    public ResponseEntity<?> loginConGoogle(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String CLIENT_ID = "69075773198-5joq80nrsujctfiqjeap2lc9bhe7ot2q.apps.googleusercontent.com";
+
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    GoogleNetHttpTransport.newTrustedTransport(),
+                    JacksonFactory.getDefaultInstance()
+            )
+                    .setAudience(Collections.singletonList(CLIENT_ID))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(token);
+
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+                String nombre = (String) payload.get("given_name");
+                String apellido = (String) payload.get("family_name");
+
+                // Verificar si ya existe el usuario
+                Usuario usuario = usuarioService.findByEmail(email);
+                Cliente cliente = null;
+
+                if (usuario == null) {
+                    // Crear nuevo usuario y cliente si no existe
+                    usuario = new Usuario();
+                    usuario.setEmail(email);
+                    usuario.setNombre(nombre);
+                    usuario.setRol(Rol.CLIENTE);
+                    usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // clave aleatoria
+                    usuario = usuarioService.save(usuario);
+
+                    cliente = new Cliente();
+                    cliente.setNombre(nombre);
+                    cliente.setApellido(apellido);
+                    cliente.setUsuario(usuario);
+                    cliente.setBaja(false);
+                    clienteRepository.save(cliente);
+                } else {
+                    cliente = clienteRepository.findByUsuario(usuario).orElse(null);
+                }
+
+                UsuarioResponse response = new UsuarioResponse(
+                        usuario.getId(),
+                        cliente != null ? cliente.getNombre() : nombre,
+                        cliente != null ? cliente.getApellido() : apellido,
+                        email,
+                        cliente != null ? cliente.getTelefono() : "",
+                        usuario.getRol()
+                );
+
+                return ResponseEntity.ok(response);
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al verificar el token: " + e.getMessage());
+        }
+    }
+
+    // 🔐 Validación de contraseñas seguras
     private boolean esPasswordSegura(String password) {
         return password.length() >= 8 &&
-                password.matches(".*[A-Z].*") &&     // al menos una mayúscula
-                password.matches(".*[a-z].*") &&     // al menos una minúscula
-                password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*"); // al menos un símbolo
+                password.matches(".*[A-Z].*") &&
+                password.matches(".*[a-z].*") &&
+                password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*");
     }
 }

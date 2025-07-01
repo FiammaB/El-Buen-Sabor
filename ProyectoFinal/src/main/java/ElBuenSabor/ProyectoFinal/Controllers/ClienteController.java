@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -89,7 +90,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
             }
 
             if (createDTO.getDomicilioIds() != null && !createDTO.getDomicilioIds().isEmpty()) {
-                Set<Domicilio> domicilios = new HashSet<>();
+                List<Domicilio> domicilios = new ArrayList<>();
                 for (Long domicilioId : createDTO.getDomicilioIds()) {
                     Domicilio domicilio = domicilioService.findById(domicilioId);
                     domicilios.add(domicilio);
@@ -130,7 +131,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
             }
 
             if (dto.getDomicilioIds() != null && !dto.getDomicilioIds().isEmpty()) {
-                Set<Domicilio> domicilios = new HashSet<>();
+                List<Domicilio> domicilios = new ArrayList<>();
                 for (Long domicilioId : dto.getDomicilioIds()) {
                     Domicilio domicilio = domicilioService.findById(domicilioId);
                     domicilios.add(domicilio);

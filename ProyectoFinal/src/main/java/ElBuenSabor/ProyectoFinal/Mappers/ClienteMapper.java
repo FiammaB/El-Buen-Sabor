@@ -22,6 +22,8 @@ public interface ClienteMapper {
     ClienteDTO toDTO(Cliente cliente);
 
     @InheritInverseConfiguration
+    @Mapping(target = "nombre", source = "nombreUsuario") // Agregá esto para el campo de Cliente
+    @Mapping(target = "usuario.nombre", source = "nombreUsuario") // También para el Usuario
     Cliente toEntity(ClienteDTO dto);
 
     Cliente toEntity(ClienteCreateDTO createDTO);

@@ -18,17 +18,38 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
         try {
             Cliente existente = findById(id);
 
-            existente.setNombre(updatedCliente.getNombre());
+            // Actualizar datos simples
             existente.setApellido(updatedCliente.getApellido());
             existente.setTelefono(updatedCliente.getTelefono());
             existente.setFechaNacimiento(updatedCliente.getFechaNacimiento());
             existente.setBaja(updatedCliente.getBaja());
             existente.setImagen(updatedCliente.getImagen());
-            existente.setUsuario(updatedCliente.getUsuario());
 
-            if (updatedCliente.getDomicilios() != null) {
-                existente.getDomicilios().clear();
-                existente.getDomicilios().addAll(updatedCliente.getDomicilios());
+            // Actualizar nombre de usuario si corresponde (usuario embebido)
+            if (existente.getUsuario() != null && updatedCliente.getUsuario() != null) {
+                if (updatedCliente.getUsuario().getNombre() != null) {
+                    existente.getUsuario().setNombre(updatedCliente.getUsuario().getNombre());
+                }
+            }
+
+            // Actualizar domicilio (asumimos solo uno por simplicidad, podés iterar si son varios)
+            if (
+                    updatedCliente.getDomicilios() != null &&
+                            !updatedCliente.getDomicilios().isEmpty() &&
+                            existente.getDomicilios() != null &&
+                            !existente.getDomicilios().isEmpty()
+            ) {
+                // Actualiza SOLO los campos del primer domicilio
+                var domicilioNuevo = updatedCliente.getDomicilios().get(0);
+                var domicilioExistente = existente.getDomicilios().get(0);
+
+                domicilioExistente.setCalle(domicilioNuevo.getCalle());
+                domicilioExistente.setNumero(domicilioNuevo.getNumero());
+                domicilioExistente.setCp(domicilioNuevo.getCp());
+                // Si querés actualizar localidad también:
+                if (domicilioNuevo.getLocalidad() != null) {
+                    domicilioExistente.setLocalidad(domicilioNuevo.getLocalidad());
+                }
             }
 
             return baseRepository.save(existente);

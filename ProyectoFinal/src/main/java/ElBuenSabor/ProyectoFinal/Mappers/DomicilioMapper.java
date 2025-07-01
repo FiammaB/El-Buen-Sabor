@@ -11,7 +11,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {LocalidadMapper.class})
 public interface DomicilioMapper {
-
     DomicilioDTO toDTO(Domicilio domicilio);
 
     Domicilio toEntity(DomicilioDTO dto);

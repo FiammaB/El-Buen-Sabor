@@ -1,6 +1,7 @@
 // ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Entities/Domicilio.java
 package ElBuenSabor.ProyectoFinal.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -28,6 +29,7 @@ public class Domicilio extends BaseEntity {
     private Localidad localidad;
 
     @ManyToMany(mappedBy = "domicilios")
+    @JsonIgnore
     private Set<Cliente> clientes = new HashSet<>();
 
     @OneToMany(mappedBy = "domicilioEntrega")

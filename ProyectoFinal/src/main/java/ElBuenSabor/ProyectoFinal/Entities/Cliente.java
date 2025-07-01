@@ -30,7 +30,7 @@ public class Cliente extends BaseEntity {
             joinColumns = @JoinColumn(name = "cliente_id"),
             inverseJoinColumns = @JoinColumn(name = "domicilio_id")
     )
-    private Set<Domicilio> domicilios = new HashSet<>();
+    private List<Domicilio> domicilios = new ArrayList<>();
 
     @OneToOne
     @MapsId

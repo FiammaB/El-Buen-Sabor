@@ -15,4 +15,6 @@ public interface UsuarioService extends BaseService<Usuario, Long> {
     Usuario registrarCocinero(UsuarioDTO usuarioDTO);
 
     Usuario registrarCajero(UsuarioDTO usuarioDTO);
+
+    void actualizarNombre(Long id, String nuevoNombre);
 }

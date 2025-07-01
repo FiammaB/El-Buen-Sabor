@@ -1,6 +1,7 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.NombreDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PerfilDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
 import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
@@ -172,6 +173,17 @@ public class UsuarioController extends BaseController<Usuario, Long> {
             return ResponseEntity.ok("Perfil actualizado correctamente");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PatchMapping("/{id}/nombre")
+    public ResponseEntity<?> updateNombre(@PathVariable Long id, @RequestBody NombreDTO nombreDTO) {
+        try {
+            usuarioService.actualizarNombre(id, nombreDTO.nombre);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 

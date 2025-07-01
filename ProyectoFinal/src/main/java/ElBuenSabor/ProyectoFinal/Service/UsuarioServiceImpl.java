@@ -136,4 +136,17 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
         return usuarioRepository.save(usuario);
     }
+
+    @Override
+    @Transactional
+    public void actualizarNombre(Long id, String nuevoNombre) {
+        try {
+            Usuario usuario = findById(id); // Este método arroja Exception
+            usuario.setNombre(nuevoNombre);
+            save(usuario);
+        } catch (Exception e) {
+            // Podés tirar una RuntimeException, que no necesita ser declarada
+            throw new RuntimeException("No se pudo actualizar el nombre del usuario: " + e.getMessage(), e);
+        }
+    }
 }

@@ -179,7 +179,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1990, 5, 15))//Nacimiento inventado
                     .imagen(imgCliente)//imagen siempre la misma de stock
                     .usuario(usuarioCliente)//relación con el usuario ya creado
-                    .domicilios(Set.of(domicilioCliente))//Domicilio creado individualmente para el cliente
+                    .domicilios(List.of(domicilioCliente))//Domicilio creado individualmente para el cliente
                     .build();
 
             clienteService.save(cliente);
@@ -205,7 +205,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1993, 3, 10))
                     .imagen(imgCliente1)
                     .usuario(usuarioCliente1)
-                    .domicilios(Set.of(domicilioCliente1))
+                    .domicilios(List.of(domicilioCliente1))
                     .build();
 
             clienteService.save(cliente1);
@@ -231,7 +231,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1988, 7, 22))
                     .imagen(imgCliente2)
                     .usuario(usuarioCliente2)
-                    .domicilios(Set.of(domicilioCliente2))
+                    .domicilios(List.of(domicilioCliente2))
                     .build();
 
             clienteService.save(cliente2);
@@ -257,7 +257,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1995, 11, 5))
                     .imagen(imgCliente3)
                     .usuario(usuarioCliente3)
-                    .domicilios(Set.of(domicilioCliente3))
+                    .domicilios(List.of(domicilioCliente3))
                     .build();
 
             clienteService.save(cliente3);
@@ -283,7 +283,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1985, 1, 18))
                     .imagen(imgCliente4)
                     .usuario(usuarioCliente4)
-                    .domicilios(Set.of(domicilioCliente4))
+                    .domicilios(List.of(domicilioCliente4))
                     .build();
 
             clienteService.save(cliente4);
@@ -309,7 +309,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1993, 3, 22))
                     .imagen(imgCliente5)
                     .usuario(usuarioCliente5)
-                    .domicilios(Set.of(domicilioCliente5))
+                    .domicilios(List.of(domicilioCliente5))
                     .build();
 
             clienteService.save(cliente5);
@@ -335,7 +335,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1988, 6, 10))
                     .imagen(imgCliente6)
                     .usuario(usuarioCliente6)
-                    .domicilios(Set.of(domicilioCliente6))
+                    .domicilios(List.of(domicilioCliente6))
                     .build();
 
             clienteService.save(cliente6);
@@ -361,7 +361,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1997, 11, 12))
                     .imagen(imgCliente7)
                     .usuario(usuarioCliente7)
-                    .domicilios(Set.of(domicilioCliente7))
+                    .domicilios(List.of(domicilioCliente7))
                     .build();
 
             clienteService.save(cliente7);
@@ -387,7 +387,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1991, 4, 27))
                     .imagen(imgCliente8)
                     .usuario(usuarioCliente8)
-                    .domicilios(Set.of(domicilioCliente8))
+                    .domicilios(List.of(domicilioCliente8))
                     .build();
 
             clienteService.save(cliente8);
@@ -413,7 +413,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1993, 2, 18))
                     .imagen(imgCliente9)
                     .usuario(usuarioCliente9)
-                    .domicilios(Set.of(domicilioCliente9))
+                    .domicilios(List.of(domicilioCliente9))
                     .build();
 
             clienteService.save(cliente9);
@@ -439,7 +439,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1990, 10, 5))
                     .imagen(imgCliente10)
                     .usuario(usuarioCliente10)
-                    .domicilios(Set.of(domicilioCliente10))
+                    .domicilios(List.of(domicilioCliente10))
                     .build();
 
             clienteService.save(cliente10);
@@ -465,7 +465,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1988, 4, 22))
                     .imagen(imgCliente11)
                     .usuario(usuarioCliente11)
-                    .domicilios(Set.of(domicilioCliente11))
+                    .domicilios(List.of(domicilioCliente11))
                     .build();
 
             clienteService.save(cliente11);
@@ -491,7 +491,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1995, 9, 9))
                     .imagen(imgCliente12)
                     .usuario(usuarioCliente12)
-                    .domicilios(Set.of(domicilioCliente12))
+                    .domicilios(List.of(domicilioCliente12))
                     .build();
 
             clienteService.save(cliente12);
@@ -517,7 +517,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1997, 6, 17))
                     .imagen(imgCliente13)
                     .usuario(usuarioCliente13)
-                    .domicilios(Set.of(domicilioCliente13))
+                    .domicilios(List.of(domicilioCliente13))
                     .build();
 
             clienteService.save(cliente13);
@@ -543,7 +543,7 @@ public class DataLoader implements CommandLineRunner {
                     .fechaNacimiento(LocalDate.of(1989, 8, 12))
                     .imagen(imgCliente14)
                     .usuario(usuarioCliente14)
-                    .domicilios(Set.of(domicilioCliente14))
+                    .domicilios(List.of(domicilioCliente14))
                     .build();
 
             clienteService.save(cliente14);

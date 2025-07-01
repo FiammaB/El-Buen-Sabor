@@ -88,8 +88,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             pedido.setCliente(clienteRepository.findById(dto.getClienteId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
 
-            pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
+            if (dto.getDomicilioId() != null) {
+                pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
+            }
 
             // 🧩 Relaciones opcionales
             if (dto.getSucursalId() != null) {

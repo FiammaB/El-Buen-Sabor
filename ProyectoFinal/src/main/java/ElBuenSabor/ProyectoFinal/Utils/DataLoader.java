@@ -32,6 +32,7 @@ public class DataLoader implements CommandLineRunner {
     private final SucursalService sucursalService;
     private final PedidoService pedidoService;
     private final FacturaService facturaService;
+    private final PromocionService promocionService;
 
     public DataLoader(PaisService paisService,
                       ProvinciaService provinciaService,
@@ -48,7 +49,8 @@ public class DataLoader implements CommandLineRunner {
                       PasswordEncoder passwordEncoder,
                       SucursalService sucursalService,
                       PedidoService pedidoService,
-                      FacturaService facturaService) { // ✅ agregado acá también
+                      FacturaService facturaService,
+                      PromocionService promocionService) { // ✅ agregado acá también
         this.paisService = paisService;
         this.provinciaService = provinciaService;
         this.localidadService = localidadService;
@@ -65,6 +67,7 @@ public class DataLoader implements CommandLineRunner {
         this.sucursalService = sucursalService;
         this.pedidoService = pedidoService;
         this.facturaService = facturaService;
+        this.promocionService = promocionService;
     }
 
 
@@ -154,6 +157,12 @@ public class DataLoader implements CommandLineRunner {
             Imagen imgBombonHelado = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751330011/j1tnysvpkrnsyifgi4jd.jpg").build());
             Imagen imgBombonEscoces = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751330020/ufzgj4qcdussnz5uxtrp.jpg").build());
             Imagen imgBombonSuizo = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751330033/idjhsxzlufnndsjnfqts.jpg").build());
+
+            Imagen imgPromo1 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751379730/qwicagg3qogbmkco7qie.jpg").build());
+            Imagen imgPromo2 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751379513/b0rsq5wdbi52ci7bqesb.jpg").build());
+            Imagen imgPromo3 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751379760/pvkzswr2gg4hjhpae88b.jpg").build());
+            Imagen imgPromo4 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751379748/wjdiosiva5f8vko32nju.jpg").build());
+            Imagen imgPromo5 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751379475/yv0gf1oz7dd2stjisheu.jpg").build());
 
 
             // 3. Domicilio
@@ -3434,6 +3443,91 @@ public class DataLoader implements CommandLineRunner {
             pedido30.setEmpleado(null);
             pedidoService.save(pedido30);
 
+
+            //PROMOCIONES
+
+            Promocion promoBurgerPizza = Promocion.builder()
+                    .denominacion("Promo Locura Hamburguesas")
+                    .fechaDesde(LocalDate.now())
+                    .fechaHasta(LocalDate.now().plusDays(10))
+                    .horaDesde(LocalTime.of(18, 0))
+                    .horaHasta(LocalTime.of(22, 0))
+                    .descripcionDescuento("2x1 en Hamburguesa Clásica")
+                    .precioPromocional(9500.0) // O el precio que prefieras
+                    .tipoPromocion(TipoPromocion.HAPPY_HOUR)
+                    .imagen(imgPromo1)
+                    .articulosManufacturados(
+                            List.of(hamburguesa, hamburguesa)
+                    )
+                    .sucursales(List.of(sucursal))
+                    .build();
+
+            promocionService.save(promoBurgerPizza);
+
+            Promocion pizzaNight = Promocion.builder()
+                    .denominacion("Pizza Night")
+                    .fechaDesde(LocalDate.now())
+                    .fechaHasta(LocalDate.now().plusDays(14))
+                    .horaDesde(LocalTime.of(20, 0))
+                    .horaHasta(LocalTime.of(23, 0))
+                    .descripcionDescuento("¡Llevate 2 pizzas a precio especial solo por la noche! Aplica a Muzzarella")
+                    .precioPromocional(13900.0) // Precio por 2
+                    .tipoPromocion(TipoPromocion.PROMOCION_GENERAL)
+                    .imagen(imgPromo2)
+                    .articulosManufacturados(List.of(pizzaMuzzarella, pizzaMuzzarella))
+                    .sucursales(List.of(sucursal))
+                    .build();
+            promocionService.save(pizzaNight);
+
+            Promocion empanadaFest = Promocion.builder()
+                    .denominacion("Empanada Fest")
+                    .fechaDesde(LocalDate.now())
+                    .fechaHasta(LocalDate.now().plusWeeks(1))
+                    .horaDesde(LocalTime.of(12, 0))
+                    .horaHasta(LocalTime.of(15, 0))
+                    .descripcionDescuento("¡Promo mediodía! 12 empanadas surtidas por precio especial.")
+                    .precioPromocional(6200.0)
+                    .tipoPromocion(TipoPromocion.PROMOCION_GENERAL)
+                    .imagen(imgPromo3)
+                    .articulosManufacturados(List.of(empanadasCarne, empanadasJyQ, empanadasCarneCuchillo, empanadasHumita, empanadasCarne, empanadasJyQ, empanadasCarneCuchillo, empanadasHumita, empanadasCarne, empanadasJyQ, empanadasCarneCuchillo, empanadasHumita))
+                    .sucursales(List.of(sucursal))
+                    .build();
+
+            promocionService.save(empanadaFest);
+
+            Promocion sandwichYpapas = Promocion.builder()
+                    .denominacion("Sándwich + Papas")
+                    .fechaDesde(LocalDate.now())
+                    .fechaHasta(LocalDate.now().plusDays(10))
+                    .horaDesde(LocalTime.of(19, 0))
+                    .horaHasta(LocalTime.of(23, 0))
+                    .descripcionDescuento("Pedí un lomito y llevate papas clásicas al 50%.")
+                    .precioPromocional(9999.0) // Precio combo sugerido
+                    .tipoPromocion(TipoPromocion.HAPPY_HOUR)
+                    .imagen(imgPromo4)
+                    .articulosManufacturados(List.of(lomitoSimple, papasFritas))
+                    .sucursales(List.of(sucursal))
+                    .build();
+
+            promocionService.save(sandwichYpapas);
+
+            Promocion megaBurgerLovers = Promocion.builder()
+                    .denominacion("Mega Burger Lovers")
+                    .fechaDesde(LocalDate.now())
+                    .fechaHasta(LocalDate.now().plusDays(7))
+                    .horaDesde(LocalTime.of(11, 0))
+                    .horaHasta(LocalTime.of(23, 0))
+                    .descripcionDescuento("2 hamburguesas clasicas + Papas Cheddar Bacon por solo $18.900.")
+                    .precioPromocional(18900.0)
+                    .tipoPromocion(TipoPromocion.PROMOCION_GENERAL)
+                    .imagen(imgPromo5)
+                    .articulosManufacturados(List.of(
+                            hamburguesa, hamburguesa, papasCheddarBacon
+                    ))
+                    .sucursales(List.of(sucursal))
+                    .build();
+
+            promocionService.save(megaBurgerLovers);
 
         } catch (Exception e) {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());

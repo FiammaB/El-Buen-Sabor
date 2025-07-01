@@ -26,7 +26,7 @@ public class PedidoCreateDTO {
     private Long domicilioId;
     private Long sucursalId;
     private Long empleadoId;
-
+    private Double totalCosto;
     private FacturaCreateDTO factura;
     private List<DetallePedidoCreateDTO> detalles;
 }

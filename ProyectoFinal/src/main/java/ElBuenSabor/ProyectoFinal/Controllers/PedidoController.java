@@ -238,6 +238,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
             existingPedido.setTipoEnvio(dto.getTipoEnvio()); // Convertir String a Enum
             existingPedido.setFormaPago(dto.getFormaPago()); // Convertir String a Enum
             existingPedido.setTotal(dto.getTotal());
+            existingPedido.setTotalCosto(dto.getTotalCosto());
             // Si hay Observaciones en Pedido, asegúrate de que el DTO las tenga
             // existingPedido.setObservaciones(dto.getObservaciones());
 

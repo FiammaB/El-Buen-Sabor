@@ -81,6 +81,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
             if (createDTO.getUsuarioId() != null) {
                 Usuario usuario = usuarioService.findById(createDTO.getUsuarioId());
                 cliente.setUsuario(usuario);
+                cliente.setId(usuario.getId()); // Usar el mismo ID que el usuario
             }
 
             if (createDTO.getImagenId() != null) {
@@ -96,7 +97,6 @@ public class ClienteController extends BaseController<Cliente, Long> {
                 }
                 cliente.setDomicilios(domicilios);
             }
-
 
             Cliente saved = baseService.save(cliente);
             return ResponseEntity.status(HttpStatus.CREATED).body(clienteMapper.toDTO(saved));

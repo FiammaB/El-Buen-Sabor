@@ -33,8 +33,13 @@ public class Cliente extends BaseEntity {
     private Set<Domicilio> domicilios = new HashSet<>();
 
     @OneToOne
-    @JoinColumn(name = "usuario_id", unique = true)
+    @MapsId
+    @JoinColumn(name = "id")
     private Usuario usuario;
+
+    //@OneToOne
+    //@JoinColumn(name = "usuario_id", unique = true)
+    //private Usuario usuario;
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
     private List<Pedido> pedidos = new ArrayList<>();

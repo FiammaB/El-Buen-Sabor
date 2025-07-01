@@ -139,6 +139,22 @@ public class DataLoader implements CommandLineRunner {
             Imagen imgPapasCheddarBacon = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238729/qx0z9lausf5f5nv9q98z.jpg").build());
             Imagen imgEmpanadaCuchillo = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238711/t4znioamg9tpn4l3bajv.jpg").build());
             Imagen imgEmpanadaHumita = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751238684/gwoxenaymp42zsgqz3hs.jpg").build());
+            Imagen imgCoca500 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329981/mzvzw5rmkyrxnkhsf15k.webp").build());
+            Imagen imgCoca1l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329990/hximljfzsnd4vv8wug6q.webp").build());
+            Imagen imgCoca15l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329999/asoymdsq1gt9o3onwfr9.webp").build());
+            Imagen imgPepsi500 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329922/agf0iduaawosofjemu1u.jpg").build());
+            Imagen imgPepsi1l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329931/bsj8tsnl5mkukiqobnga.webp").build());
+            Imagen imgPepsi15l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329940/ja7gqbrjwvdonlcmszok.jpg").build());
+            Imagen imgSprite500 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329893/rado9ogkwvu6ju5ibg8h.webp").build());
+            Imagen imgSprite1l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329913/sndtakkmjcldenivem3u.jpg").build());
+            Imagen imgSprite15l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329904/pgzsdiqyh38psyhwhziy.png").build());
+            Imagen imgFanta500 = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329950/gcusw0frai8ztbf9uqm9.webp").build());
+            Imagen imgFanta1l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329959/bozxr6zqukxoz7zwtqso.avif").build());
+            Imagen imgFanta15l = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751329973/wr5vmh6ikuyuml9fmytr.jpg").build());
+            Imagen imgBombonHelado = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751330011/j1tnysvpkrnsyifgi4jd.jpg").build());
+            Imagen imgBombonEscoces = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751330020/ufzgj4qcdussnz5uxtrp.jpg").build());
+            Imagen imgBombonSuizo = imagenService.save(Imagen.builder().denominacion("https://res.cloudinary.com/deagcdoak/image/upload/v1751330033/idjhsxzlufnndsjnfqts.jpg").build());
+
 
             // 3. Domicilio
             Domicilio domicilioCliente = domicilioService.save(Domicilio.builder()
@@ -567,7 +583,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.5)
                     .stockActual(5000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaMasasYTapas)
                     .unidadMedida(unidadGramos)
                     .imagen(imgHarina)
@@ -579,7 +595,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2.0)
                     .stockActual(5000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imgTomate)
@@ -591,7 +607,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2000.0)
                     .stockActual(30.0)
                     .stockMinimo(5.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaMasasYTapas)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgPrepizza)
@@ -603,7 +619,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(15.0)
                     .stockActual(10000.0)
                     .stockMinimo(1500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaQueso)
                     .unidadMedida(unidadGramos)
                     .imagen(imgQuesoMuzarella)
@@ -615,7 +631,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(20.0)
                     .stockActual(4000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaQueso)
                     .unidadMedida(unidadGramos)
                     .imagen(imgQuesoRoquefort)
@@ -627,7 +643,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(70.0)
                     .stockActual(3000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaQueso)
                     .unidadMedida(unidadGramos)
                     .imagen(imgQuesoBrie)
@@ -639,7 +655,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(30.0)
                     .stockActual(6000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaQueso)
                     .unidadMedida(unidadGramos)
                     .imagen(imgQuesoParmesano)
@@ -651,7 +667,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.0)
                     .stockActual(10000.0)
                     .stockMinimo(1000.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaSalsasYAderezos)
                     .unidadMedida(unidadMililitros)
                     .imagen(imgSalsaTomate)
@@ -663,7 +679,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(0.4)
                     .stockActual(4000.0)
                     .stockMinimo(300.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imgCebolla)
@@ -675,7 +691,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(3.0)
                     .stockActual(500.0)
                     .stockMinimo(50.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCondimentosYHierbas)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgAlbahaca)
@@ -687,7 +703,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(20.0)
                     .stockActual(4000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadGramos)
                     .imagen(imgJamonCocido)
@@ -699,7 +715,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2000.0)
                     .stockActual(40.0)
                     .stockMinimo(5.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaPan)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgPanHamburguesa)
@@ -711,7 +727,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2.5)
                     .stockActual(4000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imgLechuga)
@@ -723,7 +739,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2500.0)
                     .stockActual(100.0)
                     .stockMinimo(10.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgMedallonCarne)
@@ -735,7 +751,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2200.0)
                     .stockActual(50.0)
                     .stockMinimo(5.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgMedallonPollo)
@@ -747,7 +763,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(30.0)
                     .stockActual(4500.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaQueso)
                     .unidadMedida(unidadGramos)
                     .imagen(imgCheddar)
@@ -759,7 +775,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(150.0)
                     .stockActual(240.0)
                     .stockMinimo(48.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaMasasYTapas)
                     .unidadMedida(unidadPorcion) // cada tapa se considera una unidad
                     .imagen(imgTapasEmpanada)
@@ -771,7 +787,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2000.0)
                     .stockActual(40.0)
                     .stockMinimo(5.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaPan)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgPanLomito)
@@ -783,7 +799,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(2000.0)
                     .stockActual(40.0)
                     .stockMinimo(5.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaPan)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgPanBarroluco)
@@ -795,7 +811,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(9.0)
                     .stockActual(8000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadGramos)
                     .imagen(imgCarneMolida)
@@ -807,7 +823,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1500.0)
                     .stockActual(150.0)
                     .stockMinimo(30.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadPorcion)
                     .imagen(imgBifeCarne)
@@ -819,7 +835,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(7.0)
                     .stockActual(2000.0)
                     .stockMinimo(300.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/morron.jpg").build()))
@@ -831,7 +847,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(300.0)
                     .stockActual(120.0)
                     .stockMinimo(30.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaConservasYOtros)
                     .unidadMedida(unidadPorcion)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/huevo.jpg").build()))
@@ -843,7 +859,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.0)
                     .stockActual(5000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaSalsasYAderezos)
                     .unidadMedida(unidadMililitros)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/mayonesa.jpg").build()))
@@ -855,7 +871,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.0)
                     .stockActual(5000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaSalsasYAderezos)
                     .unidadMedida(unidadMililitros)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/mostaza.jpg").build()))
@@ -867,7 +883,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.0)
                     .stockActual(5000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaSalsasYAderezos)
                     .unidadMedida(unidadMililitros)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ketchup.jpg").build()))
@@ -879,7 +895,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(40.0)
                     .stockActual(2500.0)
                     .stockMinimo(250.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCondimentosYHierbas)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ajo.jpg").build()))
@@ -891,7 +907,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(30.0)
                     .stockActual(1500.0)
                     .stockMinimo(200.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/champinones.jpg").build()))
@@ -903,7 +919,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.0)
                     .stockActual(3000.0)
                     .stockMinimo(350.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/zanahoria.jpg").build()))
@@ -915,7 +931,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(32.0)
                     .stockActual(2500.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaQueso)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/provolone.jpg").build()))
@@ -927,7 +943,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(12.0)
                     .stockActual(3000.0)
                     .stockMinimo(200.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/salame.jpg").build()))
@@ -939,7 +955,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(12.0)
                     .stockActual(3000.0)
                     .stockMinimo(400.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaLacteosYDerivados)
                     .unidadMedida(unidadMililitros)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/crema.jpg").build()))
@@ -951,7 +967,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(35.0)
                     .stockActual(2500.0)
                     .stockMinimo(300.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCondimentosYHierbas)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/oregano.jpg").build()))
@@ -963,7 +979,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(8.0)
                     .stockActual(2500.0)
                     .stockMinimo(300.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaConservasYOtros)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/aceitunas.jpg").build()))
@@ -975,7 +991,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(40.0)
                     .stockActual(1500.0)
                     .stockMinimo(250.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCondimentosYHierbas)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/perejil.jpg").build()))
@@ -987,7 +1003,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(20.0)
                     .stockActual(3000.0)
                     .stockMinimo(400.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCarne)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/panceta.jpg").build()))
@@ -999,7 +1015,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(90.0)
                     .stockActual(300.0)
                     .stockMinimo(50.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/arvejas.jpg").build()))
@@ -1011,7 +1027,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(3.0)
                     .stockActual(2000.0)
                     .stockMinimo(200.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ciboulette.jpg").build()))
@@ -1023,7 +1039,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(25.0)
                     .stockActual(2000.0)
                     .stockMinimo(250.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaCondimentosYHierbas)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/ajimolido.jpg").build()))
@@ -1035,7 +1051,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(1.0)
                     .stockActual(8000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/papas.jpg").build()))
@@ -1047,7 +1063,7 @@ public class DataLoader implements CommandLineRunner {
                     .precioCompra(5.0)
                     .stockActual(6000.0)
                     .stockMinimo(500.0)
-                    .esParaElaborar(false)
+                    .esParaElaborar(true)
                     .categoria(categoriaVerdura)
                     .unidadMedida(unidadGramos)
                     .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/choclo.jpg").build()))
@@ -1063,7 +1079,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/CocaCola.png").build()))
+                    .imagen(imgCoca500)
                     .build());
 
             ArticuloInsumo cocaCola1L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1075,7 +1091,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/CocaCola1L.png").build()))
+                    .imagen(imgCoca1l)
                     .build());
 
             ArticuloInsumo cocaCola15L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1087,7 +1103,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/CocaCola15L.png").build()))
+                    .imagen(imgCoca15l)
                     .build());
 
             ArticuloInsumo pepsi = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1099,7 +1115,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Pepsi.png").build()))
+                    .imagen(imgPepsi500)
                     .build());
             ArticuloInsumo pepsi1L = articuloInsumoService.save(ArticuloInsumo.builder()
                     .denominacion("Pepsi 1L")
@@ -1110,7 +1126,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Pepsi1L.png").build()))
+                    .imagen(imgPepsi1l)
                     .build());
 
             ArticuloInsumo pepsi15L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1122,7 +1138,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Pepsi15L.png").build()))
+                    .imagen(imgPepsi15l)
                     .build());
 
             ArticuloInsumo sprite = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1134,7 +1150,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Sprite.png").build()))
+                    .imagen(imgSprite500)
                     .build());
 
             ArticuloInsumo sprite1L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1146,7 +1162,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Sprite1L.png").build()))
+                    .imagen(imgSprite1l)
                     .build());
 
             ArticuloInsumo sprite15L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1158,7 +1174,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Sprite15L.png").build()))
+                    .imagen(imgSprite15l)
                     .build());
 
             ArticuloInsumo fanta = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1170,7 +1186,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Fanta.png").build()))
+                    .imagen(imgFanta500)
                     .build());
 
             ArticuloInsumo fanta1L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1182,7 +1198,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Fanta1L.png").build()))
+                    .imagen(imgFanta1l)
                     .build());
 
             ArticuloInsumo fanta15L = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1194,7 +1210,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaBebida)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder().denominacion("https://i.imgur.com/Fanta15L.png").build()))
+                    .imagen(imgFanta15l)
                     .build());
 
             ArticuloInsumo bombonHeladoSopelsa = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1206,9 +1222,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaPostre)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder()
-                            .denominacion("https://i.imgur.com/yAlqK97.jpg") // imagen genérica tipo bombón
-                            .build()))
+                    .imagen(imgBombonHelado)
                     .build());
 
             ArticuloInsumo bombonEscocesSopelsa = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1220,9 +1234,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaPostre)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder()
-                            .denominacion("https://i.imgur.com/VS5qHuN.jpg") // imagen escocés genérica
-                            .build()))
+                    .imagen(imgBombonEscoces)
                     .build());
 
             ArticuloInsumo bombonSuizoSopelsa = articuloInsumoService.save(ArticuloInsumo.builder()
@@ -1234,9 +1246,7 @@ public class DataLoader implements CommandLineRunner {
                     .esParaElaborar(false)
                     .categoria(categoriaPostre)
                     .unidadMedida(unidadPorcion)
-                    .imagen(imagenService.save(Imagen.builder()
-                            .denominacion("https://i.imgur.com/qFaUYZD.jpg") // imagen suizo genérica
-                            .build()))
+                    .imagen(imgBombonSuizo)
                     .build());
 //
             // 8. Artículo Manufacturado

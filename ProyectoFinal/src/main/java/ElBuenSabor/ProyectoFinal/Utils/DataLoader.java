@@ -818,7 +818,7 @@ public class DataLoader implements CommandLineRunner {
                     .denominacion("Carne Molida")
                     .precioVenta(9.0)
                     .precioCompra(9.0)
-                    .stockActual(8000.0)
+                    .stockActual(600.0)
                     .stockMinimo(500.0)
                     .esParaElaborar(true)
                     .categoria(categoriaCarne)

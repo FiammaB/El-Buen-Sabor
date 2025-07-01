@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -117,6 +118,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
     }
 
     // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
+
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
@@ -180,6 +182,11 @@ public class PedidoController extends BaseController<Pedido, Long> {
                         }
                     }
 
+                    // --- ¡NUEVA LÓGICA: CALCULAR Y ASIGNAR EL COSTO TOTAL DEL PEDIDO! ---
+                    Double costoTotalCalculado = pedidoService.calcularTotalCostoPedido(pedidoParaCalculos);
+                    System.out.println(costoTotalCalculado);// Llama a tu función
+                    pedidoParaCalculos.setTotalCosto(costoTotalCalculado); // <-- Asigna el costo total al pedido
+                    System.out.println("DEBUG Costo: Costo total del pedido asignado: " + costoTotalCalculado);
 
                     detalle.setPedido(pedidoParaCalculos); // Relación inversa
                     detalles.add(detalle);
@@ -238,7 +245,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
             existingPedido.setTipoEnvio(dto.getTipoEnvio()); // Convertir String a Enum
             existingPedido.setFormaPago(dto.getFormaPago()); // Convertir String a Enum
             existingPedido.setTotal(dto.getTotal());
-            existingPedido.setTotalCosto(dto.getTotalCosto());
+
             // Si hay Observaciones en Pedido, asegúrate de que el DTO las tenga
             // existingPedido.setObservaciones(dto.getObservaciones());
 

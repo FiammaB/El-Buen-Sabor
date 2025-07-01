@@ -19,7 +19,7 @@ public class PedidoDTO {
     private String observaciones;
     private Double total;
     private LocalTime horaEstimadaFinalizacion;
-
+    private  Double totalCosto;
     private ClienteDTO cliente;
     private DomicilioDTO domicilio;
     private SucursalDTO sucursal;

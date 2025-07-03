@@ -91,8 +91,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             pedido.setCliente(clienteRepository.findById(dto.getClienteId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
 
-            pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
+            if (dto.getDomicilioId() != null) {
+                pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
+            }
 
             // 🧩 Relaciones opcionales
             if (dto.getSucursalId() != null) {
@@ -251,9 +253,11 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     System.out.println("DEBUG Stock (Descuento): Iniciando descuento de stock para Pedido ID: " + pedido.getId());
                     if (pedido.getDetallesPedidos() != null && !pedido.getDetallesPedidos().isEmpty()) {
                         for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+
                             if (detalle.getArticuloManufacturado() != null) {
                                 // Descontar insumos de ArticuloManufacturado (por su receta)
                                 ArticuloManufacturado am = detalle.getArticuloManufacturado();
+
                                 System.out.println("DEBUG Stock (Descuento): Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad: " + detalle.getCantidad());
                                 if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
                                     for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
@@ -262,6 +266,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                                             Double cantidadADescontar = amd.getCantidad() * detalle.getCantidad();
                                             double stockAntes = insumo.getStockActual();
                                             insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
+
+                                            if (insumo.getStockActual() < insumo.getStockMinimo()) {
+                                                insumo.setBaja(true);
+                                                am.setBaja(true);
+                                            }
+
                                             articuloInsumoService.save(insumo); // Guardar el insumo
                                             System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
                                                     "' (ID: " + insumo.getId() + ") para AM. Cant: " + cantidadADescontar +
@@ -746,8 +756,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         return detallePedidoRepository.rankingProductosMasVendidos(desde, hasta);
     }
     // --- NUEVA FUNCIÓN: calcularTotalCostoPedido ---
-    // @Transactional // Podría ser necesario si se llama fuera de una transacción existente
-    private Double calcularTotalCostoPedido(Pedido pedido) {
+    @Transactional // Podría ser necesario si se llama fuera de una transacción existente
+    public Double calcularTotalCostoPedido(Pedido pedido) {
         double totalCosto = 0.0;
         System.out.println("DEBUG Costo: Iniciando cálculo de totalCosto para Pedido ID: " + (pedido.getId() != null ? pedido.getId() : "nuevo"));
 

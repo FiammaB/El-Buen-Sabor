@@ -27,28 +27,6 @@ public class WebhookController {
     @Autowired
     private PedidoService pedidoService;
 
-    // Puedes usar el mismo Access Token de Mercado Pago que usas para crear preferencias
-    // No necesitas inyectarlo aquí si ya está configurado globalmente por MPController @PostConstruct
-    // Pero si quieres ser explícito o no tener MPController, lo inyectas aquí también
-    // @Value("${mercadopago.access.token}")
-    // private String accessToken;
-    //
-    // @PostConstruct
-    // public void init() {
-    //     MercadoPagoConfig.setAccessToken(accessToken);
-    // }
-
-    /**
-     * Endpoint para recibir notificaciones de Mercado Pago (Webhooks).
-     * Mercado Pago enviará un POST a esta URL cuando el estado de un pago cambie.
-     * La URL exacta debe ser configurada en Mercado Pago para tu aplicación o en la preferencia.
-     * Ejemplo: https://tu-dominio.com/api/webhooks/mercadopago
-     *
-     * @param params Un mapa con los parámetros de la notificación, típicamente 'id' y 'topic'.
-     * id: ID del recurso (ej. ID de pago, ID de orden de comerciante).
-     * topic: Tipo de recurso (ej. 'payment', 'merchant_order').
-     * @return ResponseEntity con estado 200 OK si la notificación fue procesada correctamente.
-     */
     @PostMapping("/mercadopago")
     public ResponseEntity<String> handleMercadoPagoWebhook(@RequestParam Map<String, String> params) {
         try {

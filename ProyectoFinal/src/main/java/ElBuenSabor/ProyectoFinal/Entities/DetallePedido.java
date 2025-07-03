@@ -26,6 +26,10 @@ public class DetallePedido extends BaseEntity {
     private ArticuloInsumo articuloInsumo;
 
     @ManyToOne
+    @JoinColumn(name = "id_promocion" , nullable = true)
+    private Promocion promocion;
+
+    @ManyToOne
     @JoinColumn(name = "id_pedido")
     private Pedido pedido;
 

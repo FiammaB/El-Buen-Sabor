@@ -1,11 +1,6 @@
 // ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Controllers/MPController.java
 package ElBuenSabor.ProyectoFinal.Controllers;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
-import ElBuenSabor.ProyectoFinal.Entities.DetallePedido;
-import ElBuenSabor.ProyectoFinal.Entities.Pedido;
-import ElBuenSabor.ProyectoFinal.Entities.Estado;
-import ElBuenSabor.ProyectoFinal.Entities.Factura; // <-- Importar Factura
+import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
 import ElBuenSabor.ProyectoFinal.Service.PedidoService;
 import com.mercadopago.MercadoPagoConfig;
@@ -97,12 +92,24 @@ public class MPController {
                         System.err.println("Advertencia: Datos incompletos para ArticuloInsumo en detalle de pedido ID: " + detalle.getId());
                         continue;
                     }
+                }
+                // ---- AQUI AGREGÁS EL SOPORTE DE PROMOCION ----
+                else if (detalle.getPromocion() != null) {
+                    Promocion promo = detalle.getPromocion();
+                    if (promo.getId() != null && promo.getDenominacion() != null && promo.getPrecioPromocional() != null && detalle.getCantidad() != null) {
+                        itemId = "PROMO-" + promo.getId(); // o solo promo.getId()
+                        itemTitle = promo.getDenominacion();
+                        itemPrice = BigDecimal.valueOf(promo.getPrecioPromocional());
+                    } else {
+                        System.err.println("Advertencia: Datos incompletos para Promocion en detalle de pedido ID: " + detalle.getId());
+                        continue;
+                    }
                 } else {
-                    System.err.println("Advertencia: Detalle de pedido sin ArticuloManufacturado ni ArticuloInsumo asociado. Se omite. Detalle ID: " + detalle.getId());
+                    System.err.println("Advertencia: Detalle de pedido sin ArticuloManufacturado, ArticuloInsumo NI Promocion asociado. Se omite. Detalle ID: " + detalle.getId());
                     continue;
                 }
 
-                if (detalle.getCantidad() <= 0) {
+                if (detalle.getCantidad() == null || detalle.getCantidad() <= 0) {
                     System.err.println("Advertencia: Cantidad inválida (" + detalle.getCantidad() + ") para el item " + itemTitle + ". Se omite.");
                     continue;
                 }

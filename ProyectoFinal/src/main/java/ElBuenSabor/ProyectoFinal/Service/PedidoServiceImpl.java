@@ -43,6 +43,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final RegistroAnulacionService registroAnulacionService;
     private final ArticuloInsumoService articuloInsumoService;
     private  final DetallePedidoRepository detallePedidoRepository;
+    private final PromocionRepository promocionRepository;
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -58,7 +59,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             NotaCreditoService notaCreditoService,
             RegistroAnulacionService registroAnulacionService,
             ArticuloInsumoService articuloInsumoService,
-            DetallePedidoRepository detallePedidoRepository) {
+            DetallePedidoRepository detallePedidoRepository,
+            PromocionRepository promocionRepository) {
         super(pedidoRepository); // Llama al constructor de la clase base
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
@@ -75,6 +77,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.registroAnulacionService = registroAnulacionService;
         this.articuloInsumoService = articuloInsumoService;
         this.detallePedidoRepository = detallePedidoRepository;
+        this.promocionRepository = promocionRepository;
     }
 
     // Método para crear un pedido antes de generar la preferencia de MP
@@ -131,21 +134,34 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
 
-                    ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                    if (insumo != null) {
-                        detalle.setArticuloInsumo(insumo);
-                        // Calcular subTotal correctamente
-                        detalle.setSubTotal(insumo.getPrecioVenta() * detalle.getCantidad());
+                    // PRIORIZA PROMO PRIMERO
+                    if (detalleDTO.getPromocionId() != null) {
+                        Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Promoción no encontrada con id " + detalleDTO.getPromocionId()));
+                        detalle.setPromocion(promo);
+                        detalle.setSubTotal(promo.getPrecioPromocional() * detalle.getCantidad());
+
+                    } else if (detalleDTO.getArticuloId() != null) {
+                        // Buscá primero como insumo
+                        ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                        if (insumo != null) {
+                            detalle.setArticuloInsumo(insumo);
+                            detalle.setSubTotal(insumo.getPrecioVenta() * detalle.getCantidad());
+                        } else {
+                            // Si no es insumo, es manufacturado
+                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Artículo manufacturado no encontrado con id " + detalleDTO.getArticuloId()));
+                            detalle.setArticuloManufacturado(manufacturado);
+                            detalle.setSubTotal(detalleDTO.getSubTotal());
+                        }
+
                     } else {
-                        ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
-                        detalle.setArticuloManufacturado(manufacturado);
-                        // Si querés, podrías recalcular el subtotal o usar el del DTO
-                        detalle.setSubTotal(detalleDTO.getSubTotal());
+                        throw new RuntimeException("El detalle del pedido debe tener articuloId o promocionId");
                     }
                     detalle.setPedido(pedido);
                     detalles.add(detalle);
                 }
+
                 pedido.setDetallesPedidos(detalles);
             }
             // --- ¡NUEVO!: CALCULAR Y ASIGNAR EL totalCosto AQUÍ ---

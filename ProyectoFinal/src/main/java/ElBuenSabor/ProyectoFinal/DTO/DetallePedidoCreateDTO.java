@@ -11,4 +11,6 @@ public class DetallePedidoCreateDTO {
     private Integer cantidad;
     private Double subTotal;
     private Long articuloId;
+    private Long promocionId;
+
 }

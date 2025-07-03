@@ -49,6 +49,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
     private final DomicilioService domicilioService;
     private final SucursalService sucursalService;
     private final FacturaService facturaService;
+    private final PromocionRepository promocionRepository;
 
     // El constructor inyecta el servicio específico de Pedido y todas las dependencias adicionales
     public PedidoController(
@@ -67,7 +68,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
             ClienteService clienteService,
             DomicilioService domicilioService,
             SucursalService sucursalService,
-
+            PromocionRepository promocionRepository,
 
             FacturaService facturaService) {
         super(pedidoService); // Pasa el servicio al constructor del BaseController
@@ -87,6 +88,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.domicilioService = domicilioService;
         this.sucursalService = sucursalService;
         this.facturaService = facturaService;
+        this.promocionRepository = promocionRepository;
     }
 
     // Sobrescribir getAll para devolver DTOs y manejar excepciones
@@ -120,19 +122,18 @@ public class PedidoController extends BaseController<Pedido, Long> {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
-            // --- LÓGICA DE PREPARACIÓN DEL PEDIDO (común para MP y EFECTIVO) ---
-
             Pedido pedidoParaCalculos = new Pedido();
 
             // Validaciones de IDs obligatorios
             if (dto.getClienteId() == null) {
                 return ResponseEntity.badRequest().body("El ID del cliente no puede ser nulo");
             }
+
             if (dto.getDomicilioId() == null) {
                 return ResponseEntity.badRequest().body("El ID del domicilio no puede ser nulo");
             }
 
-            // Resolver relaciones necesarias
+
             pedidoParaCalculos.setCliente(clienteService.findById(dto.getClienteId()));
             pedidoParaCalculos.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
 
@@ -165,11 +166,18 @@ public class PedidoController extends BaseController<Pedido, Long> {
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
 
+
+
                     if (detalleDTO.getArticuloId() != null) {
                         ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
                         if (insumo != null) {
                             detalle.setArticuloInsumo(insumo);
                             detalle.setSubTotal(insumo.getPrecioVenta() * detalle.getCantidad());
+                        } else if (detalleDTO.getPromocionId() != null) {
+                            Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada"));
+                            detalle.setPromocion(promo);
+                            detalle.setSubTotal(promo.getPrecioPromocional() * detalle.getCantidad());
                         } else {
                             ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
                                     .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado"));
@@ -179,7 +187,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
                     }
 
 
-                    detalle.setPedido(pedidoParaCalculos); // Relación inversa
+                    detalle.setPedido(pedidoParaCalculos);
                     detalles.add(detalle);
                 }
                 pedidoParaCalculos.setDetallesPedidos(detalles);

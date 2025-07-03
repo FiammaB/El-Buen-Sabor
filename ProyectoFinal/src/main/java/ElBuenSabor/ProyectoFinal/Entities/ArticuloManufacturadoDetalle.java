@@ -26,4 +26,8 @@ public class ArticuloManufacturadoDetalle extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "articulo_manufacturado_id",nullable = false) // Esta columna almacenará el ID del ArticuloManufacturado
     private ArticuloManufacturado articuloManufacturado;
+
+    @ManyToOne
+    @JoinColumn(name = "promocion_id")
+    private Promocion promocion;
 }

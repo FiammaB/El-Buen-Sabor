@@ -46,9 +46,21 @@ public class Promocion extends BaseEntity {
 
     @ManyToMany
     @JoinTable(
+            name = "promocion_articulo_insumo",
+            joinColumns = @JoinColumn(name = "promocion_id"),
+            inverseJoinColumns = @JoinColumn(name = "articulo_insumo_id")
+
+    )
+    private List<ArticuloInsumo> articulosInsumos;
+
+    @ManyToMany
+    @JoinTable(
             name = "promocion_sucursal",
             joinColumns = @JoinColumn(name = "promocion_id"),
             inverseJoinColumns = @JoinColumn(name = "sucursal_id")
     )
     private List<Sucursal> sucursales;
+
+    @OneToMany(mappedBy = "promocion", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+    private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 }

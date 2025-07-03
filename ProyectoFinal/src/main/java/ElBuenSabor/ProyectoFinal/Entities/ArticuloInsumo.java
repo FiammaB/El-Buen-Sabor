@@ -24,14 +24,4 @@ public class ArticuloInsumo extends Articulo {
     @OneToMany(mappedBy = "articuloInsumo", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 
-    @Override
-    public String toString() {
-        return "ArticuloInsumo{" +
-                "precioCompra=" + precioCompra +
-                ", stockActual=" + stockActual +
-                ", stockMinimo=" + stockMinimo +
-                ", esParaElaborar=" + esParaElaborar +
-                ", detalles=" + detalles +
-                '}';
-    }
 }

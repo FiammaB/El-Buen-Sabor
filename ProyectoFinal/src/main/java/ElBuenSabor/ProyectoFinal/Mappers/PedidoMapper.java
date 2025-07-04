@@ -16,7 +16,6 @@ import org.mapstruct.*;
 public interface PedidoMapper {
     @Mapping(target = "domicilio", source = "domicilioEntrega")
     @Mapping(target = "detalles", source = "detallesPedidos")
-    @Mapping(target = "horaEstimadaFinalizacion", source = "horaEstimadaFinalizacion")
     PedidoDTO toDTO(Pedido pedido);
 
     @Mapping(target = "domicilioEntrega", ignore = true)

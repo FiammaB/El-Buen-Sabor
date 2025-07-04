@@ -23,8 +23,5 @@ public class ArticuloInsumo extends Articulo {
 
     @OneToMany(mappedBy = "articuloInsumo", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
-    @ManyToOne
-    @JoinColumn(name = "sucursal_id") // Columna de clave foránea en la tabla articulo_insumo
-    private Sucursal sucursal;
 
 }

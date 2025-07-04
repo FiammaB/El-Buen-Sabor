@@ -36,13 +36,10 @@ public class Sucursal extends BaseEntity {
             joinColumns = @JoinColumn(name = "sucursal_id"),
             inverseJoinColumns = @JoinColumn(name = "categoria_id")
     )
-    // Asegurarse de que la lista se inicialice para evitar NullPointerExceptions
-    @Builder.Default // ✅ Añadido para asegurar que Lombok Builder inicialice la lista
-    private List<Categoria> categorias = new ArrayList<>(); // ✅ Inicialización explícita
+    private List<Categoria> categorias;
 
     @OneToMany(mappedBy = "sucursal")
-    @Builder.Default // ✅ Añadido para asegurar que Lombok Builder inicialice la lista
-    private List<Pedido> pedidos = new ArrayList<>(); // ✅ Inicialización explícita, si es que esta no la tenías
+    private List<Pedido> pedidos;
 
     @ManyToMany
     @JoinTable(
@@ -50,7 +47,5 @@ public class Sucursal extends BaseEntity {
             joinColumns = @JoinColumn(name = "sucursal_id"),
             inverseJoinColumns = @JoinColumn(name = "promocion_id")
     )
-    // Asegurarse de que la lista se inicialice para evitar NullPointerExceptions
-    @Builder.Default // ✅ Añadido para asegurar que Lombok Builder inicialice la lista
     private List<Promocion> promociones = new ArrayList<>();
 }

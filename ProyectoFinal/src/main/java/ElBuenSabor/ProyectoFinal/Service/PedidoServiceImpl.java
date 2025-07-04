@@ -617,28 +617,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     }
     @Override
     @Transactional(readOnly = true) // <-- Implementación del método findPedidosByEstado
-    public List<Pedido> findPedidosByEstados(List<Estado> estados) throws Exception {
+    public List<Pedido> findPedidosByEstado(Estado estado) throws Exception {
         try {
-            return pedidoRepository.findByEstadoIn(estados);
+            return pedidoRepository.findByEstado(estado);
         } catch (Exception e) {
             throw new Exception("Error al buscar pedidos por estado: " + e.getMessage());
         }
-    }
-
-    @Override
-    public LocalTime calcularHoraEstimadaFinalizacion(Pedido pedido) {
-        int tiempoBase = 20; // Un valor por defecto, por si no hay detalles manufacturados
-        int tiempo = pedido.getDetallesPedidos().stream()
-                .filter(d -> d.getArticuloManufacturado() != null)
-                .mapToInt(d -> {
-                    // Si tu ArticuloManufacturado tiene tiempoEstimadoMinutos:
-                    Integer t = d.getArticuloManufacturado().getTiempoEstimadoMinutos();
-                    return t != null ? t : tiempoBase;
-                })
-                .max()
-                .orElse(tiempoBase);
-
-        return LocalTime.now().plusMinutes(tiempo);
     }
 
   }

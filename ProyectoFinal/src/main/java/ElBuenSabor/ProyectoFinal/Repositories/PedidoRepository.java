@@ -17,7 +17,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByClienteId(Long clienteId);
     List<Pedido> findByEstado(Estado estado);
 
-
     //--------------------------------------FILTRADO CLIENTES-PEDIDOS-----------------------------------
     @Query("SELECT new ElBuenSabor.ProyectoFinal.DTO.ClienteReporteDTO(" +
             "p.cliente.id, p.cliente.nombre, p.cliente.apellido, COUNT(p), SUM(p.total)) " +
@@ -31,6 +30,4 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             @Param("desde") LocalDate desde,
             @Param("hasta") LocalDate hasta,
             @Param("orden") String orden);
-    List<Pedido> findByEstadoIn(List<Estado> estados);
-
 }

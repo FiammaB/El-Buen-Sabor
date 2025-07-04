@@ -131,9 +131,9 @@ public class PedidoController extends BaseController<Pedido, Long> {
                 return ResponseEntity.badRequest().body("El ID del cliente no puede ser nulo");
             }
 
-            if (dto.getDomicilioId() == null) {
-                return ResponseEntity.badRequest().body("El ID del domicilio no puede ser nulo");
-            }
+//            if (dto.getDomicilioId() == null) {
+//                return ResponseEntity.badRequest().body("El ID del domicilio no puede ser nulo");
+//            }
 
             pedidoParaCalculos.setCliente(clienteService.findById(dto.getClienteId()));
             if (dto.getDomicilioId() != null) {

@@ -42,8 +42,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     private final NotaCreditoService notaCreditoService;
     private final RegistroAnulacionService registroAnulacionService;
     private final ArticuloInsumoService articuloInsumoService;
-    private  final DetallePedidoRepository detallePedidoRepository;
+    private final DetallePedidoRepository detallePedidoRepository;
     private final PromocionRepository promocionRepository;
+
     public PedidoServiceImpl(
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
@@ -216,7 +217,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // --- CORRECCIÓN: MOVER LA DEFINICIÓN DE PEDIDO AQUÍ ---
             Long pedidoId = Long.valueOf(payment.getExternalReference());
             Pedido pedido = findById(pedidoId); // <-- 'pedido' se define aquí
-            System.out.println("procesar not mp"+pedido.getFormaPago());//aca tambien me da null
+            System.out.println("procesar not mp" + pedido.getFormaPago());//aca tambien me da null
             if (pedido == null) {
                 System.err.println("Notificación: Pedido no encontrado en la BD con externalReference: " + payment.getExternalReference());
                 return;
@@ -226,7 +227,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // --- PASO CLAVE: OBTENER LA INSTANCIA DE FACTURA UNA SOLA VEZ AL PRINCIPIO ---
             // Se asume que la Factura ya fue creada y asociada al Pedido en crearPedidoPreferenciaMP
             Factura factura = pedido.getFactura(); // <-- 'factura' ahora se obtiene aquí
-            if(factura == null) {
+            if (factura == null) {
                 // Esto no debería pasar si crearPedidoPreferenciaMP funciona correctamente,
                 // pero lo manejamos por seguridad, creando y asociando una nueva.
                 factura = new Factura();
@@ -380,7 +381,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new RuntimeException("Error general al procesar notificación de pago: " + e.getMessage(), e);
         }
     }
-
 
 
     @Override
@@ -540,6 +540,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new RuntimeException("Error al actualizar el pedido: " + e.getMessage(), e);
         }
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception {
@@ -549,7 +550,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new Exception(e.getMessage());
         }
     }
-
 
 
     @Override
@@ -735,6 +735,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         return horaActual.plusMinutes(tiempoTotalMinutos);
 
     }
+
     @Override
     @Transactional(readOnly = true) // <-- Implementación del método findPedidosByEstado
     public List<Pedido> findPedidosByEstados(List<Estado> estados) throws Exception {
@@ -750,13 +751,14 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     public List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden) {
         return pedidoRepository.obtenerReporteClientes(desde, hasta, orden);
     }
+
     //-----------------------------------------------------------------------------------
     @Override
     public List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta) {
         return detallePedidoRepository.rankingProductosMasVendidos(desde, hasta);
     }
-    // --- NUEVA FUNCIÓN: calcularTotalCostoPedido ---
-    @Transactional // Podría ser necesario si se llama fuera de una transacción existente
+
+    @Transactional
     public Double calcularTotalCostoPedido(Pedido pedido) {
         double totalCosto = 0.0;
         System.out.println("DEBUG Costo: Iniciando cálculo de totalCosto para Pedido ID: " + (pedido.getId() != null ? pedido.getId() : "nuevo"));
@@ -768,7 +770,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
         for (DetallePedido detalle : pedido.getDetallesPedidos()) {
             double costoDetalle = 0.0;
-            // Caso 1: El detalle es un ArticuloInsumo (se vende como tal)
+
+            // 1. Caso: ArticuloInsumo directo
             if (detalle.getArticuloInsumo() != null) {
                 ArticuloInsumo insumo = detalle.getArticuloInsumo();
                 if (insumo.getPrecioCompra() != null) {
@@ -778,15 +781,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     System.err.println("ADVERTENCIA Costo: ArticuloInsumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") no tiene precio de compra definido. No se suma al costo.");
                 }
             }
-            // Caso 2: El detalle es un ArticuloManufacturado (costo basado en receta)
+            // 2. Caso: ArticuloManufacturado
             else if (detalle.getArticuloManufacturado() != null) {
                 ArticuloManufacturado am = detalle.getArticuloManufacturado();
                 System.out.println("DEBUG Costo: Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
 
                 double costoManufacturadoUnitario = 0.0;
-                // Asegúrate de que los detalles del AM (receta) estén cargados (LAZY por defecto)
-                // Si esto causa LazyInitializationException, necesitarás un JOIN FETCH en la consulta del Pedido
-                // o cargar el AM explícitamente con sus detalles dentro de esta transacción.
                 if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
                     for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
                         ArticuloInsumo insumoReceta = amd.getArticuloInsumo();
@@ -798,18 +798,54 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                             System.err.println("ADVERTENCIA Costo: Insumo en receta (ID: " + (insumoReceta != null ? insumoReceta.getId() : "N/A") + ") no tiene precio de compra o es nulo. No se suma al costo del AM.");
                         }
                     }
-                    costoDetalle = costoManufacturadoUnitario * detalle.getCantidad(); // Multiplicar por la cantidad del AM en el pedido
+                    costoDetalle = costoManufacturadoUnitario * detalle.getCantidad();
                     System.out.println("DEBUG Costo:  - Costo Unitario AM '" + am.getDenominacion() + "': " + costoManufacturadoUnitario + " x Cant. Pedido: " + detalle.getCantidad() + " = " + costoDetalle);
                 } else {
                     System.err.println("ADVERTENCIA Costo: ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") no tiene receta (detalles) definida. Costo = 0 para este AM.");
                 }
-            } else {
-                System.err.println("ADVERTENCIA Costo: Detalle de pedido sin ArticuloInsumo ni ArticuloManufacturado asociado. Se ignora para el costo.");
+            }
+            // 3. Caso: Promoción
+            else if (detalle.getPromocion() != null) {
+                Promocion promo = detalle.getPromocion();
+                System.out.println("DEBUG Costo: Procesando Promocion '" + promo.getDenominacion() + "' (ID: " + promo.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
+
+                double costoPromoUnitario = 0.0;
+                // Si tu promoción tiene una lista de ArticuloManufacturado y/o ArticuloInsumo asociados:
+                if (promo.getArticulosManufacturados() != null) {
+                    for (ArticuloManufacturado am : promo.getArticulosManufacturados()) {
+                        if (am.getDetalles() != null) {
+                            double costoAM = 0.0;
+                            for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
+                                ArticuloInsumo insumoReceta = amd.getArticuloInsumo();
+                                if (insumoReceta != null && insumoReceta.getPrecioCompra() != null) {
+                                    double costoInsumoReceta = insumoReceta.getPrecioCompra() * amd.getCantidad();
+                                    costoAM += costoInsumoReceta;
+                                    System.out.println("DEBUG Costo PROMO: AM '" + am.getDenominacion() + "' -> Insumo '" + insumoReceta.getDenominacion() + "' (ID: " + insumoReceta.getId() + ") - Cant: " + amd.getCantidad() + " x Precio Compra: " + insumoReceta.getPrecioCompra() + " = " + costoInsumoReceta);
+                                }
+                            }
+                            costoPromoUnitario += costoAM;
+                            System.out.println("DEBUG Costo PROMO: Suma de costo AM '" + am.getDenominacion() + "': " + costoAM);
+                        }
+                    }
+                }
+                if (promo.getArticulosInsumos() != null) {
+                    for (ArticuloInsumo ai : promo.getArticulosInsumos()) {
+                        if (ai.getPrecioCompra() != null) {
+                            costoPromoUnitario += ai.getPrecioCompra();
+                            System.out.println("DEBUG Costo PROMO: Insumo directo '" + ai.getDenominacion() + "' (ID: " + ai.getId() + ") x Precio Compra: " + ai.getPrecioCompra());
+                        }
+                    }
+                }
+                costoDetalle = costoPromoUnitario * detalle.getCantidad();
+                System.out.println("DEBUG Costo PROMO: Costo unitario promoción '" + promo.getDenominacion() + "': " + costoPromoUnitario + " x Cant. Pedido: " + detalle.getCantidad() + " = " + costoDetalle);
+            }
+            // 4. Caso desconocido
+            else {
+                System.err.println("ADVERTENCIA Costo: Detalle de pedido sin ArticuloInsumo, ArticuloManufacturado ni Promocion asociado. Se ignora para el costo.");
             }
             totalCosto += costoDetalle;
         }
         System.out.println("DEBUG Costo: Cálculo totalCosto finalizado. Costo total del pedido: " + totalCosto);
         return totalCosto;
     }
-    // ---------------------------------------------
-  }
+}

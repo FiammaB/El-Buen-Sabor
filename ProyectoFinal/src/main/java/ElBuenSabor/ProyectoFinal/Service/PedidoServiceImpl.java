@@ -9,11 +9,8 @@ import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.payment.Payment;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ElBuenSabor.ProyectoFinal.Repositories.DetallePedidoRepository;
-
 
 
 import java.nio.file.Files;
@@ -27,10 +24,7 @@ import java.util.Set;
 
 @Service
 public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements PedidoService {
-    @Autowired
-    private DetallePedidoRepository detallePedidoRepository;
 
-    @Autowired
     private final PedidoRepository pedidoRepository; // Mantener esta referencia si necesitas llamar a métodos específicos no en BaseService
 
     // Repositorios para resolver relaciones
@@ -79,13 +73,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.registroAnulacionService = registroAnulacionService;
         this.articuloInsumoService = articuloInsumoService;
 
-    }
-
-
-    //------------------------REPORTE CLIENTES-----------------------------
-    @Override
-    public List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden) {
-        return pedidoRepository.obtenerReporteClientes(desde, hasta, orden);
     }
 
     // Método para crear un pedido antes de generar la preferencia de MP
@@ -185,13 +172,6 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new RuntimeException("Error al crear el pedido para Mercado Pago: " + e.getMessage(), e);
         }
     }
-
-    //-----------------------------------------------------------------------------------
-    @Override
-    public List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta) {
-        return detallePedidoRepository.rankingProductosMasVendidos(desde, hasta);
-    }
-
 
     @Override
     @Transactional

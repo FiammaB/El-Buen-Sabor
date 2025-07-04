@@ -1,15 +1,12 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClienteReporteDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
 
-import ElBuenSabor.ProyectoFinal.DTO.ProductoRankingDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Estado;
 import ElBuenSabor.ProyectoFinal.Entities.NotaCredito;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -21,7 +18,6 @@ public interface PedidoService extends BaseService<Pedido, Long> {
     void procesarNotificacionPagoMercadoPago(String paymentId) throws Exception;
 
     List<Pedido> findPedidosByClienteId(Long clienteId)throws Exception;
-
 
     /**
      * Anula una factura asociada a un pedido, genera una nota de crédito,
@@ -38,14 +34,6 @@ public interface PedidoService extends BaseService<Pedido, Long> {
     // Métodos para las nuevas consultas (si ya los habías añadido, no hace falta repetirlos)
 
     List<Pedido> findPedidosByEstado(Estado estado) throws Exception;
-
-    //-----------------------------
-    List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta);
-
-    List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden);
-
-
-
     //List<Pedido> findPedidosBetweenFechas(LocalDate fechaInicio, LocalDate fechaFin) throws Exception;
    // List<Pedido> findPedidosByClienteIdAndEstado(Long clienteId, Estado estado) throws Exception;
     //List<Pedido> findPedidosByFechaAndEstado(LocalDate fechaInicio, LocalDate fechaFin, Estado estado) throws Exception;

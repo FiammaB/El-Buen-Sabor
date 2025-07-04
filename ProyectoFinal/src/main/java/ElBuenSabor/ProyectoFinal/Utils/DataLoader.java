@@ -801,7 +801,7 @@ public class DataLoader implements CommandLineRunner {
             facturaPedido1.setPedido(pedido1);
 
             pedidoService.save(pedido1);
-
+            
         } catch (Exception e) {
             System.err.println("Error al cargar datos de ejemplo: " + e.getMessage());
             e.printStackTrace();

@@ -14,4 +14,5 @@ public class DetallePedidoDTO {
 
     private ArticuloManufacturadoDTO articuloManufacturado;
     private ArticuloInsumoShortDTO articuloInsumo;
+    private PromocionDTO promocion;
 }

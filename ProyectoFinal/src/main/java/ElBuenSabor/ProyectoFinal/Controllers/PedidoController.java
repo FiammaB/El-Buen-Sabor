@@ -119,7 +119,6 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
-    // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
 
 
     @PostMapping(consumes = "application/json")

@@ -1582,7 +1582,7 @@ public class DataLoader implements CommandLineRunner {
 
             List<ArticuloManufacturadoDetalle> detallesEmpCarneCuchillo = new ArrayList<>();
             detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(1.0).articuloInsumo(tapasEmpanada).articuloManufacturado(empanadasCarneCuchillo).build());
-            detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(80.0).articuloInsumo(bifeCarne).articuloManufacturado(empanadasCarneCuchillo).build());
+            detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(2.0).articuloInsumo(bifeCarne).articuloManufacturado(empanadasCarneCuchillo).build());
             detallesEmpCarneCuchillo.add(ArticuloManufacturadoDetalle.builder().cantidad(20.0).articuloInsumo(cebolla).articuloManufacturado(empanadasCarneCuchillo).build());
 
             empanadasCarneCuchillo.setDetalles(detallesEmpCarneCuchillo);

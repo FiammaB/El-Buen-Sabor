@@ -18,9 +18,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements PedidoService {
@@ -252,59 +250,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     String generatedPdfUrl = null; // Declaramos aquí para usarla más adelante
                     // --- LÓGICA DE DESCUENTO DE STOCK ACTUALIZADA ---
                     System.out.println("DEBUG Stock (Descuento): Iniciando descuento de stock para Pedido ID: " + pedido.getId());
-                    if (pedido.getDetallesPedidos() != null && !pedido.getDetallesPedidos().isEmpty()) {
-                        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
-
-                            if (detalle.getArticuloManufacturado() != null) {
-                                // Descontar insumos de ArticuloManufacturado (por su receta)
-                                ArticuloManufacturado am = detalle.getArticuloManufacturado();
-
-                                System.out.println("DEBUG Stock (Descuento): Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad: " + detalle.getCantidad());
-                                if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
-                                    for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
-                                        ArticuloInsumo insumo = amd.getArticuloInsumo();
-                                        if (insumo != null && insumo.getEsParaElaborar()) {
-                                            Double cantidadADescontar = amd.getCantidad() * detalle.getCantidad();
-                                            double stockAntes = insumo.getStockActual();
-                                            insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
-
-                                            if (insumo.getStockActual() < insumo.getStockMinimo()) {
-                                                insumo.setBaja(true);
-                                                am.setBaja(true);
-                                            }
-
-                                            articuloInsumoService.save(insumo); // Guardar el insumo
-                                            System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
-                                                    "' (ID: " + insumo.getId() + ") para AM. Cant: " + cantidadADescontar +
-                                                    ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
-                                        }
-                                    }
-                                } else {
-                                    System.out.println("DEBUG Stock (Descuento): AM '" + am.getDenominacion() + "' no tiene detalles de insumo definidos.");
-                                }
-                            } else if (detalle.getArticuloInsumo() != null) {
-                                // Descontar ArticuloInsumo directamente (si se vende como tal)
-                                ArticuloInsumo insumo = detalle.getArticuloInsumo();
-                                if (insumo != null && !insumo.getEsParaElaborar()) { // Descontar solo si NO es para elaborar (se vende directo)
-                                    int cantidadADescontar = detalle.getCantidad(); // La cantidad del detalle es la cantidad del insumo
-                                    double stockAntes = insumo.getStockActual();
-                                    insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
-                                    articuloInsumoService.save(insumo); // Guardar el insumo
-                                    System.out.println("DEBUG Stock (Descuento): Descontado ArticuloInsumo Directo '" + insumo.getDenominacion() +
-                                            "' (ID: " + insumo.getId() + "). Cant: " + cantidadADescontar +
-                                            ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
-                                } else if (insumo != null && insumo.getEsParaElaborar()) {
-                                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo '" + insumo.getDenominacion() + "' es para elaborar. Se espera que sea parte de un AM. No se descuenta directamente.");
-                                } else {
-                                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo en detalle es nulo.");
-                                }
-                            } else {
-                                System.out.println("DEBUG Stock (Descuento): Detalle de pedido sin ArticuloManufacturado ni ArticuloInsumo asociado.");
-                            }
-                        }
-                    } else {
-                        System.out.println("DEBUG Stock (Descuento): Pedido no tiene detalles de pedido para descontar stock o colección vacía.");
-                    }
+                    descontarInsumosDelStock(pedido);
                     System.out.println("DEBUG Stock (Descuento): Finalizado descuento de stock.");
                     // --- FIN LÓGICA DE DESCUENTO DE STOCK ACTUALIZADA ---
 
@@ -452,54 +398,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                 // --- LÓGICA DE DESCUENTO DE STOCK INICIAR AQUÍ ---
                 System.out.println("DEBUG Stock (Descuento): Iniciando descuento de stock para Pedido ID: " + actual.getId());
-                if (actual.getDetallesPedidos() != null && !actual.getDetallesPedidos().isEmpty()) {
-                    for (DetallePedido detalle : actual.getDetallesPedidos()) {
-                        if (detalle.getArticuloManufacturado() != null) {
-                            // Descontar insumos de ArticuloManufacturado (por su receta)
-                            ArticuloManufacturado am = detalle.getArticuloManufacturado();
-                            System.out.println("DEBUG Stock (Descuento): Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
-                            // Si am.getDetalles() es lazy y am no está cargado completamente, podría haber LazyInitializationException aquí.
-                            // Considera cargar am con sus detalles si no vienen ya.
-                            // Ejemplo: am = articuloManufacturadoRepository.findById(am.getId()).orElse(null);
-                            if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
-                                for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
-                                    ArticuloInsumo insumo = amd.getArticuloInsumo();
-                                    if (insumo != null && insumo.getEsParaElaborar()) {
-                                        Double cantidadADescontar = amd.getCantidad() * detalle.getCantidad();
-                                        double stockAntes = insumo.getStockActual();
-                                        insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
-                                        articuloInsumoService.save(insumo); // Guardar el insumo actualizado
-                                        System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
-                                                "' (ID: " + insumo.getId() + ") para AM. Cant: " + cantidadADescontar +
-                                                ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
-                                    }
-                                }
-                            } else {
-                                System.out.println("DEBUG Stock (Descuento): AM '" + am.getDenominacion() + "' no tiene detalles de insumo definidos (receta vacía).");
-                            }
-                        } else if (detalle.getArticuloInsumo() != null) {
-                            // Descontar ArticuloInsumo directamente (si se vende como tal)
-                            ArticuloInsumo insumo = detalle.getArticuloInsumo();
-                            if (insumo != null && !insumo.getEsParaElaborar()) {
-                                int cantidadADescontar = detalle.getCantidad();
-                                double stockAntes = insumo.getStockActual();
-                                insumo.setStockActual(insumo.getStockActual() - cantidadADescontar);
-                                articuloInsumoService.save(insumo); // Guardar el insumo actualizado
-                                System.out.println("DEBUG Stock (Descuento): Descontado ArticuloInsumo Directo '" + insumo.getDenominacion() +
-                                        "' (ID: " + insumo.getId() + "). Cant: " + cantidadADescontar +
-                                        ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual());
-                            } else if (insumo != null && insumo.getEsParaElaborar()) {
-                                System.out.println("DEBUG Stock (Descuento): ArticuloInsumo '" + insumo.getDenominacion() + "' es para elaborar. Se espera que sea parte de un AM. No se descuenta directamente de stock de venta.");
-                            } else {
-                                System.out.println("DEBUG Stock (Descuento): ArticuloInsumo en detalle es nulo.");
-                            }
-                        } else {
-                            System.out.println("DEBUG Stock (Descuento): Detalle de pedido sin ArticuloManufacturado ni ArticuloInsumo asociado.");
-                        }
-                    }
-                } else {
-                    System.out.println("DEBUG Stock (Descuento): Pedido no tiene detalles de pedido para descontar stock o colección vacía.");
-                }
+                descontarInsumosDelStock(actual); // Llama a la lógica de descuento de stock
                 System.out.println("DEBUG Stock (Descuento): Finalizado descuento de stock.");
                 // --- FIN LÓGICA DE DESCUENTO DE STOCK ---
 
@@ -607,7 +506,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
 
             // 4. Reponer el stock de ingredientes
-         /*   if (pedido.getDetallesPedidos() != null) {
+         /* if (pedido.getDetallesPedidos() != null) {
                 for (DetallePedido detalle : pedido.getDetallesPedidos()) {
                     // Reponer ingredientes solo si son artículos manufacturados
                     if (detalle.getArticuloManufacturado() != null) {
@@ -771,7 +670,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         for (DetallePedido detalle : pedido.getDetallesPedidos()) {
             double costoDetalle = 0.0;
 
-            // 1. Caso: ArticuloInsumo directo
+            // 1. Caso: ArticuloInsumo directo en el detalle de pedido
             if (detalle.getArticuloInsumo() != null) {
                 ArticuloInsumo insumo = detalle.getArticuloInsumo();
                 if (insumo.getPrecioCompra() != null) {
@@ -781,7 +680,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     System.err.println("ADVERTENCIA Costo: ArticuloInsumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") no tiene precio de compra definido. No se suma al costo.");
                 }
             }
-            // 2. Caso: ArticuloManufacturado
+            // 2. Caso: ArticuloManufacturado directo en el detalle de pedido
             else if (detalle.getArticuloManufacturado() != null) {
                 ArticuloManufacturado am = detalle.getArticuloManufacturado();
                 System.out.println("DEBUG Costo: Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
@@ -804,38 +703,54 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     System.err.println("ADVERTENCIA Costo: ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") no tiene receta (detalles) definida. Costo = 0 para este AM.");
                 }
             }
-            // 3. Caso: Promoción
+            // 3. Caso: Promoción en el detalle de pedido
             else if (detalle.getPromocion() != null) {
                 Promocion promo = detalle.getPromocion();
                 System.out.println("DEBUG Costo: Procesando Promocion '" + promo.getDenominacion() + "' (ID: " + promo.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
 
                 double costoPromoUnitario = 0.0;
-                // Si tu promoción tiene una lista de ArticuloManufacturado y/o ArticuloInsumo asociados:
+
+                // Sumar costos de ArticulosManufacturados dentro de la promoción
                 if (promo.getArticulosManufacturados() != null) {
-                    for (ArticuloManufacturado am : promo.getArticulosManufacturados()) {
-                        if (am.getDetalles() != null) {
+                    for (ArticuloManufacturado amPromo : promo.getArticulosManufacturados()) {
+                        if (amPromo.getDetalles() != null) {
                             double costoAM = 0.0;
-                            for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
-                                ArticuloInsumo insumoReceta = amd.getArticuloInsumo();
+                            for (ArticuloManufacturadoDetalle amdPromo : amPromo.getDetalles()) {
+                                ArticuloInsumo insumoReceta = amdPromo.getArticuloInsumo();
                                 if (insumoReceta != null && insumoReceta.getPrecioCompra() != null) {
-                                    double costoInsumoReceta = insumoReceta.getPrecioCompra() * amd.getCantidad();
+                                    double costoInsumoReceta = insumoReceta.getPrecioCompra() * amdPromo.getCantidad();
                                     costoAM += costoInsumoReceta;
-                                    System.out.println("DEBUG Costo PROMO: AM '" + am.getDenominacion() + "' -> Insumo '" + insumoReceta.getDenominacion() + "' (ID: " + insumoReceta.getId() + ") - Cant: " + amd.getCantidad() + " x Precio Compra: " + insumoReceta.getPrecioCompra() + " = " + costoInsumoReceta);
+                                    System.out.println("DEBUG Costo PROMO: AM '" + amPromo.getDenominacion() + "' -> Insumo '" + insumoReceta.getDenominacion() + "' (ID: " + insumoReceta.getId() + ") - Cant: " + amdPromo.getCantidad() + " x Precio Compra: " + insumoReceta.getPrecioCompra() + " = " + costoInsumoReceta);
                                 }
                             }
                             costoPromoUnitario += costoAM;
-                            System.out.println("DEBUG Costo PROMO: Suma de costo AM '" + am.getDenominacion() + "': " + costoAM);
+                            System.out.println("DEBUG Costo PROMO: Suma de costo AM '" + amPromo.getDenominacion() + "': " + costoAM);
                         }
                     }
                 }
+
+                // Sumar costos de ArticulosInsumos directos dentro de la promoción (NUEVO)
                 if (promo.getArticulosInsumos() != null) {
-                    for (ArticuloInsumo ai : promo.getArticulosInsumos()) {
-                        if (ai.getPrecioCompra() != null) {
-                            costoPromoUnitario += ai.getPrecioCompra();
-                            System.out.println("DEBUG Costo PROMO: Insumo directo '" + ai.getDenominacion() + "' (ID: " + ai.getId() + ") x Precio Compra: " + ai.getPrecioCompra());
+                    for (ArticuloInsumo aiPromo : promo.getArticulosInsumos()) {
+                        if (aiPromo.getPrecioCompra() != null) {
+                            costoPromoUnitario += aiPromo.getPrecioCompra(); // Se asume que es una unidad de insumo por promoción
+                            System.out.println("DEBUG Costo PROMO: Insumo directo '" + aiPromo.getDenominacion() + "' (ID: " + aiPromo.getId() + ") x Precio Compra: " + aiPromo.getPrecioCompra());
                         }
                     }
                 }
+
+                // Sumar costos de los detalles de insumo propios de la promoción (NUEVO)
+                if (promo.getDetalles() != null) {
+                    for (ArticuloManufacturadoDetalle amdPromoDetalle : promo.getDetalles()) {
+                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
+                        if (insumoDetalle != null && insumoDetalle.getPrecioCompra() != null) {
+                            double costoInsumoDetalle = insumoDetalle.getPrecioCompra() * amdPromoDetalle.getCantidad();
+                            costoPromoUnitario += costoInsumoDetalle;
+                            System.out.println("DEBUG Costo PROMO: Detalle propio de promo -> Insumo '" + insumoDetalle.getDenominacion() + "' (ID: " + insumoDetalle.getId() + ") - Cant: " + amdPromoDetalle.getCantidad() + " x Precio Compra: " + insumoDetalle.getPrecioCompra() + " = " + costoInsumoDetalle);
+                        }
+                    }
+                }
+
                 costoDetalle = costoPromoUnitario * detalle.getCantidad();
                 System.out.println("DEBUG Costo PROMO: Costo unitario promoción '" + promo.getDenominacion() + "': " + costoPromoUnitario + " x Cant. Pedido: " + detalle.getCantidad() + " = " + costoDetalle);
             }
@@ -847,5 +762,302 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         }
         System.out.println("DEBUG Costo: Cálculo totalCosto finalizado. Costo total del pedido: " + totalCosto);
         return totalCosto;
+    }
+    @Transactional
+    public void descontarInsumosDelStock(Pedido pedido) {
+        // Set para recolectar ArticuloManufacturado que necesitan ser marcados como baja
+        Set<ArticuloManufacturado> articulosManufacturadosToUpdate = new HashSet<>();
+
+        // Primera pasada: realizar las deducciones de stock para todos los ítems
+        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+            // 🟠 CASO 1: Artículo Manufacturado (directamente en el detalle de pedido)
+            ArticuloManufacturado manufacturadoDelDetalle = detalle.getArticuloManufacturado();
+            if (manufacturadoDelDetalle != null) {
+                // Obtener el estado más reciente de ArticuloManufacturado y sus detalles (receta)
+                // Esto es crucial si los detalles no se cargan eager o si el objeto está desasociado
+                ArticuloManufacturado fullAm = articuloManufacturadoRepository.findById(manufacturadoDelDetalle.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado no encontrado con ID: " + manufacturadoDelDetalle.getId()));
+                for (ArticuloManufacturadoDetalle det : fullAm.getDetalles()) {
+                    ArticuloInsumo insumo = det.getArticuloInsumo();
+                    if (insumo != null) {
+                        double cantidadAReducir = (double) detalle.getCantidad() * det.getCantidad();
+                        performStockDeductionForInsumo(insumo, cantidadAReducir, fullAm, articulosManufacturadosToUpdate);
+                    }
+                }
+            }
+
+            // 🟢 CASO 2: Artículo Insumo directo (directamente en el detalle de pedido)
+            ArticuloInsumo insumoDirecto = detalle.getArticuloInsumo();
+            if (insumoDirecto != null) {
+                // Obtener el estado más reciente de ArticuloInsumo
+                ArticuloInsumo fullInsumoDirecto = articuloInsumoRepository.findById(insumoDirecto.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo no encontrado con ID: " + insumoDirecto.getId()));
+                // Solo se descuentan insumos directos que NO son 'para elaborar' (ya que esos se manejan por AMs)
+                if (!fullInsumoDirecto.getEsParaElaborar()) {
+                    double cantidadAReducir = detalle.getCantidad();
+                    performStockDeductionForInsumo(fullInsumoDirecto, cantidadAReducir, null, articulosManufacturadosToUpdate);
+                } else {
+                    System.out.println("DEBUG Stock (Descuento): ArticuloInsumo '" + fullInsumoDirecto.getDenominacion() + "' (ID: " + fullInsumoDirecto.getId() + ") es para elaborar. No se descuenta directamente de stock de venta.");
+                }
+            }
+
+            // 🔵 CASO 3: Promoción (si el detalle de pedido hace referencia a una promoción)
+            Promocion promocion = detalle.getPromocion();
+            if (promocion != null) {
+                // Obtener el estado más reciente de Promocion y sus componentes
+                Promocion fullPromo = promocionRepository.findById(promocion.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Promocion no encontrada con ID: " + promocion.getId()));
+
+                // Procesar ArticulosManufacturados dentro de la promoción
+                if (fullPromo.getArticulosManufacturados() != null) {
+                    for (ArticuloManufacturado amPromo : fullPromo.getArticulosManufacturados()) {
+                        ArticuloManufacturado currentAmPromo = articuloManufacturadoRepository.findById(amPromo.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado en promocion no encontrado: " + amPromo.getId()));
+                        if (currentAmPromo.getDetalles() != null) {
+                            for (ArticuloManufacturadoDetalle detPromo : currentAmPromo.getDetalles()) {
+                                ArticuloInsumo insumoPromo = detPromo.getArticuloInsumo();
+                                if (insumoPromo != null) {
+                                    ArticuloInsumo currentInsumoPromo = articuloInsumoRepository.findById(insumoPromo.getId())
+                                            .orElseThrow(() -> new ResourceNotFoundException("Insumo de ArticuloManufacturado en promocion no encontrado: " + insumoPromo.getId()));
+                                    double cantidadAReducir = (double) detalle.getCantidad() * detPromo.getCantidad();
+                                    performStockDeductionForInsumo(currentInsumoPromo, cantidadAReducir, currentAmPromo, articulosManufacturadosToUpdate);
+                                }
+                            }
+                        } else {
+                            System.out.println("DEBUG Stock (Descuento): ArticuloManufacturado '" + amPromo.getDenominacion() + "' (ID: " + amPromo.getId() + ") dentro de promoción no tiene detalles de insumo definidos.");
+                        }
+                    }
+                } else {
+                    System.out.println("DEBUG Stock (Descuento): Promoción '" + promocion.getDenominacion() + "' (ID: " + promocion.getId() + ") no tiene artículos manufacturados asociados.");
+                }
+
+                // Procesar ArticulosInsumos directos dentro de la promoción (NUEVO)
+                if (fullPromo.getArticulosInsumos() != null) {
+                    for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
+                        ArticuloInsumo currentAiPromo = articuloInsumoRepository.findById(aiPromo.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo en promocion no encontrado: " + aiPromo.getId()));
+                        if (!currentAiPromo.getEsParaElaborar()) {
+                            double cantidadAReducir = detalle.getCantidad();
+                            performStockDeductionForInsumo(currentAiPromo, cantidadAReducir, null, articulosManufacturadosToUpdate);
+                        } else {
+                            System.out.println("DEBUG Stock (Descuento): ArticuloInsumo directo de promoción '" + aiPromo.getDenominacion() + "' (ID: " + aiPromo.getId() + ") es para elaborar. No se descuenta directamente.");
+                        }
+                    }
+                }
+
+                // Procesar insumos definidos en los detalles propios de la promoción (NUEVO)
+                if (fullPromo.getDetalles() != null) {
+                    for (ArticuloManufacturadoDetalle amdPromoDetalle : fullPromo.getDetalles()) {
+                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
+                        if (insumoDetalle != null) {
+                            ArticuloInsumo currentInsumoDetalle = articuloInsumoRepository.findById(insumoDetalle.getId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Insumo en detalle de promocion no encontrado: " + insumoDetalle.getId()));
+                            double cantidadAReducir = (double) detalle.getCantidad() * amdPromoDetalle.getCantidad();
+                            performStockDeductionForInsumo(currentInsumoDetalle, cantidadAReducir, null, articulosManufacturadosToUpdate);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Segunda pasada: determinar si las promociones deben ser dadas de baja
+        Set<Promocion> promocionesToSetBaja = new HashSet<>(); // Para guardar Promociones que irán a baja
+
+        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+            if (detalle.getPromocion() != null) {
+                Promocion promo = detalle.getPromocion();
+                // Obtener el estado más reciente de la Promocion para verificar sus componentes
+                Promocion fullPromo = promocionRepository.findById(promo.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Promocion no encontrada con ID: " + promo.getId()));
+
+                boolean promoShouldBeBaja = false; // Bandera para indicar si la promoción debe ir a baja
+
+                // Verificar si algún ArticuloManufacturado en la promoción está de baja
+                if (fullPromo.getArticulosManufacturados() != null) {
+                    for (ArticuloManufacturado amPromo : fullPromo.getArticulosManufacturados()) {
+                        // Cargar el estado más reciente del AM para ver si está de baja
+                        ArticuloManufacturado currentAmPromo = articuloManufacturadoRepository.findById(amPromo.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado en promocion no encontrado: " + amPromo.getId()));
+                        if (currentAmPromo.getBaja()) {
+                            promoShouldBeBaja = true;
+                            break; // Si uno está de baja, la promo completa debe ir a baja
+                        }
+                    }
+                }
+
+                // Verificar si algún ArticuloInsumo directo en la promoción está de baja
+                // Solo si la promoción aún no ha sido marcada para baja por un AM
+                if (!promoShouldBeBaja && fullPromo.getArticulosInsumos() != null) {
+                    for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
+                        // Cargar el estado más reciente del insumo para ver si está de baja
+                        ArticuloInsumo currentAiPromo = articuloInsumoRepository.findById(aiPromo.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo en promocion no encontrado: " + aiPromo.getId()));
+                        if (currentAiPromo.getBaja()) {
+                            promoShouldBeBaja = true;
+                            break; // Si uno está de baja, la promo completa debe ir a baja
+                        }
+                    }
+                }
+
+                // Verificar si algún insumo de los detalles propios de la promoción está de baja
+                // Solo si la promoción aún no ha sido marcada para baja
+                if (!promoShouldBeBaja && fullPromo.getDetalles() != null) {
+                    for (ArticuloManufacturadoDetalle amdPromoDetalle : fullPromo.getDetalles()) {
+                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
+                        if (insumoDetalle != null) {
+                            // Cargar el estado más reciente del insumo para ver si está de baja
+                            ArticuloInsumo currentInsumoDetalle = articuloInsumoRepository.findById(insumoDetalle.getId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Insumo en detalle de promocion no encontrado: " + insumoDetalle.getId()));
+                            if (currentInsumoDetalle.getBaja()) {
+                                promoShouldBeBaja = true;
+                                break; // Si uno está de baja, la promo completa debe ir a baja
+                            }
+                        }
+                    }
+                }
+
+                // Si la promoción debe ser dada de baja y aún no lo está, la añadimos al set
+                if (promoShouldBeBaja && !fullPromo.getBaja()) {
+                    fullPromo.setBaja(true);
+                    promocionesToSetBaja.add(fullPromo);
+                }
+            }
+        }
+
+        // Guardar cualquier ArticuloManufacturado que necesite actualización (ya marcado como baja en performStockDeductionForInsumo)
+        for (ArticuloManufacturado am : articulosManufacturadosToUpdate) {
+            articuloManufacturadoRepository.save(am);
+            System.out.println("DEBUG Estado: Artículo Manufacturado '" + am.getDenominacion() +
+                    "' (ID: " + am.getId() + ") DADO DE BAJA porque un insumo vital se agotó (actualizado fuera del bucle).");
+        }
+
+        // Guardar cualquier Promoción que necesite ser dada de baja
+        for (Promocion promo : promocionesToSetBaja) {
+            promocionRepository.save(promo);
+            System.out.println("DEBUG Estado: Promoción '" + promo.getDenominacion() +
+                    "' (ID: " + promo.getId() + ") DADO DE BAJA porque un componente se agotó.");
+        }
+    }
+
+    @Transactional
+    public void performStockDeductionForInsumo(ArticuloInsumo insumo, double cantidadAReducir,
+                                               ArticuloManufacturado articuloManufacturado,
+                                               Set<ArticuloManufacturado> articulosManufacturadosToUpdate) {
+        double stockAntes = insumo.getStockActual();
+        double nuevoStock = insumo.getStockActual() - cantidadAReducir;
+        insumo.setStockActual(nuevoStock);
+
+        boolean insumoDadoDeBaja = false;
+        // Si el stock actual es menor que el stock mínimo, se marca el insumo como de baja
+        if (insumo.getStockActual() < insumo.getStockMinimo()) {
+            insumo.setBaja(true);
+            insumoDadoDeBaja = true;
+            System.out.println("DEBUG Estado: Insumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") DADO DE BAJA por bajo stock.");
+
+            // Si hay un ArticuloManufacturado asociado y el insumo se da de baja,
+            // se marca el ArticuloManufacturado para ser dado de baja (se añadirá al set).
+            if (articuloManufacturado != null) {
+                if (!articuloManufacturado.getBaja()) { // Solo si no está ya dado de baja
+                    articuloManufacturado.setBaja(true);
+                    articulosManufacturadosToUpdate.add(articuloManufacturado); // Añadir al set para actualización posterior
+                }
+            }
+        }
+
+        articuloInsumoRepository.save(insumo); // Siempre guarda la actualización del insumo inmediatamente.
+
+        System.out.println("DEBUG Stock (Descuento): Descontado insumo '" + insumo.getDenominacion() +
+                "' (ID: " + insumo.getId() + ") para pedido. Cant: " + cantidadAReducir +
+                ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual() +
+                (insumoDadoDeBaja ? " (INSUMO DADO DE BAJA)" : ""));
+    }
+    @Transactional
+    public boolean verificarStockParaPedido(Pedido pedido) {
+        // Usamos un mapa para llevar la cuenta de las cantidades totales de cada insumo
+        // que se necesitarían para el pedido, para evitar múltiples consultas o cálculos.
+        Map<Long, Double> insumosNecesarios = new HashMap<>();
+
+        for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+            // 🟠 CASO 1: Artículo Manufacturado
+            ArticuloManufacturado manufacturado = detalle.getArticuloManufacturado();
+            if (manufacturado != null) {
+                for (ArticuloManufacturadoDetalle det : manufacturado.getDetalles()) {
+                    ArticuloInsumo insumo = det.getArticuloInsumo();
+                    if (insumo != null) {
+                        double cantidadNecesaria = detalle.getCantidad() * det.getCantidad();
+                        insumosNecesarios.merge(insumo.getId(), cantidadNecesaria, Double::sum);
+                    }
+                }
+            }
+
+            // 🟢 CASO 2: Artículo Insumo directo
+            ArticuloInsumo insumoDirecto = detalle.getArticuloInsumo();
+            if (insumoDirecto != null) {
+                // Solo considera insumos directos que no son 'para elaborar'
+                if (!insumoDirecto.getEsParaElaborar()) {
+                    double cantidadNecesaria = detalle.getCantidad();
+                    insumosNecesarios.merge(insumoDirecto.getId(), cantidadNecesaria, Double::sum);
+                }
+            }
+
+            // 🔵 CASO 3: Promoción
+            Promocion promocion = detalle.getPromocion();
+            if (promocion != null) {
+                // Sumar insumos de ArticulosManufacturados dentro de la promoción
+                if (promocion.getArticulosManufacturados() != null) {
+                    for (ArticuloManufacturado am : promocion.getArticulosManufacturados()) {
+                        if (am.getDetalles() != null) {
+                            for (ArticuloManufacturadoDetalle det : am.getDetalles()) {
+                                ArticuloInsumo insumo = det.getArticuloInsumo();
+                                if (insumo != null) {
+                                    double cantidadNecesaria = detalle.getCantidad() * det.getCantidad();
+                                    insumosNecesarios.merge(insumo.getId(), cantidadNecesaria, Double::sum);
+                                }
+                            }
+                        }
+                    }
+                }
+                // Sumar ArticulosInsumos directos dentro de la promoción (NUEVO)
+                if (promocion.getArticulosInsumos() != null) {
+                    for (ArticuloInsumo aiPromo : promocion.getArticulosInsumos()) {
+                        if (!aiPromo.getEsParaElaborar()) {
+                            double cantidadNecesaria = detalle.getCantidad(); // Se asume que es 1 unidad de insumo por cada promo pedida
+                            insumosNecesarios.merge(aiPromo.getId(), cantidadNecesaria, Double::sum);
+                        }
+                    }
+                }
+                // Sumar insumos definidos en los detalles propios de la promoción (NUEVO)
+                if (promocion.getDetalles() != null) {
+                    for (ArticuloManufacturadoDetalle amdPromoDetalle : promocion.getDetalles()) {
+                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
+                        if (insumoDetalle != null) {
+                            double cantidadNecesaria = detalle.getCantidad() * amdPromoDetalle.getCantidad();
+                            insumosNecesarios.merge(insumoDetalle.getId(), cantidadNecesaria, Double::sum);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ahora, recorremos el mapa de insumos necesarios y comparamos con el stock actual
+        for (Map.Entry<Long, Double> entry : insumosNecesarios.entrySet()) {
+            Long insumoId = entry.getKey();
+            Double cantidadRequerida = entry.getValue();
+
+            // Buscar el insumo por ID (podrías tener un mapa de insumos cargados previamente para optimizar)
+            // Es crucial cargar el insumo directamente de la base de datos para obtener el stock más reciente
+            ArticuloInsumo insumo = articuloInsumoRepository.findById(insumoId)
+                    .orElseThrow(() -> new RuntimeException("Insumo no encontrado: " + insumoId));
+
+            // Si el insumo está dado de baja o el stock es insuficiente, el pedido no es viable
+            if (insumo.getBaja() || insumo.getStockActual() < cantidadRequerida) {
+                System.out.println("DEBUG Verificación Stock: Insuficiente stock para '" + insumo.getDenominacion() +
+                        "'. Requerido: " + cantidadRequerida + ", Disponible: " + insumo.getStockActual() +
+                        (insumo.getBaja() ? " (El insumo está dado de baja)" : ""));
+                return false; // No hay stock, retorna false inmediatamente
+            }
+        }
+
+        return true; // Hay stock para todos los insumos
     }
 }

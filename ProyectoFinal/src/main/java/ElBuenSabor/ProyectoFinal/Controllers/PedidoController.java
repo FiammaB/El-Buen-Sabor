@@ -121,122 +121,143 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
     // Sobrescribir create para aceptar un DTO de entrada, mapear y manejar excepciones
 
+
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
-            Pedido pedidoParaCalculos = new Pedido();
+            Pedido pedidoParaPersistir = new Pedido(); // Renombrado para mayor claridad
 
             // Validaciones de IDs obligatorios
             if (dto.getClienteId() == null) {
-                return ResponseEntity.badRequest().body("El ID del cliente no puede ser nulo");
+                return ResponseEntity.badRequest().body("El ID del cliente no puede ser nulo.");
             }
 
-//            if (dto.getDomicilioId() == null) {
-//                return ResponseEntity.badRequest().body("El ID del domicilio no puede ser nulo");
-//            }
-
-            pedidoParaCalculos.setCliente(clienteService.findById(dto.getClienteId()));
+            // Asignación de entidades básicas
+            pedidoParaPersistir.setCliente(clienteService.findById(dto.getClienteId()));
             if (dto.getDomicilioId() != null) {
-                pedidoParaCalculos.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
+                pedidoParaPersistir.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
             }
-
             if (dto.getSucursalId() != null) {
-                pedidoParaCalculos.setSucursal(sucursalService.findById(dto.getSucursalId()));
+                pedidoParaPersistir.setSucursal(sucursalService.findById(dto.getSucursalId()));
             }
-
             if (dto.getEmpleadoId() != null) {
-                pedidoParaCalculos.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
+                pedidoParaPersistir.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
             }
 
-            // Descuento por Retiro en Local
-            Double totalCalculado = dto.getTotal();
-            if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
-                double descuento = totalCalculado * 0.10;
-                totalCalculado -= descuento;
-                System.out.println("DEBUG Descuento: Aplicado 10% por Retiro en Local. Total Original: " + dto.getTotal() + ", Final: " + totalCalculado);
-            } else {
-                System.out.println("DEBUG Descuento: No aplica descuento. Tipo de Envío: " + dto.getTipoEnvio());
-            }
-
-            pedidoParaCalculos.setTotal(totalCalculado);
-            pedidoParaCalculos.setTipoEnvio(dto.getTipoEnvio());
-            pedidoParaCalculos.setFormaPago(dto.getFormaPago());
-
-            // Construcción de detalles del pedido
-            if (dto.getDetalles() != null) {
+            // Construcción de detalles del pedido y cálculo de sub-totales
+            double totalCalculadoPedido = 0.0;
+            if (dto.getDetalles() != null && !dto.getDetalles().isEmpty()) {
                 Set<DetallePedido> detalles = new HashSet<>();
                 for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
                     DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
-
-
+                    double subTotalDetalle = 0.0;
 
                     if (detalleDTO.getArticuloId() != null) {
+                        // Intentamos encontrarlo como ArticuloInsumo, luego como ArticuloManufacturado
                         ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
                         if (insumo != null) {
                             detalle.setArticuloInsumo(insumo);
-                            detalle.setSubTotal(insumo.getPrecioVenta() * detalle.getCantidad());
-                        } else if (detalleDTO.getPromocionId() != null) {
-                            Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
-                                    .orElseThrow(() -> new ResourceNotFoundException("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada"));
-                            detalle.setPromocion(promo);
-                            detalle.setSubTotal(promo.getPrecioPromocional() * detalle.getCantidad());
+                            subTotalDetalle = insumo.getPrecioVenta() * detalle.getCantidad();
                         } else {
                             ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
-                                    .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado"));
+                                    .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado."));
                             detalle.setArticuloManufacturado(manufacturado);
-                            detalle.setSubTotal(detalleDTO.getSubTotal());
+                            subTotalDetalle = manufacturado.getPrecioVenta() * detalle.getCantidad(); // Usar precioVenta del manufacturado
                         }
+                    } else if (detalleDTO.getPromocionId() != null) { // Si no es artículo, podría ser promoción
+                        Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada."));
+                        detalle.setPromocion(promo);
+                        subTotalDetalle = promo.getPrecioPromocional() * detalle.getCantidad(); // Usar precioPromocional de la promo
+                    } else {
+                        return ResponseEntity.badRequest().body("Cada detalle del pedido debe tener un articuloId o un promocionId.");
                     }
 
-                    // --- ¡NUEVA LÓGICA: CALCULAR Y ASIGNAR EL COSTO TOTAL DEL PEDIDO! ---
-                    Double costoTotalCalculado = pedidoService.calcularTotalCostoPedido(pedidoParaCalculos);
-                    System.out.println(costoTotalCalculado);// Llama a tu función
-                    pedidoParaCalculos.setTotalCosto(costoTotalCalculado); // <-- Asigna el costo total al pedido
-                    System.out.println("DEBUG Costo: Costo total del pedido asignado: " + costoTotalCalculado);
-
-                    detalle.setPedido(pedidoParaCalculos);
+                    detalle.setSubTotal(subTotalDetalle);
+                    totalCalculadoPedido += subTotalDetalle; // Acumular el total
+                    detalle.setPedido(pedidoParaPersistir); // Asignar el pedido al detalle
                     detalles.add(detalle);
                 }
-                pedidoParaCalculos.setDetallesPedidos(detalles);
+                pedidoParaPersistir.setDetallesPedidos(detalles);
+            } else {
+                return ResponseEntity.badRequest().body("El pedido debe contener al menos un detalle.");
             }
 
-            // --- ¡CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN AQUÍ! ---
-            LocalTime horaEstimada = pedidoService.calcularTiempoEstimadoFinalizacion(pedidoParaCalculos); // Llama al servicio para calcular
-            pedidoParaCalculos.setHoraEstimadaFinalizacion(horaEstimada); // <-- Asignar al pedido
+            // Aplicar descuento por Retiro en Local
+            if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
+                double descuento = totalCalculadoPedido * 0.10;
+                totalCalculadoPedido -= descuento;
+                System.out.println("DEBUG Descuento: Aplicado 10% por Retiro en Local. Total Original: " + String.format("%.2f", totalCalculadoPedido + descuento) + ", Final: " + String.format("%.2f", totalCalculadoPedido));
+            } else {
+                System.out.println("DEBUG Descuento: No aplica descuento. Tipo de Envío: " + dto.getTipoEnvio());
+            }
+            pedidoParaPersistir.setTotal(totalCalculadoPedido); // Asignar el total final al pedido
+
+            // --- ¡NUEVA UBICACIÓN: CALCULAR Y ASIGNAR EL COSTO TOTAL DEL PEDIDO! ---
+            Double costoTotalCalculado = pedidoService.calcularTotalCostoPedido(pedidoParaPersistir);
+            pedidoParaPersistir.setTotalCosto(costoTotalCalculado);
+            System.out.println("DEBUG Costo: Costo total del pedido asignado: " + String.format("%.2f", costoTotalCalculado));
+
+            // --- ¡NUEVA UBICACIÓN: CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN! ---
+            LocalTime horaEstimada = pedidoService.calcularTiempoEstimadoFinalizacion(pedidoParaPersistir);
+            pedidoParaPersistir.setHoraEstimadaFinalizacion(horaEstimada);
             System.out.println("DEBUG Tiempo Estimado: Hora estimada finalización asignada: " + horaEstimada);
 
-            // Asignar el resto de propiedades del DTO al pedidoParaCalculos
-            pedidoParaCalculos.setFechaPedido(dto.getFechaPedido());
-            pedidoParaCalculos.setEstado(Estado.A_CONFIRMAR); // Estado inicial
-            pedidoParaCalculos.setBaja(false); // No dado de baja por defecto
+            // Asignar el resto de propiedades del DTO al pedidoParaPersistir
+            pedidoParaPersistir.setFechaPedido(LocalDate.now()); // Usar la fecha actual del servidor
+            pedidoParaPersistir.setEstado(Estado.A_CONFIRMAR); // Estado inicial
+            pedidoParaPersistir.setBaja(false); // No dado de baja por defecto
+            pedidoParaPersistir.setFormaPago(dto.getFormaPago());
+            pedidoParaPersistir.setTipoEnvio(dto.getTipoEnvio());
 
+            System.out.println("pasa antes de l if");
+            // --- ¡PUNTO CLAVE: VERIFICACIÓN DE STOCK ANTES DE CUALQUIER PAGO! ---
+            if (!pedidoService.verificarStockParaPedido(pedidoParaPersistir)) {
+                System.out.println("entra al if de verificarStockParaPedido");
+                return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED) // O BAD_REQUEST
+                        .body("{\"error\": \"No hay stock suficiente para algunos productos del pedido. Por favor, ajuste su carrito.\"}");
+                // Podrías devolver más detalles aquí sobre qué insumos faltan si tu método verificarStockParaPedido los devuelve
+            }
 
             // --- LÓGICA DE DECISIÓN POR FORMA DE PAGO ---
             if (dto.getFormaPago() == FormaPago.MERCADO_PAGO) {
-                dto.setTotal(pedidoParaCalculos.getTotal());
+                // Antes de delegar a MP, asegúrate de que el DTO tenga el total correcto
+                dto.setTotal(pedidoParaPersistir.getTotal()); // Importantísimo para el pago
+                // NOTA: mpController.crearPreferencia debería guardar el pedido en base de datos
+                // después de una respuesta exitosa de Mercado Pago, o al menos
+                // antes de redirigir al cliente para el pago.
+                System.out.println("entra al decicion forma pago MP");
                 return mpController.crearPreferencia(dto); // Delega al MPController
 
             } else if (dto.getFormaPago() == FormaPago.EFECTIVO) {
-                // Para efectivo, ya tenemos el pedidoParaCalculos completo.
-                // Ahora, creamos la factura final para efectivo.
+                // Para efectivo, se procesa directamente
                 Factura factura = Factura.builder()
                         .fechaFacturacion(LocalDate.now())
                         .formaPago(FormaPago.EFECTIVO)
-                        .totalVenta(pedidoParaCalculos.getTotal()) // Usar el total ya calculado
+                        .totalVenta(pedidoParaPersistir.getTotal()) // Usar el total ya calculado
                         .build();
-                pedidoParaCalculos.setFactura(factura); // Asignar al pedidoParaCalculos
+                pedidoParaPersistir.setFactura(factura); // Asignar al pedidoParaPersistir
 
-                Pedido saved = baseService.save(pedidoParaCalculos); // Guarda el pedido completo
+                // Descontar el stock inmediatamente para pedidos en efectivo
+                // Asumo que descontarInsumosDelStock es @Transactional y maneja las bajas.
+                pedidoService.descontarInsumosDelStock(pedidoParaPersistir);
+
+                Pedido saved = pedidoService.save(pedidoParaPersistir); // Guarda el pedido completo
                 return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved));
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Forma de pago no válida.\"}");
             }
 
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Error al crear el pedido: " + e.getMessage() + "\"}");
+            // Un manejo de errores más específico podría ser útil aquí.
+            e.printStackTrace(); // Para ver la traza completa en la consola del servidor
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al crear el pedido: " + e.getMessage() + "\"}");
         }
     }
+
     // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
     // (Tu controlador original no tenía un PUT explícito, pero es buena práctica añadirlo)
     @PutMapping(value = "/{id}", consumes = "application/json")

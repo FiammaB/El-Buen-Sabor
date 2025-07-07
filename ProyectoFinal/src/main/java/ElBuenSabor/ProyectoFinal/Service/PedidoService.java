@@ -23,5 +23,9 @@ public interface PedidoService extends BaseService<Pedido, Long> {
     List<Pedido> findPedidosByEstados(List<Estado> estados) throws Exception;
     List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta);
     List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden);
-     Double calcularTotalCostoPedido(Pedido pedido);
+    Double calcularTotalCostoPedido(Pedido pedido);
+    void descontarInsumosDelStock(Pedido pedido);
+    boolean verificarStockParaPedido(Pedido pedido);
+
+
 }

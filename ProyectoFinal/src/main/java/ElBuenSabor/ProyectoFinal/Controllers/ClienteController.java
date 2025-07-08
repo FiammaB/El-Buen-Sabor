@@ -12,9 +12,13 @@ import ElBuenSabor.ProyectoFinal.Service.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid; // <--- Importar @Valid
+import org.springframework.web.bind.MethodArgumentNotValidException; // <--- Importar esto para el handler
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HashMap; // <--- Para el mapa de errores
+import java.util.Map; // <--- Para el mapa de errores
 import java.util.List;
 import java.util.Set;
 
@@ -146,6 +150,18 @@ public class ClienteController extends BaseController<Cliente, Long> {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("{\"error\": \"" + e.getMessage() + "\"}");
         }
+    }
+    // -------------------- NUEVO MÉTODO PARA MANEJAR ERRORES DE VALIDACIÓN ----------------
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((org.springframework.validation.FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        return errors;
     }
 
     @GetMapping("/{clienteId}/pedidos")

@@ -178,7 +178,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("faustinovinolo@gmail.com") //Inventados (ej: cliente@buen.com)
                     .password(passwordEncoder.encode("cliente123")) // Mismas contraseñas cliente123
                     .rol(Rol.CLIENTE)//Siempre rol CLIENTE
-                    .nombre("Fiamma") //Nombre inventado
+                    .username("Fiamma") //Nombre inventado
                     .build());
 
             // 5. Cliente asociado al Usuario
@@ -205,7 +205,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente1@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Camila")
+                    .username("Camila")
                     .build());
 
             Cliente cliente1 = Cliente.builder()
@@ -231,7 +231,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente2@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Lucas")
+                    .username("Lucas")
                     .build());
 
             Cliente cliente2 = Cliente.builder()
@@ -257,7 +257,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente3@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Valentina")
+                    .username("Valentina")
                     .build());
 
             Cliente cliente3 = Cliente.builder()
@@ -283,7 +283,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente4@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Bruno")
+                    .username("Bruno")
                     .build());
 
             Cliente cliente4 = Cliente.builder()
@@ -309,7 +309,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente5@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Martina")
+                    .username("Martina")
                     .build());
 
             Cliente cliente5 = Cliente.builder()
@@ -335,7 +335,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente6@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Ezequiel")
+                    .username("Ezequiel")
                     .build());
 
             Cliente cliente6 = Cliente.builder()
@@ -361,7 +361,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente7@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Valentina")
+                    .username("Valentina")
                     .build());
 
             Cliente cliente7 = Cliente.builder()
@@ -387,7 +387,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente8@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Benjamín")
+                    .username("Benjamín")
                     .build());
 
             Cliente cliente8 = Cliente.builder()
@@ -413,7 +413,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente9@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Sofía")
+                    .username("Sofía")
                     .build());
 
             Cliente cliente9 = Cliente.builder()
@@ -439,7 +439,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente10@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Tomás")
+                    .username("Tomás")
                     .build());
 
             Cliente cliente10 = Cliente.builder()
@@ -465,7 +465,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente11@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Guadalupe")
+                    .username("Guadalupe")
                     .build());
 
             Cliente cliente11 = Cliente.builder()
@@ -491,7 +491,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente12@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Luciano")
+                    .username("Luciano")
                     .build());
 
             Cliente cliente12 = Cliente.builder()
@@ -517,7 +517,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente13@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Martina")
+                    .username("Martina")
                     .build());
 
             Cliente cliente13 = Cliente.builder()
@@ -543,7 +543,7 @@ public class DataLoader implements CommandLineRunner {
                     .email("cliente14@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
-                    .nombre("Alejo")
+                    .username("Alejo")
                     .build());
 
             Cliente cliente14 = Cliente.builder()
@@ -1603,25 +1603,25 @@ public class DataLoader implements CommandLineRunner {
             Usuario usuarioAdmin = usuarioService.save(Usuario.builder()
                     .email("admin@buen.com")
                     .password(passwordEncoder.encode("admin123")) // asegurate que uses PasswordEncoder
-                    .nombre("Admin General")
+                    .username("Admin General")
                     .rol(Rol.ADMINISTRADOR)
                     .build());
             Usuario usuarioCocinero = usuarioService.save(Usuario.builder()
                     .email("cocinero@buen.com")
                     .password(passwordEncoder.encode("cocinero123"))
-                    .nombre("Juan Cocinero")
+                    .username("Juan Cocinero")
                     .rol(Rol.COCINERO)
                     .build());
             Usuario usuarioCajero = usuarioService.save(Usuario.builder()
                     .email("cajero@buen.com")
                     .password(passwordEncoder.encode("cajero123"))
-                    .nombre("Carlos Cajero")
+                    .username("Carlos Cajero")
                     .rol(Rol.CAJERO)
                     .build());
             Usuario usuarioDelivery = usuarioService.save(Usuario.builder()
                     .email("delivery@buen.com")
                     .password(passwordEncoder.encode("delivery123"))
-                    .nombre("Pepe delivery")
+                    .username("Pepe delivery")
                     .rol(Rol.DELIVERY)
                     .build());
 

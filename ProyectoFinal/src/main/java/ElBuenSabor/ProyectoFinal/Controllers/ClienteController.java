@@ -124,7 +124,7 @@ public class ClienteController extends BaseController<Cliente, Long> {
             Usuario nuevoUsuario = Usuario.builder()
                     .email(dto.getEmail())
                     .password(dto.getPassword()) // En producción: encriptar con BCrypt
-                    .nombre(dto.getNombre())
+                    .username(dto.getNombre())
                     .rol(Rol.CLIENTE)
                     .build();
             Usuario usuarioGuardado = usuarioService.save(nuevoUsuario);

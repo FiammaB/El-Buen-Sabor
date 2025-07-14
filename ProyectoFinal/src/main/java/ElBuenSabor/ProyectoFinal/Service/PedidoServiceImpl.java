@@ -268,7 +268,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                         String recipientEmail = pedido.getCliente().getUsuario().getEmail();
                         String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getUsuario().getNombre() + "! Adjuntamos la factura de tu pedido #" + pedido.getId();
+                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getUsuario().getUsername() + "! Adjuntamos la factura de tu pedido #" + pedido.getId();
                         String attachmentFilename = "factura_" + pedido.getId() + ".pdf"; // ✅ línea agregada
 
                         emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
@@ -421,7 +421,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                     String recipientEmail = actual.getCliente().getUsuario().getEmail();
                     String subject = "Factura de tu pedido #" + actual.getId() + " - El Buen Sabor";
-                    String body = "¡Gracias por tu compra, " + actual.getCliente().getUsuario().getNombre()
+                    String body = "¡Gracias por tu compra, " + actual.getCliente().getUsuario().getUsername()
                             + "! Adjuntamos la factura de tu pedido #" + actual.getId();
                     String attachmentFilename = "factura_" + actual.getId() + ".pdf";
 
@@ -559,7 +559,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 // ✅ Corrección: acceder al usuario del cliente
                 String recipientEmail = notaCredito.getCliente().getUsuario().getEmail();
                 String subject = "Nota de Crédito de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                String body = "Estimado/a " + notaCredito.getCliente().getUsuario().getNombre() + ", \n\n" +
+                String body = "Estimado/a " + notaCredito.getCliente().getUsuario().getUsername() + ", \n\n" +
                         "Adjuntamos la Nota de Crédito N° " + notaCredito.getId() + " emitida por la anulación de tu factura del pedido #" + pedido.getId() + ".\n" +
                         "Motivo de la anulación: " + notaCredito.getMotivo() + "\n\n" +
                         "Puedes descargarla también desde: " + pdfUrlNC + "\n\n" +

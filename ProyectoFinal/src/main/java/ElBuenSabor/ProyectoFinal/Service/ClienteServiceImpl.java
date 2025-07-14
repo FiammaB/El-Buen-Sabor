@@ -27,8 +27,8 @@ public class ClienteServiceImpl extends BaseServiceImpl<Cliente, Long> implement
 
             // Actualizar nombre de usuario si corresponde (usuario embebido)
             if (existente.getUsuario() != null && updatedCliente.getUsuario() != null) {
-                if (updatedCliente.getUsuario().getNombre() != null) {
-                    existente.getUsuario().setNombre(updatedCliente.getUsuario().getNombre());
+                if (updatedCliente.getUsuario().getUsername() != null) {
+                    existente.getUsuario().setUsername(updatedCliente.getUsuario().getUsername());
                 }
             }
 

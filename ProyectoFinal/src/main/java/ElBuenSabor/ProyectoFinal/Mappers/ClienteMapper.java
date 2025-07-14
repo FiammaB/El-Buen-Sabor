@@ -17,13 +17,13 @@ import java.util.List;
 })
 public interface ClienteMapper {
 
-    @Mapping(source = "usuario.nombre", target = "nombreUsuario")
+    @Mapping(source = "usuario.username", target = "nombreUsuario")
     @Mapping(source = "usuario.email", target = "emailUsuario")
     ClienteDTO toDTO(Cliente cliente);
 
     @InheritInverseConfiguration
     @Mapping(target = "nombre", source = "nombreUsuario") // Agregá esto para el campo de Cliente
-    @Mapping(target = "usuario.nombre", source = "nombreUsuario") // También para el Usuario
+    @Mapping(target = "usuario.username", source = "nombreUsuario") // También para el Usuario
     Cliente toEntity(ClienteDTO dto);
 
     Cliente toEntity(ClienteCreateDTO createDTO);

@@ -116,7 +116,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario existente = usuarioService.findById(id);
             existente.setEmail(dto.getEmail());
-            existente.setNombre(dto.getNombre());
+            existente.setUsername(dto.getUsername()); // ✅ CAMBIO
             existente.setRol(dto.getRol());
             if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
                 existente.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -179,7 +179,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     @PatchMapping("/{id}/nombre")
     public ResponseEntity<?> updateNombre(@PathVariable Long id, @RequestBody NombreDTO nombreDTO) {
         try {
-            usuarioService.actualizarNombre(id, nombreDTO.nombre);
+            usuarioService.actualizarNombre(id, nombreDTO.nombre); // ⚠️ Este método debería llamarse actualizarUsername()
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

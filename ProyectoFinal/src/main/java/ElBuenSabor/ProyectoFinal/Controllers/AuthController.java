@@ -44,7 +44,7 @@ public class AuthController {
 
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),
-                cliente != null ? cliente.getNombre() : usuario.getNombre(),
+                cliente != null ? cliente.getNombre() : usuario.getUsername(),
                 cliente != null ? cliente.getApellido() : "",
                 usuario.getEmail(),
                 cliente != null ? cliente.getTelefono() : "",
@@ -69,7 +69,7 @@ public class AuthController {
             Usuario usuario = new Usuario();
             usuario.setEmail(request.getEmail());
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-            usuario.setNombre(request.getNombre());
+            usuario.setUsername(request.getNombre());
             usuario.setRol(Rol.CLIENTE);
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
@@ -180,7 +180,7 @@ public class AuthController {
                     // Crear nuevo usuario y cliente si no existe
                     usuario = new Usuario();
                     usuario.setEmail(email);
-                    usuario.setNombre(nombre);
+                    usuario.setUsername(nombre);
                     usuario.setRol(Rol.CLIENTE);
                     usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // clave aleatoria
                     usuario = usuarioService.save(usuario);

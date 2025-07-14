@@ -67,7 +67,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
             Cliente cliente = pedido.getCliente();
             if (cliente != null && cliente.getUsuario() != null) {
                 document.add(new Paragraph("Cliente: "
-                        + cliente.getUsuario().getNombre() + " "
+                        + cliente.getUsuario().getUsername() + " "
                         + cliente.getApellido()));
                 document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
 
@@ -186,7 +186,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
             Cliente cliente = notaCredito.getCliente();
             if (cliente != null && cliente.getUsuario() != null) {
                 document.add(new Paragraph("Cliente: "
-                        + cliente.getUsuario().getNombre() + " "
+                        + cliente.getUsuario().getUsername() + " "
                         + cliente.getApellido()));
                 document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
             }

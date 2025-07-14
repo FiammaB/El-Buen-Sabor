@@ -20,7 +20,7 @@ public class Usuario extends BaseEntity {
     @Column(nullable = false)
     private String password;
 
-    private String nombre; // 👉 nombre real de la persona
+    private String username;
 
     @Enumerated(EnumType.STRING)
     private Rol rol;

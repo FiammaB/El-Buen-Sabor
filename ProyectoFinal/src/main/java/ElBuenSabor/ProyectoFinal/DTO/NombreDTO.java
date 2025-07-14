@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NombreDTO {
-    public String nombre;
+    public String nombre; 
+    //Nose para q sirve este DTO
 }

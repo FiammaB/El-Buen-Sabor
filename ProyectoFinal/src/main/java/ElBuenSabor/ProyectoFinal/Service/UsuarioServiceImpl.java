@@ -43,7 +43,7 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         try {
             Usuario existing = findById(id);
 
-            existing.setNombre(updatedUsuario.getNombre());
+            existing.setUsername(updatedUsuario.getUsername());
             existing.setEmail(updatedUsuario.getEmail());
             existing.setRol(updatedUsuario.getRol());
 
@@ -98,12 +98,12 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
     // 🔒 Validación de contraseña segura
     private boolean esPasswordSegura(String password) {
         return password.length() >= 8 &&
-                password.matches(".*[A-Z].*") &&     // al menos una letra mayúscula
-                password.matches(".*[a-z].*") &&     // al menos una letra minúscula
-                password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*"); // al menos un símbolo
+                password.matches(".*[A-Z].*") &&
+                password.matches(".*[a-z].*") &&
+                password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*");
     }
 
-    // ✅ Método para registrar cocinero con validación de email y contraseña segura
+    // ✅ Método para registrar cocinero
     @Override
     public Usuario registrarCocinero(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -120,7 +120,7 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ Método para registrar cajero con validación de email y contraseña segura
+    // ✅ Método para registrar cajero
     @Override
     public Usuario registrarCajero(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -139,14 +139,13 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
 
     @Override
     @Transactional
-    public void actualizarNombre(Long id, String nuevoNombre) {
+    public void actualizarNombre(Long id, String nuevoUsername) {
         try {
-            Usuario usuario = findById(id); // Este método arroja Exception
-            usuario.setNombre(nuevoNombre);
+            Usuario usuario = findById(id);
+            usuario.setUsername(nuevoUsername);
             save(usuario);
         } catch (Exception e) {
-            // Podés tirar una RuntimeException, que no necesita ser declarada
-            throw new RuntimeException("No se pudo actualizar el nombre del usuario: " + e.getMessage(), e);
+            throw new RuntimeException("No se pudo actualizar el nombre de usuario: " + e.getMessage(), e);
         }
     }
 }

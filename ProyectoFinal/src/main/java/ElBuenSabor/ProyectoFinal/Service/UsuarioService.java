@@ -1,6 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaPerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 
@@ -10,7 +10,7 @@ public interface UsuarioService extends BaseService<Usuario, Long> {
 
     Usuario save(Usuario usuario);
 
-    void actualizarPerfilCliente(String email, ClientePerfilUpdateDTO dto) throws Exception;
+    void actualizarPerfilCliente(String email, PersonaPerfilUpdateDTO dto) throws Exception;
 
     Usuario registrarCocinero(UsuarioDTO usuarioDTO);
 

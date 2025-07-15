@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -38,7 +37,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
     // Repositorios necesarios para resolver relaciones en el controlador
     private final ArticuloInsumoRepository articuloInsumoRepository;
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
-    private final ClienteRepository clienteRepository;
+    private final PersonaRepository personaRepository;
     private final DomicilioRepository domicilioRepository;
     private final SucursalRepository sucursalRepository;
     private final UsuarioRepository usuarioRepository;
@@ -46,7 +45,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
     private final UsuarioService usuarioService; // Asegúrate de que ya está, o añádelo
     private final NotaCreditoMapper notaCreditoMapper;
     private final MPController mpController;
-    private final ClienteService clienteService;
+    private final PersonaService personaService;
     private final DomicilioService domicilioService;
     private final SucursalService sucursalService;
     private final FacturaService facturaService;
@@ -58,7 +57,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
             PedidoMapper pedidoMapper, PedidoService pedidoService1,
             ArticuloInsumoRepository articuloInsumoRepository,
             ArticuloManufacturadoRepository articuloManufacturadoRepository,
-            ClienteRepository clienteRepository,
+            PersonaRepository personaRepository,
             DomicilioRepository domicilioRepository,
             SucursalRepository sucursalRepository,
             UsuarioRepository usuarioRepository,
@@ -66,7 +65,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
             UsuarioService usuarioService, // Asegúrate de que ya esté en el constructor
             NotaCreditoMapper notaCreditoMapper,
             MPController mpController,
-            ClienteService clienteService,
+            PersonaService personaService,
             DomicilioService domicilioService,
             SucursalService sucursalService,
             PromocionRepository promocionRepository,
@@ -77,7 +76,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.pedidoService = pedidoService;
         this.articuloInsumoRepository = articuloInsumoRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
-        this.clienteRepository = clienteRepository;
+        this.personaRepository = personaRepository;
         this.domicilioRepository = domicilioRepository;
         this.sucursalRepository = sucursalRepository;
         this.usuarioRepository = usuarioRepository;
@@ -85,7 +84,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.usuarioService = usuarioService;
         this.notaCreditoMapper = notaCreditoMapper;
         this.mpController = mpController;
-        this.clienteService = clienteService;
+        this.personaService = personaService;
         this.domicilioService = domicilioService;
         this.sucursalService = sucursalService;
         this.facturaService = facturaService;
@@ -127,12 +126,12 @@ public class PedidoController extends BaseController<Pedido, Long> {
             Pedido pedidoParaPersistir = new Pedido(); // Renombrado para mayor claridad
 
             // Validaciones de IDs obligatorios
-            if (dto.getClienteId() == null) {
-                return ResponseEntity.badRequest().body("El ID del cliente no puede ser nulo.");
+            if (dto.getPersonaId() == null) {
+                return ResponseEntity.badRequest().body("El ID del persona no puede ser nulo.");
             }
 
             // Asignación de entidades básicas
-            pedidoParaPersistir.setCliente(clienteService.findById(dto.getClienteId()));
+            pedidoParaPersistir.setPersona(personaService.findById(dto.getPersonaId()));
             if (dto.getDomicilioId() != null) {
                 pedidoParaPersistir.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
             }
@@ -225,7 +224,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
                 dto.setTotal(pedidoParaPersistir.getTotal()); // Importantísimo para el pago
                 // NOTA: mpController.crearPreferencia debería guardar el pedido en base de datos
                 // después de una respuesta exitosa de Mercado Pago, o al menos
-                // antes de redirigir al cliente para el pago.
+                // antes de redirigir al persona para el pago.
                 System.out.println("entra al decicion forma pago MP");
                 return mpController.crearPreferencia(dto); // Delega al MPController
 
@@ -277,8 +276,8 @@ public class PedidoController extends BaseController<Pedido, Long> {
             // existingPedido.setObservaciones(dto.getObservaciones());
 
             // Actualizar relaciones
-            existingPedido.setCliente(clienteRepository.findById(dto.getClienteId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
+            existingPedido.setPersona(personaRepository.findById(dto.getPersonaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrado")));
             existingPedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
                     .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
 
@@ -465,12 +464,12 @@ public class PedidoController extends BaseController<Pedido, Long> {
 
     //-------------------------------RANKING PEDIDOS-CLIENTES---------------------------
     @GetMapping("/reporte/clientes")
-    public ResponseEntity<List<ClienteReporteDTO>> obtenerReporteClientes(
+    public ResponseEntity<List<PersonaReporteDTO>> obtenerReporteClientes(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam("orden") String orden // "cantidad" o "importe"
     ) {
-        List<ClienteReporteDTO> reporte = pedidoService.obtenerReporteClientes(desde, hasta, orden);
+        List<PersonaReporteDTO> reporte = pedidoService.obtenerReporteClientes(desde, hasta, orden);
         return ResponseEntity.ok(reporte);
     }
 
@@ -491,17 +490,17 @@ public class PedidoController extends BaseController<Pedido, Long> {
     }
 
     // NUEVO ENDPOINT PARA HISTORIAL DE PEDIDOS POR CLIENTE
-    @GetMapping("/cliente/{clienteId}")
-    public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long clienteId) {
+    @GetMapping("/cliente/{personaId}")
+    public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long personaId) {
         try {
-            // Asegúrate de que el cliente exista para evitar errores con un ID inexistente
-            Cliente cliente = clienteService.findById(clienteId);
-            if (cliente == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Cliente no encontrado con ID: " + clienteId + "\"}");
+            // Asegúrate de que el persona exista para evitar errores con un ID inexistente
+            Persona persona = personaService.findById(personaId);
+            if (persona == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Persona no encontrado con ID: " + personaId + "\"}");
             }
 
-            // Llama al servicio que ya tienes para obtener los pedidos del cliente
-            List<Pedido> pedidos = pedidoService.findPedidosByClienteId(clienteId);
+            // Llama al servicio que ya tienes para obtener los pedidos del persona
+            List<Pedido> pedidos = pedidoService.findPedidosByClienteId(personaId);
 
             // Mapea las entidades Pedido a DTOs para la respuesta
             List<PedidoDTO> dtos = pedidos.stream()

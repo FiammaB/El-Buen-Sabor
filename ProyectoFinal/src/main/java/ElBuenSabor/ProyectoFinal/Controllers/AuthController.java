@@ -3,10 +3,10 @@ package ElBuenSabor.ProyectoFinal.Controllers;
 import ElBuenSabor.ProyectoFinal.Auth.LoginRequest;
 import ElBuenSabor.ProyectoFinal.Auth.RegisterRequest;
 import ElBuenSabor.ProyectoFinal.Auth.UsuarioResponse;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Entities.Persona;
 import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
-import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.PersonaRepository;
 import ElBuenSabor.ProyectoFinal.Service.EmailService;
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import java.security.GeneralSecurityException;
+
 import java.util.*;
 
 @RestController
@@ -27,7 +27,7 @@ import java.util.*;
 public class AuthController {
 
     private final UsuarioService usuarioService;
-    private final ClienteRepository clienteRepository;
+    private final PersonaRepository personaRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final Map<String, String> codigoRecuperacion = new HashMap<>();
@@ -40,21 +40,21 @@ public class AuthController {
             return ResponseEntity.status(401).body("Credenciales inválidas");
         }
 
-        Cliente cliente = clienteRepository.findByUsuario(usuario).orElse(null);
+        Persona persona = personaRepository.findByUsuario(usuario).orElse(null);
 
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),
-                cliente != null ? cliente.getNombre() : usuario.getUsername(),
-                cliente != null ? cliente.getApellido() : "",
+                persona != null ? persona.getNombre() : usuario.getUsername(),
+                persona != null ? persona.getApellido() : "",
                 usuario.getEmail(),
-                cliente != null ? cliente.getTelefono() : "",
+                persona != null ? persona.getTelefono() : "",
                 usuario.getRol()
         );
 
         return ResponseEntity.ok(response);
     }
 
-    // 🧾 REGISTRO de cliente común
+    // 🧾 REGISTRO de persona común
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
@@ -73,21 +73,21 @@ public class AuthController {
             usuario.setRol(Rol.CLIENTE);
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
-            Cliente cliente = new Cliente();
-            cliente.setNombre(request.getNombre());
-            cliente.setApellido(request.getApellido());
-            cliente.setTelefono(request.getTelefono());
-            cliente.setFechaNacimiento(request.getFechaNacimiento());
-            cliente.setUsuario(nuevoUsuario);
-            cliente.setBaja(false);
-            clienteRepository.save(cliente);
+            Persona persona = new Persona();
+            persona.setNombre(request.getNombre());
+            persona.setApellido(request.getApellido());
+            persona.setTelefono(request.getTelefono());
+            persona.setFechaNacimiento(request.getFechaNacimiento());
+            persona.setUsuario(nuevoUsuario);
+            persona.setBaja(false);
+            personaRepository.save(persona);
 
             UsuarioResponse response = new UsuarioResponse(
                     nuevoUsuario.getId(),
-                    cliente.getNombre(),
-                    cliente.getApellido(),
+                    persona.getNombre(),
+                    persona.getApellido(),
                     nuevoUsuario.getEmail(),
-                    cliente.getTelefono(),
+                    persona.getTelefono(),
                     nuevoUsuario.getRol()
             );
 
@@ -174,10 +174,10 @@ public class AuthController {
 
                 // Verificar si ya existe el usuario
                 Usuario usuario = usuarioService.findByEmail(email);
-                Cliente cliente = null;
+                Persona persona = null;
 
                 if (usuario == null) {
-                    // Crear nuevo usuario y cliente si no existe
+                    // Crear nuevo usuario y persona si no existe
                     usuario = new Usuario();
                     usuario.setEmail(email);
                     usuario.setUsername(nombre);
@@ -185,22 +185,22 @@ public class AuthController {
                     usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // clave aleatoria
                     usuario = usuarioService.save(usuario);
 
-                    cliente = new Cliente();
-                    cliente.setNombre(nombre);
-                    cliente.setApellido(apellido);
-                    cliente.setUsuario(usuario);
-                    cliente.setBaja(false);
-                    clienteRepository.save(cliente);
+                    persona = new Persona();
+                    persona.setNombre(nombre);
+                    persona.setApellido(apellido);
+                    persona.setUsuario(usuario);
+                    persona.setBaja(false);
+                    personaRepository.save(persona);
                 } else {
-                    cliente = clienteRepository.findByUsuario(usuario).orElse(null);
+                    persona = personaRepository.findByUsuario(usuario).orElse(null);
                 }
 
                 UsuarioResponse response = new UsuarioResponse(
                         usuario.getId(),
-                        cliente != null ? cliente.getNombre() : nombre,
-                        cliente != null ? cliente.getApellido() : apellido,
+                        persona != null ? persona.getNombre() : nombre,
+                        persona != null ? persona.getApellido() : apellido,
                         email,
-                        cliente != null ? cliente.getTelefono() : "",
+                        persona != null ? persona.getTelefono() : "",
                         usuario.getRol()
                 );
 

@@ -12,7 +12,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClienteDTO {
+public class PersonaDTO {
 
     private Long id;
     private String nombreUsuario;

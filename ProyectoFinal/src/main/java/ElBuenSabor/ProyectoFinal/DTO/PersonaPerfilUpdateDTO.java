@@ -11,7 +11,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientePerfilUpdateDTO {
+public class PersonaPerfilUpdateDTO {
 
     // Validaciones para campos que siempre deben ser válidos si se envían
     @Size(min = 2, max = 50, message = "El nombre debe tener entre 2 y 50 caracteres")

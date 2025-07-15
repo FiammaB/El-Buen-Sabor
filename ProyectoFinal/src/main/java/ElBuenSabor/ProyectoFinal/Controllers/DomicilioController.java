@@ -1,13 +1,13 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
 import ElBuenSabor.ProyectoFinal.DTO.DomicilioDTO;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.Entities.Persona;
 import ElBuenSabor.ProyectoFinal.Entities.Domicilio;
 import ElBuenSabor.ProyectoFinal.Entities.Localidad; // Importar Localidad
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.DomicilioMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.LocalidadRepository;
-import ElBuenSabor.ProyectoFinal.Service.ClienteService;
+import ElBuenSabor.ProyectoFinal.Service.PersonaService;
 import ElBuenSabor.ProyectoFinal.Service.DomicilioService; // Usar la interfaz específica
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
 
     private final DomicilioMapper domicilioMapper;
     private final LocalidadRepository localidadRepository;
-    private final ClienteService clienteService;
+    private final PersonaService personaService;
     private final DomicilioService domicilioService;
 
 
@@ -32,12 +32,12 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
             DomicilioService domicilioService,
             DomicilioMapper domicilioMapper,
             LocalidadRepository localidadRepository,
-            ClienteService clienteService // ⬅️ inyectado
+            PersonaService personaService // ⬅️ inyectado
 ) {
         super(domicilioService);
         this.domicilioMapper = domicilioMapper;
         this.localidadRepository = localidadRepository;
-        this.clienteService = clienteService; // ⬅️ guardado
+        this.personaService = personaService; // ⬅️ guardado
         this.domicilioService = domicilioService;
     }
 
@@ -89,8 +89,8 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
     }
 
     // DomicilioController.java
-    @PostMapping("/cliente/{clienteId}")
-    public ResponseEntity<?> createForCliente(@PathVariable Long clienteId, @RequestBody DomicilioDTO dto) {
+    @PostMapping("/persona/{personaId}")
+    public ResponseEntity<?> createForPersona(@PathVariable Long personaId, @RequestBody DomicilioDTO dto) {
         try {
             System.out.println("DTO recibido: " + dto);
             System.out.println("DTO localidad: " + dto.getLocalidad());
@@ -104,14 +104,14 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
                 domicilio.setLocalidad(localidad);
             }
 
-            Cliente cliente = clienteService.findById(clienteId);
+            Persona persona = personaService.findById(personaId);
 
-            if (domicilio.getClientes() == null) {
-                domicilio.setClientes(new HashSet<>());
+            if (domicilio.getPersonas() == null) {
+                domicilio.setPersonas(new HashSet<>());
             }
 
-            cliente.getDomicilios().add(domicilio);
-            domicilio.getClientes().add(cliente);
+            persona.getDomicilios().add(domicilio);
+            domicilio.getPersonas().add(persona);
             domicilio.setBaja(false);
 
             Domicilio saved = domicilioService.save(domicilio);
@@ -123,12 +123,12 @@ public class DomicilioController extends BaseController<Domicilio, Long> {
         }
     }
 
-    @GetMapping("/cliente/{clienteId}")
-    public ResponseEntity<?> getDomiciliosByClienteId(@PathVariable Long clienteId) {
+    @GetMapping("/persona/{personaId}")
+    public ResponseEntity<?> getDomiciliosByPersonaId(@PathVariable Long personaId) {
         try {
-            List<Domicilio> domicilios = baseService.findAll(); // o un método filtrado por cliente
+            List<Domicilio> domicilios = baseService.findAll(); // o un método filtrado por persona
             List<DomicilioDTO> dtos = domicilios.stream()
-                    .filter(d -> d.getClientes().stream().anyMatch(c -> c.getId().equals(clienteId)))
+                    .filter(d -> d.getPersonas().stream().anyMatch(c -> c.getId().equals(personaId)))
                     .map(domicilioMapper::toDTO)
                     .toList();
 

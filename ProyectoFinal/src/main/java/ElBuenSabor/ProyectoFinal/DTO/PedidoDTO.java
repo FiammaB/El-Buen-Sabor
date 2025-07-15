@@ -20,7 +20,7 @@ public class PedidoDTO {
     private Double total;
     private LocalTime horaEstimadaFinalizacion;
     private  Double totalCosto;
-    private ClienteDTO cliente;
+    private PersonaDTO persona;
     private DomicilioDTO domicilio;
     private SucursalDTO sucursal;
 

@@ -1,6 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClienteReporteDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaReporteDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
 
 import ElBuenSabor.ProyectoFinal.DTO.ProductoRankingDTO;
@@ -17,12 +17,12 @@ import java.util.List;
 public interface PedidoService extends BaseService<Pedido, Long> {
     Pedido crearPedidoPreferenciaMP(PedidoCreateDTO dto) throws Exception;
     void procesarNotificacionPagoMercadoPago(String paymentId) throws Exception;
-    List<Pedido> findPedidosByClienteId(Long clienteId)throws Exception;
+    List<Pedido> findPedidosByClienteId(Long personaId)throws Exception;
     NotaCredito anularFacturaYGenerarNotaCredito(Long pedidoId, String motivoAnulacion, Usuario usuarioAnulador) throws Exception;
     LocalTime calcularTiempoEstimadoFinalizacion(Pedido pedido) throws Exception;
     List<Pedido> findPedidosByEstados(List<Estado> estados) throws Exception;
     List<ProductoRankingDTO> obtenerRankingProductosMasVendidos(LocalDate desde, LocalDate hasta);
-    List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden);
+    List<PersonaReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden);
     Double calcularTotalCostoPedido(Pedido pedido);
     void descontarInsumosDelStock(Pedido pedido);
     boolean verificarStockParaPedido(Pedido pedido);

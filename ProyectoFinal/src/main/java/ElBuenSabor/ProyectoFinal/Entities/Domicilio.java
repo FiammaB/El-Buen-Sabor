@@ -4,9 +4,7 @@ package ElBuenSabor.ProyectoFinal.Entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,13 +28,13 @@ public class Domicilio extends BaseEntity {
 
     @ManyToMany(mappedBy = "domicilios")
     @JsonIgnore
-    private Set<Cliente> clientes = new HashSet<>();
+    private Set<Persona> personas = new HashSet<>();
 
     @OneToMany(mappedBy = "domicilioEntrega")
     private List<Pedido> pedidos;
 
-    public Cliente getCliente() {
-        return clientes.stream().findFirst().orElse(null);
+    public Persona getCliente() {
+        return personas.stream().findFirst().orElse(null);
     }
 
 }

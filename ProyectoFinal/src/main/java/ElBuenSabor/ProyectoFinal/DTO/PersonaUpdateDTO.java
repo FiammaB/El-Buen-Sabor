@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClienteUpdateDTO {
+public class PersonaUpdateDTO {
 
     private String nombre;
     private String apellido;

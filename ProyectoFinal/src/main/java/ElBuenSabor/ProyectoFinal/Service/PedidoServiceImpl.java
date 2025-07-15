@@ -28,7 +28,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     // Repositorios para resolver relaciones
     private final ArticuloInsumoRepository articuloInsumoRepository;
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
-    private final ClienteRepository clienteRepository;
+    private final PersonaRepository personaRepository;
     private final DomicilioRepository domicilioRepository;
     private final SucursalRepository sucursalRepository;
     private final UsuarioRepository usuarioRepository;
@@ -47,7 +47,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             PedidoRepository pedidoRepository,
             ArticuloInsumoRepository articuloInsumoRepository,
             ArticuloManufacturadoRepository articuloManufacturadoRepository,
-            ClienteRepository clienteRepository,
+            PersonaRepository personaRepository,
             DomicilioRepository domicilioRepository,
             SucursalRepository sucursalRepository,
             UsuarioRepository usuarioRepository,
@@ -64,7 +64,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         this.pedidoRepository = pedidoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
-        this.clienteRepository = clienteRepository;
+        this.personaRepository = personaRepository;
         this.domicilioRepository = domicilioRepository;
         this.sucursalRepository = sucursalRepository;
         this.usuarioRepository = usuarioRepository;
@@ -87,8 +87,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             Pedido pedido = new Pedido();
             System.out.println("DEBUG Pedido: Creando instancia de Pedido para Mercado Pago: " + pedido.getFormaPago());
             // 🧩 Asignación de relaciones obligatorias
-            pedido.setCliente(clienteRepository.findById(dto.getClienteId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado")));
+            pedido.setPersona(personaRepository.findById(dto.getPersonaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrado")));
 
             if (dto.getDomicilioId() != null) {
                 pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
@@ -266,9 +266,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
                         factura.setUrlPdf(generatedPdfUrl); // <-- ¡ASIGNA LA URL A LA INSTANCIA ÚNICA DE FACTURA!
 
-                        String recipientEmail = pedido.getCliente().getUsuario().getEmail();
+                        String recipientEmail = pedido.getPersona().getUsuario().getEmail();
                         String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                        String body = "¡Gracias por tu compra, " + pedido.getCliente().getUsuario().getUsername() + "! Adjuntamos la factura de tu pedido #" + pedido.getId();
+                        String body = "¡Gracias por tu compra, " + pedido.getPersona().getUsuario().getUsername() + "! Adjuntamos la factura de tu pedido #" + pedido.getId();
                         String attachmentFilename = "factura_" + pedido.getId() + ".pdf"; // ✅ línea agregada
 
                         emailService.sendEmail(recipientEmail, subject, body, pdfBytes, attachmentFilename);
@@ -345,7 +345,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             actual.setTipoEnvio(updatedPedido.getTipoEnvio());
             actual.setFormaPago(updatedPedido.getFormaPago());
 
-            actual.setCliente(updatedPedido.getCliente());
+            actual.setPersona(updatedPedido.getPersona());
             actual.setEmpleado(updatedPedido.getEmpleado());
             actual.setSucursal(updatedPedido.getSucursal());
             actual.setDomicilioEntrega(updatedPedido.getDomicilioEntrega());
@@ -419,9 +419,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     }
                     factura.setUrlPdf(generatedPdfUrl);
 
-                    String recipientEmail = actual.getCliente().getUsuario().getEmail();
+                    String recipientEmail = actual.getPersona().getUsuario().getEmail();
                     String subject = "Factura de tu pedido #" + actual.getId() + " - El Buen Sabor";
-                    String body = "¡Gracias por tu compra, " + actual.getCliente().getUsuario().getUsername()
+                    String body = "¡Gracias por tu compra, " + actual.getPersona().getUsuario().getUsername()
                             + "! Adjuntamos la factura de tu pedido #" + actual.getId();
                     String attachmentFilename = "factura_" + actual.getId() + ".pdf";
 
@@ -442,9 +442,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
     @Override
     @Transactional(readOnly = true)
-    public List<Pedido> findPedidosByClienteId(Long clienteId) throws Exception {
+    public List<Pedido> findPedidosByClienteId(Long personaId) throws Exception {
         try {
-            return pedidoRepository.findByClienteId(clienteId);
+            return pedidoRepository.findByPersonaId(personaId);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
@@ -480,7 +480,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     .motivo(motivoAnulacion)
                     .facturaAnulada(facturaAnulada) // Referencia a la factura que anula
                     .pedidoOriginal(pedido) // Referencia al pedido original
-                    .cliente(pedido.getCliente()) // Referencia al cliente del pedido
+                    .persona(pedido.getPersona()) // Referencia al persona del pedido
                     .build();
 
             // Copiar detalles del pedido original a la Nota de Crédito
@@ -556,10 +556,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 notaCredito.setUrlPdfNotaCredito(pdfUrlNC); // <-- ¡Guardar la URL en la NotaCredito!
                 notaCreditoService.save(notaCredito); // <-- Persistir la URL
 
-                // ✅ Corrección: acceder al usuario del cliente
-                String recipientEmail = notaCredito.getCliente().getUsuario().getEmail();
+                // ✅ Corrección: acceder al usuario del persona
+                String recipientEmail = notaCredito.getPersona().getUsuario().getEmail();
                 String subject = "Nota de Crédito de tu pedido #" + pedido.getId() + " - El Buen Sabor";
-                String body = "Estimado/a " + notaCredito.getCliente().getUsuario().getUsername() + ", \n\n" +
+                String body = "Estimado/a " + notaCredito.getPersona().getUsuario().getUsername() + ", \n\n" +
                         "Adjuntamos la Nota de Crédito N° " + notaCredito.getId() + " emitida por la anulación de tu factura del pedido #" + pedido.getId() + ".\n" +
                         "Motivo de la anulación: " + notaCredito.getMotivo() + "\n\n" +
                         "Puedes descargarla también desde: " + pdfUrlNC + "\n\n" +
@@ -592,7 +592,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     public LocalTime calcularTiempoEstimadoFinalizacion(Pedido pedido) throws Exception {
         long tiempoTotalMinutos = 0;
 
-        // 1. Del tiempo estimado de cada uno de los artículos pedidos por el cliente se elige el mayor
+        // 1. Del tiempo estimado de cada uno de los artículos pedidos por el persona se elige el mayor
         long maxTiempoArticulosPedido = 0;
         if (pedido.getDetallesPedidos() != null) {
             maxTiempoArticulosPedido = pedido.getDetallesPedidos().stream()
@@ -621,7 +621,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         System.out.println("DEBUG Tiempo Estimado: Max tiempo de artículos en pedidos en cocina: " + maxTiempoCocina + " min.");
 
 
-        // 3. 10 minutos de entrega por delivery (solo si el cliente eligió dicha opción)
+        // 3. 10 minutos de entrega por delivery (solo si el persona eligió dicha opción)
         if (pedido.getTipoEnvio() == TipoEnvio.DELIVERY) { // <-- Asumo que TipoEnvio ya está seteado en el pedido
             tiempoTotalMinutos += 10;
             System.out.println("DEBUG Tiempo Estimado: Añadidos 10 min por DELIVERY.");
@@ -647,7 +647,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
     //------------------------REPORTE CLIENTES-----------------------------
     @Override
-    public List<ClienteReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden) {
+    public List<PersonaReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden) {
         return pedidoRepository.obtenerReporteClientes(desde, hasta, orden);
     }
 

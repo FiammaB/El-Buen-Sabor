@@ -1,12 +1,12 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaPerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Persona;
 import ElBuenSabor.ProyectoFinal.Entities.Rol;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
-import ElBuenSabor.ProyectoFinal.Repositories.ClienteRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.PersonaRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,18 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final ClienteRepository clienteRepository;
+    private final PersonaRepository personaRepository;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
 
     public UsuarioServiceImpl(
             UsuarioRepository usuarioRepository,
-            ClienteRepository clienteRepository,
+            PersonaRepository personaRepository,
             PasswordEncoder passwordEncoder,
             UsuarioMapper usuarioMapper) {
         super(usuarioRepository);
         this.usuarioRepository = usuarioRepository;
-        this.clienteRepository = clienteRepository;
+        this.personaRepository = personaRepository;
         this.passwordEncoder = passwordEncoder;
         this.usuarioMapper = usuarioMapper;
     }
@@ -64,19 +64,19 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
 
     @Override
     @Transactional
-    public void actualizarPerfilCliente(String email, ClientePerfilUpdateDTO dto) throws Exception {
+    public void actualizarPerfilCliente(String email, PersonaPerfilUpdateDTO dto) throws Exception {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new Exception("Usuario no encontrado con email: " + email));
 
-        Cliente cliente = clienteRepository.findByUsuario(usuario)
-                .orElseThrow(() -> new Exception("Cliente no encontrado para el usuario con email: " + email));
+        Persona persona = personaRepository.findByUsuario(usuario)
+                .orElseThrow(() -> new Exception("Persona no encontrado para el usuario con email: " + email));
 
         // Actualizar datos personales
-        cliente.setNombre(dto.getNombre());
-        cliente.setApellido(dto.getApellido());
-        cliente.setTelefono(dto.getTelefono());
-        cliente.setFechaNacimiento(dto.getFechaNacimiento());
-        clienteRepository.save(cliente);
+        persona.setNombre(dto.getNombre());
+        persona.setApellido(dto.getApellido());
+        persona.setTelefono(dto.getTelefono());
+        persona.setFechaNacimiento(dto.getFechaNacimiento());
+        personaRepository.save(persona);
 
         // Actualizar email si cambió
         usuario.setEmail(dto.getEmail());

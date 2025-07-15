@@ -26,9 +26,9 @@ public class NotaCredito extends BaseEntity { // Extiende BaseEntity para id y b
     @JoinColumn(name = "factura_anulada_id")
     private Factura facturaAnulada; // <-- Referencia a la Factura (no FacturaVenta)
 
-    @ManyToOne // Referencia al cliente original
-    @JoinColumn(name = "cliente_id")
-    private Cliente cliente; // <-- Cliente al que se emite la nota
+    @ManyToOne // Referencia al persona original
+    @JoinColumn(name = "persona_id")
+    private Persona persona; // <-- Persona al que se emite la nota
 
     // Los detalles de la nota de crédito serán una COPIA de los del pedido original
     // Reutilizamos DetallePedido para la estructura, con FK a NotaCredito

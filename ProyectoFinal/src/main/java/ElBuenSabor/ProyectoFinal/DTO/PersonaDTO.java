@@ -15,7 +15,7 @@ import java.util.List;
 public class PersonaDTO {
 
     private Long id;
-    private String nombreUsuario;
+    private String nombre;
     private String apellido;
     private String telefono;
     private String emailUsuario;

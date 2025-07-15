@@ -2,7 +2,6 @@ package ElBuenSabor.ProyectoFinal.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -34,8 +33,8 @@ public class Pedido extends BaseEntity {
     private LocalDate fechaPedido;
 
     @ManyToOne
-    @JoinColumn(name = "cliente_id")
-    private Cliente cliente;
+    @JoinColumn(name = "persona_id")
+    private Persona persona;
 
     @ManyToOne
     @JoinColumn(name = "domicilio_id")

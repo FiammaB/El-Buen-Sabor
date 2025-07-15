@@ -22,7 +22,7 @@ public class PedidoCreateDTO {
     private String observaciones;
     private Double total;
 
-    private Long clienteId;
+    private Long personaId;
     private Long domicilioId;
     private Long sucursalId;
     private Long empleadoId;

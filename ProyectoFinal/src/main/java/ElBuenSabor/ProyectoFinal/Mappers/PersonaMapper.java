@@ -1,8 +1,8 @@
 package ElBuenSabor.ProyectoFinal.Mappers;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClienteCreateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.ClienteDTO;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Persona;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,18 +15,18 @@ import java.util.List;
         ProvinciaMapper.class,
         PaisMapper.class
 })
-public interface ClienteMapper {
+public interface PersonaMapper {
 
     @Mapping(source = "usuario.username", target = "nombreUsuario")
     @Mapping(source = "usuario.email", target = "emailUsuario")
-    ClienteDTO toDTO(Cliente cliente);
+    PersonaDTO toDTO(Persona persona);
 
     @InheritInverseConfiguration
-    @Mapping(target = "nombre", source = "nombreUsuario") // Agregá esto para el campo de Cliente
+    @Mapping(target = "nombre", source = "nombreUsuario") // Agregá esto para el campo de Persona
     @Mapping(target = "usuario.username", source = "nombreUsuario") // También para el Usuario
-    Cliente toEntity(ClienteDTO dto);
+    Persona toEntity(PersonaDTO dto);
 
-    Cliente toEntity(ClienteCreateDTO createDTO);
+    Persona toEntity(PersonaCreateDTO createDTO);
 
-    List<ClienteDTO> toDTOList(List<Cliente> clientes);
+    List<PersonaDTO> toDTOList(List<Persona> personas);
 }

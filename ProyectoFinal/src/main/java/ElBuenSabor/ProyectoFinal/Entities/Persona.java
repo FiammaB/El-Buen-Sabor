@@ -5,18 +5,16 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
-@Table(name = "cliente")
+@Table(name = "persona")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-public class Cliente extends BaseEntity {
+public class Persona extends BaseEntity {
 
     private String nombre;
     private String apellido;
@@ -26,8 +24,8 @@ public class Cliente extends BaseEntity {
 
     @ManyToMany(cascade = CascadeType.PERSIST) // o PERSIST + MERGE
     @JoinTable(
-            name = "cliente_domicilio",
-            joinColumns = @JoinColumn(name = "cliente_id"),
+            name = "persona_domicilio",
+            joinColumns = @JoinColumn(name = "persona_id"),
             inverseJoinColumns = @JoinColumn(name = "domicilio_id")
     )
     private List<Domicilio> domicilios = new ArrayList<>();
@@ -41,7 +39,7 @@ public class Cliente extends BaseEntity {
     //@JoinColumn(name = "usuario_id", unique = true)
     //private Usuario usuario;
 
-    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL)
     private List<Pedido> pedidos = new ArrayList<>();
 
     @OneToOne

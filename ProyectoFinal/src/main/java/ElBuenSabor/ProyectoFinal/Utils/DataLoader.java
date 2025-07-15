@@ -23,7 +23,7 @@ public class DataLoader implements CommandLineRunner {
     private final UnidadMedidaService unidadMedidaService;
     private final ImagenService imagenService;
     private final UsuarioService usuarioService;
-    private final ClienteService clienteService;
+    private final PersonaService personaService;
     private final ArticuloInsumoService articuloInsumoService;
     private final ArticuloManufacturadoService articuloManufacturadoService;
     private final ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService;
@@ -41,7 +41,7 @@ public class DataLoader implements CommandLineRunner {
                       UnidadMedidaService unidadMedidaService,
                       ImagenService imagenService,
                       UsuarioService usuarioService,
-                      ClienteService clienteService,
+                      PersonaService personaService,
                       ArticuloInsumoService articuloInsumoService,
                       ArticuloManufacturadoService articuloManufacturadoService,
                       ArticuloManufacturadoDetalleService articuloManufacturadoDetalleService,
@@ -58,7 +58,7 @@ public class DataLoader implements CommandLineRunner {
         this.unidadMedidaService = unidadMedidaService;
         this.imagenService = imagenService;
         this.usuarioService = usuarioService;
-        this.clienteService = clienteService;
+        this.personaService = personaService;
         this.articuloInsumoService = articuloInsumoService;
         this.articuloManufacturadoService = articuloManufacturadoService;
         this.articuloManufacturadoDetalleService = articuloManufacturadoDetalleService;
@@ -175,25 +175,25 @@ public class DataLoader implements CommandLineRunner {
 
             // 4. Usuario CLIENTE
             Usuario usuarioCliente = usuarioService.save(Usuario.builder()
-                    .email("faustinovinolo@gmail.com") //Inventados (ej: cliente@buen.com)
+                    .email("faustinovinolo@gmail.com") //Inventados (ej: persona@buen.com)
                     .password(passwordEncoder.encode("cliente123")) // Mismas contraseñas cliente123
                     .rol(Rol.CLIENTE)//Siempre rol CLIENTE
                     .username("Fiamma") //Nombre inventado
                     .build());
 
-            // 5. Cliente asociado al Usuario
-            Cliente cliente = Cliente.builder()
+            // 5. Persona asociado al Usuario
+            Persona persona = Persona.builder()
                     .apellido("Brizuela")//Apellido inventado
                     .telefono("2615551234")//telefono inventado
                     .fechaNacimiento(LocalDate.of(1990, 5, 15))//Nacimiento inventado
                     .imagen(imgCliente)//imagen siempre la misma de stock
                     .usuario(usuarioCliente)//relación con el usuario ya creado
-                    .domicilios(List.of(domicilioCliente))//Domicilio creado individualmente para el cliente
+                    .domicilios(List.of(domicilioCliente))//Domicilio creado individualmente para el persona
                     .build();
 
-            clienteService.save(cliente);
+            personaService.save(persona);
 
-            // Cliente 1
+            // Persona 1
             Domicilio domicilioCliente1 = domicilioService.save(Domicilio.builder()
                     .calle("Av. Belgrano")
                     .numero(456)
@@ -202,13 +202,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente1 = usuarioService.save(Usuario.builder()
-                    .email("cliente1@buen.com")
+                    .email("persona1@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Camila")
                     .build());
 
-            Cliente cliente1 = Cliente.builder()
+            Persona persona1 = Persona.builder()
                     .apellido("Rodríguez")
                     .telefono("2611112233")
                     .fechaNacimiento(LocalDate.of(1993, 3, 10))
@@ -217,9 +217,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente1))
                     .build();
 
-            clienteService.save(cliente1);
+            personaService.save(persona1);
 
-// Cliente 2
+// Persona 2
             Domicilio domicilioCliente2 = domicilioService.save(Domicilio.builder()
                     .calle("Calle Las Heras")
                     .numero(789)
@@ -228,13 +228,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente2 = usuarioService.save(Usuario.builder()
-                    .email("cliente2@buen.com")
+                    .email("persona2@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Lucas")
                     .build());
 
-            Cliente cliente2 = Cliente.builder()
+            Persona persona2 = Persona.builder()
                     .apellido("Fernández")
                     .telefono("2614445566")
                     .fechaNacimiento(LocalDate.of(1988, 7, 22))
@@ -243,9 +243,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente2))
                     .build();
 
-            clienteService.save(cliente2);
+            personaService.save(persona2);
 
-            // Cliente 3
+            // Persona 3
             Domicilio domicilioCliente3 = domicilioService.save(Domicilio.builder()
                     .calle("San Martín")
                     .numero(321)
@@ -254,13 +254,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente3 = usuarioService.save(Usuario.builder()
-                    .email("cliente3@buen.com")
+                    .email("persona3@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Valentina")
                     .build());
 
-            Cliente cliente3 = Cliente.builder()
+            Persona persona3 = Persona.builder()
                     .apellido("Gómez")
                     .telefono("2617778899")
                     .fechaNacimiento(LocalDate.of(1995, 11, 5))
@@ -269,9 +269,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente3))
                     .build();
 
-            clienteService.save(cliente3);
+            personaService.save(persona3);
 
-// Cliente 4
+// Persona 4
             Domicilio domicilioCliente4 = domicilioService.save(Domicilio.builder()
                     .calle("Patricias Mendocinas")
                     .numero(654)
@@ -280,13 +280,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente4 = usuarioService.save(Usuario.builder()
-                    .email("cliente4@buen.com")
+                    .email("persona4@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Bruno")
                     .build());
 
-            Cliente cliente4 = Cliente.builder()
+            Persona persona4 = Persona.builder()
                     .apellido("López")
                     .telefono("2613334455")
                     .fechaNacimiento(LocalDate.of(1985, 1, 18))
@@ -295,9 +295,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente4))
                     .build();
 
-            clienteService.save(cliente4);
+            personaService.save(persona4);
 
-            // Cliente 5
+            // Persona 5
             Domicilio domicilioCliente5 = domicilioService.save(Domicilio.builder()
                     .calle("Godoy Cruz")
                     .numero(88)
@@ -306,13 +306,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente5 = usuarioService.save(Usuario.builder()
-                    .email("cliente5@buen.com")
+                    .email("persona5@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Martina")
                     .build());
 
-            Cliente cliente5 = Cliente.builder()
+            Persona persona5 = Persona.builder()
                     .apellido("Fernández")
                     .telefono("2611122334")
                     .fechaNacimiento(LocalDate.of(1993, 3, 22))
@@ -321,9 +321,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente5))
                     .build();
 
-            clienteService.save(cliente5);
+            personaService.save(persona5);
 
-// Cliente 6
+// Persona 6
             Domicilio domicilioCliente6 = domicilioService.save(Domicilio.builder()
                     .calle("Maipú")
                     .numero(456)
@@ -332,13 +332,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente6 = usuarioService.save(Usuario.builder()
-                    .email("cliente6@buen.com")
+                    .email("persona6@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Ezequiel")
                     .build());
 
-            Cliente cliente6 = Cliente.builder()
+            Persona persona6 = Persona.builder()
                     .apellido("Sánchez")
                     .telefono("2616677889")
                     .fechaNacimiento(LocalDate.of(1988, 6, 10))
@@ -347,9 +347,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente6))
                     .build();
 
-            clienteService.save(cliente6);
+            personaService.save(persona6);
 
-            // Cliente 7
+            // Persona 7
             Domicilio domicilioCliente7 = domicilioService.save(Domicilio.builder()
                     .calle("25 de Mayo")
                     .numero(1025)
@@ -358,13 +358,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente7 = usuarioService.save(Usuario.builder()
-                    .email("cliente7@buen.com")
+                    .email("persona7@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Valentina")
                     .build());
 
-            Cliente cliente7 = Cliente.builder()
+            Persona persona7 = Persona.builder()
                     .apellido("Moreno")
                     .telefono("2613004567")
                     .fechaNacimiento(LocalDate.of(1997, 11, 12))
@@ -373,9 +373,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente7))
                     .build();
 
-            clienteService.save(cliente7);
+            personaService.save(persona7);
 
-// Cliente 8
+// Persona 8
             Domicilio domicilioCliente8 = domicilioService.save(Domicilio.builder()
                     .calle("Tucumán")
                     .numero(731)
@@ -384,13 +384,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente8 = usuarioService.save(Usuario.builder()
-                    .email("cliente8@buen.com")
+                    .email("persona8@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Benjamín")
                     .build());
 
-            Cliente cliente8 = Cliente.builder()
+            Persona persona8 = Persona.builder()
                     .apellido("Quiroga")
                     .telefono("2619801234")
                     .fechaNacimiento(LocalDate.of(1991, 4, 27))
@@ -399,9 +399,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente8))
                     .build();
 
-            clienteService.save(cliente8);
+            personaService.save(persona8);
 
-            // Cliente 9
+            // Persona 9
             Domicilio domicilioCliente9 = domicilioService.save(Domicilio.builder()
                     .calle("Av. San Martín")
                     .numero(856)
@@ -410,13 +410,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente9 = usuarioService.save(Usuario.builder()
-                    .email("cliente9@buen.com")
+                    .email("persona9@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Sofía")
                     .build());
 
-            Cliente cliente9 = Cliente.builder()
+            Persona persona9 = Persona.builder()
                     .apellido("Montoya")
                     .telefono("2613407890")
                     .fechaNacimiento(LocalDate.of(1993, 2, 18))
@@ -425,9 +425,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente9))
                     .build();
 
-            clienteService.save(cliente9);
+            personaService.save(persona9);
 
-// Cliente 10
+// Persona 10
             Domicilio domicilioCliente10 = domicilioService.save(Domicilio.builder()
                     .calle("España")
                     .numero(1290)
@@ -436,13 +436,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente10 = usuarioService.save(Usuario.builder()
-                    .email("cliente10@buen.com")
+                    .email("persona10@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Tomás")
                     .build());
 
-            Cliente cliente10 = Cliente.builder()
+            Persona persona10 = Persona.builder()
                     .apellido("Sánchez")
                     .telefono("2614109876")
                     .fechaNacimiento(LocalDate.of(1990, 10, 5))
@@ -451,9 +451,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente10))
                     .build();
 
-            clienteService.save(cliente10);
+            personaService.save(persona10);
 
-            // Cliente 11
+            // Persona 11
             Domicilio domicilioCliente11 = domicilioService.save(Domicilio.builder()
                     .calle("Av. Libertador")
                     .numero(707)
@@ -462,13 +462,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente11 = usuarioService.save(Usuario.builder()
-                    .email("cliente11@buen.com")
+                    .email("persona11@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Guadalupe")
                     .build());
 
-            Cliente cliente11 = Cliente.builder()
+            Persona persona11 = Persona.builder()
                     .apellido("Carrizo")
                     .telefono("2613004567")
                     .fechaNacimiento(LocalDate.of(1988, 4, 22))
@@ -477,9 +477,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente11))
                     .build();
 
-            clienteService.save(cliente11);
+            personaService.save(persona11);
 
-// Cliente 12
+// Persona 12
             Domicilio domicilioCliente12 = domicilioService.save(Domicilio.builder()
                     .calle("Av. Godoy Cruz")
                     .numero(315)
@@ -488,13 +488,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente12 = usuarioService.save(Usuario.builder()
-                    .email("cliente12@buen.com")
+                    .email("persona12@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Luciano")
                     .build());
 
-            Cliente cliente12 = Cliente.builder()
+            Persona persona12 = Persona.builder()
                     .apellido("Nieto")
                     .telefono("2613901234")
                     .fechaNacimiento(LocalDate.of(1995, 9, 9))
@@ -503,9 +503,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente12))
                     .build();
 
-            clienteService.save(cliente12);
+            personaService.save(persona12);
 
-// Cliente 13
+// Persona 13
             Domicilio domicilioCliente13 = domicilioService.save(Domicilio.builder()
                     .calle("Ituzaingó")
                     .numero(444)
@@ -514,13 +514,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente13 = usuarioService.save(Usuario.builder()
-                    .email("cliente13@buen.com")
+                    .email("persona13@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Martina")
                     .build());
 
-            Cliente cliente13 = Cliente.builder()
+            Persona persona13 = Persona.builder()
                     .apellido("Toledo")
                     .telefono("2613809876")
                     .fechaNacimiento(LocalDate.of(1997, 6, 17))
@@ -529,9 +529,9 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente13))
                     .build();
 
-            clienteService.save(cliente13);
+            personaService.save(persona13);
 
-// Cliente 14
+// Persona 14
             Domicilio domicilioCliente14 = domicilioService.save(Domicilio.builder()
                     .calle("José Ingenieros")
                     .numero(672)
@@ -540,13 +540,13 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Usuario usuarioCliente14 = usuarioService.save(Usuario.builder()
-                    .email("cliente14@buen.com")
+                    .email("persona14@buen.com")
                     .password(passwordEncoder.encode("cliente123"))
                     .rol(Rol.CLIENTE)
                     .username("Alejo")
                     .build());
 
-            Cliente cliente14 = Cliente.builder()
+            Persona persona14 = Persona.builder()
                     .apellido("Herrera")
                     .telefono("2613211122")
                     .fechaNacimiento(LocalDate.of(1989, 8, 12))
@@ -555,7 +555,7 @@ public class DataLoader implements CommandLineRunner {
                     .domicilios(List.of(domicilioCliente14))
                     .build();
 
-            clienteService.save(cliente14);
+            personaService.save(persona14);
 
 
             // 6. Categoría y Unidades
@@ -1660,8 +1660,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)//Variar entre: DELIVERY y RETIRO_EN_LOCAL (DELIVERY solo disponible para pago con mercado_pago)
                     .formaPago(FormaPago.MERCADO_PAGO)//Variar entre: MERCADO_PAGO Y EFECTIVO
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente)//Variar entre clientes creados anteriormente
-                    .domicilioEntrega(domicilioCliente)//Variar dependiendo el cliente seleccionado en el campo anterior
+                    .persona(persona)//Variar entre personas creados anteriormente
+                    .domicilioEntrega(domicilioCliente)//Variar dependiendo el persona seleccionado en el campo anterior
                     .sucursal(sucursal)//Misma sucursal
                     .factura(facturaPedido) //Asignar factura
                     .anulado(false)
@@ -1712,7 +1712,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente)
+                    .persona(persona)
                     .domicilioEntrega(domicilioCliente)
                     .sucursal(sucursal)
                     .factura(facturaPedido1)
@@ -1774,7 +1774,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente)
+                    .persona(persona)
                     .domicilioEntrega(null) // No se necesita para retiro
                     .sucursal(sucursal)
                     .factura(factura1)
@@ -1828,8 +1828,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente2) // ← Cambiar al segundo cliente
-                    .domicilioEntrega(cliente2.getDomicilios().stream().findFirst().orElse(null))
+                    .persona(persona2) // ← Cambiar al segundo persona
+                    .domicilioEntrega(persona2.getDomicilios().stream().findFirst().orElse(null))
                     .sucursal(sucursal)
                     .factura(factura2)
                     .anulado(false)
@@ -1883,8 +1883,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente3) // ← Tercer cliente
-                    .domicilioEntrega(cliente3.getDomicilios().stream().findFirst().orElse(null))
+                    .persona(persona3) // ← Tercer persona
+                    .domicilioEntrega(persona3.getDomicilios().stream().findFirst().orElse(null))
                     .sucursal(sucursal)
                     .factura(factura3)
                     .anulado(false)
@@ -1938,8 +1938,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente4) // ← Cuarto cliente
-                    .domicilioEntrega(cliente4.getDomicilios().stream().findFirst().orElse(null))
+                    .persona(persona4) // ← Cuarto persona
+                    .domicilioEntrega(persona4.getDomicilios().stream().findFirst().orElse(null))
                     .sucursal(sucursal)
                     .factura(factura4)
                     .anulado(false)
@@ -1993,7 +1993,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente5) // ← Quinto cliente
+                    .persona(persona5) // ← Quinto persona
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(factura5)
@@ -2048,7 +2048,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente6) // ← Sexto cliente
+                    .persona(persona6) // ← Sexto persona
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(factura6)
@@ -2101,7 +2101,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente)
+                    .persona(persona)
                     .domicilioEntrega(null) // Retiro en local
                     .sucursal(sucursal)
                     .factura(factura7)
@@ -2153,8 +2153,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente2)
-                    .domicilioEntrega(cliente2.getDomicilios().stream().findFirst().orElse(null))
+                    .persona(persona2)
+                    .domicilioEntrega(persona2.getDomicilios().stream().findFirst().orElse(null))
                     .sucursal(sucursal)
                     .factura(factura8)
                     .anulado(false)
@@ -2209,7 +2209,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente3)
+                    .persona(persona3)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(factura9)
@@ -2265,8 +2265,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente4)
-                    .domicilioEntrega(cliente4.getDomicilios().stream().findFirst().orElse(null))
+                    .persona(persona4)
+                    .domicilioEntrega(persona4.getDomicilios().stream().findFirst().orElse(null))
                     .sucursal(sucursal)
                     .factura(factura10)
                     .anulado(false)
@@ -2321,7 +2321,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente5)
+                    .persona(persona5)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(factura11)
@@ -2377,7 +2377,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente2) // Usar cliente existente
+                    .persona(persona2) // Usar persona existente
                     .domicilioEntrega(null) // Su domicilio
                     .sucursal(sucursal)
                     .factura(facturaPedido12)
@@ -2431,7 +2431,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente3)
+                    .persona(persona3)
                     .domicilioEntrega(domicilioCliente3)
                     .sucursal(sucursal)
                     .factura(facturaPedido13)
@@ -2485,7 +2485,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente4)
+                    .persona(persona4)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(facturaPedido14)
@@ -2532,7 +2532,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente5)
+                    .persona(persona5)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(facturaPedido15)
@@ -2579,7 +2579,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente6)
+                    .persona(persona6)
                     .domicilioEntrega(domicilioCliente6)
                     .sucursal(sucursal)
                     .factura(facturaPedido16)
@@ -2626,7 +2626,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente7)
+                    .persona(persona7)
                     .domicilioEntrega(domicilioCliente7)
                     .sucursal(sucursal)
                     .factura(facturaPedido17)
@@ -2680,7 +2680,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente8)
+                    .persona(persona8)
                     .domicilioEntrega(domicilioCliente8)
                     .sucursal(sucursal)
                     .factura(facturaPedido18)
@@ -2734,7 +2734,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente10)
+                    .persona(persona10)
                     .domicilioEntrega(domicilioCliente10)
                     .sucursal(sucursal)
                     .factura(facturaPedido19)
@@ -2795,7 +2795,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente11)
+                    .persona(persona11)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(facturaPedido20)
@@ -2856,7 +2856,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente) // Usa cliente previamente cargado
+                    .persona(persona) // Usa persona previamente cargado
                     .domicilioEntrega(domicilioCliente)
                     .sucursal(sucursal)
                     .factura(facturaPedido202)
@@ -2918,7 +2918,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente) // Usa cliente previamente cargado
+                    .persona(persona) // Usa persona previamente cargado
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(facturaPedido21)
@@ -2978,8 +2978,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente10) // por ejemplo, décimo cliente cargado
-                    .domicilioEntrega(cliente10.getDomicilios().iterator().next())
+                    .persona(persona10) // por ejemplo, décimo persona cargado
+                    .domicilioEntrega(persona10.getDomicilios().iterator().next())
                     .sucursal(sucursal)
                     .factura(facturaPedido22)
                     .anulado(false)
@@ -3039,8 +3039,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente3) // Cliente previamente creado
-                    .domicilioEntrega(cliente3.getDomicilios().iterator().next()) // Primer domicilio asociado
+                    .persona(persona3) // Persona previamente creado
+                    .domicilioEntrega(persona3.getDomicilios().iterator().next()) // Primer domicilio asociado
                     .sucursal(sucursal)
                     .factura(facturaPedido23)
                     .anulado(false)
@@ -3097,7 +3097,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente4)
+                    .persona(persona4)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(facturaPedido24)
@@ -3155,8 +3155,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente5)
-                    .domicilioEntrega(cliente5.getDomicilios().iterator().next())
+                    .persona(persona5)
+                    .domicilioEntrega(persona5.getDomicilios().iterator().next())
                     .sucursal(sucursal)
                     .factura(facturaPedido25)
                     .anulado(false)
@@ -3213,7 +3213,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente6)
+                    .persona(persona6)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(facturaPedido26)
@@ -3271,8 +3271,8 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente12)
-                    .domicilioEntrega(cliente12.getDomicilios().iterator().next())
+                    .persona(persona12)
+                    .domicilioEntrega(persona12.getDomicilios().iterator().next())
                     .sucursal(sucursal)
                     .factura(facturaPedido27)
                     .anulado(false)
@@ -3322,7 +3322,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.RETIRO_EN_LOCAL)
                     .formaPago(FormaPago.EFECTIVO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente5)
+                    .persona(persona5)
                     .domicilioEntrega(null)
                     .sucursal(sucursal)
                     .factura(factura28)
@@ -3370,7 +3370,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente9)
+                    .persona(persona9)
                     .domicilioEntrega(domicilioCliente9)
                     .sucursal(sucursal)
                     .factura(factura29)
@@ -3417,7 +3417,7 @@ public class DataLoader implements CommandLineRunner {
                     .tipoEnvio(TipoEnvio.DELIVERY)
                     .formaPago(FormaPago.MERCADO_PAGO)
                     .fechaPedido(LocalDate.now())
-                    .cliente(cliente13)
+                    .persona(persona13)
                     .domicilioEntrega(domicilioCliente13)
                     .sucursal(sucursal)
                     .factura(factura30)

@@ -5,12 +5,11 @@ import ElBuenSabor.ProyectoFinal.DTO.NotaCreditoDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Factura;
 import ElBuenSabor.ProyectoFinal.Entities.NotaCredito;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
-import ElBuenSabor.ProyectoFinal.Entities.Cliente;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-@Mapper(componentModel = "spring", uses = {DetallePedidoMapper.class, ClienteMapper.class}) // Usar otros mappers
+@Mapper(componentModel = "spring", uses = {DetallePedidoMapper.class, PersonaMapper.class}) // Usar otros mappers
 public interface NotaCreditoMapper {
 
     @Mapping(target = "facturaAnuladaId", source = "facturaAnulada.id")
@@ -19,7 +18,7 @@ public interface NotaCreditoMapper {
 
     @Mapping(target = "facturaAnulada", source = "facturaAnuladaId", qualifiedByName = "mapFacturaIdToFactura")
     @Mapping(target = "pedidoOriginal", source = "pedidoOriginalId", qualifiedByName = "mapPedidoIdToPedido")
-    @Mapping(target = "cliente", ignore = true) // Cliente se asignará en el servicio/controlador
+    @Mapping(target = "persona", ignore = true) // Persona se asignará en el servicio/controlador
     NotaCredito toEntity(NotaCreditoDTO notaCreditoDTO);
 
     // Métodos auxiliares para MapStruct si los necesitas para toEntity desde ID

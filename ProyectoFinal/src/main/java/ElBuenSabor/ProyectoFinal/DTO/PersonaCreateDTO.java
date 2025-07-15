@@ -1,4 +1,4 @@
-// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/DTO/ClienteCreateDTO.java
+// ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/DTO/PersonaCreateDTO.java
 package ElBuenSabor.ProyectoFinal.DTO;
 
 import ElBuenSabor.ProyectoFinal.Validations.EsMayorDeEdad;
@@ -12,7 +12,7 @@ import java.util.List; // Importa List
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClienteCreateDTO {
+public class PersonaCreateDTO {
 
     @NotBlank(message = "El nombre es obligatorio")
     @Size(min = 2, max = 50, message = "El nombre debe tener entre 2 y 50 caracteres")

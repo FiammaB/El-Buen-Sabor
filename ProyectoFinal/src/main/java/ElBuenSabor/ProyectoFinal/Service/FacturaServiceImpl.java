@@ -60,16 +60,16 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
                     .setFontSize(20));
             document.add(new Paragraph("\n")); // Salto de línea
 
-            // Información del Pedido y Cliente
+            // Información del Pedido y Persona
             document.add(new Paragraph("Pedido N°: " + pedido.getId()));
             document.add(new Paragraph("Fecha: " + pedido.getFechaPedido().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
 
-            Cliente cliente = pedido.getCliente();
-            if (cliente != null && cliente.getUsuario() != null) {
-                document.add(new Paragraph("Cliente: "
-                        + cliente.getUsuario().getUsername() + " "
-                        + cliente.getApellido()));
-                document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
+            Persona persona = pedido.getPersona();
+            if (persona != null && persona.getUsuario() != null) {
+                document.add(new Paragraph("Persona: "
+                        + persona.getUsuario().getUsername() + " "
+                        + persona.getApellido()));
+                document.add(new Paragraph("Email: " + persona.getUsuario().getEmail()));
 
                 if (pedido.getDomicilioEntrega() != null) {
                     document.add(new Paragraph("Dirección: "
@@ -178,17 +178,17 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
                     .setFontSize(20));
             document.add(new Paragraph("\n"));
 
-            // Información de la Nota de Crédito, Cliente y Factura Original
+            // Información de la Nota de Crédito, Persona y Factura Original
             document.add(new Paragraph("Nota de Crédito N°: " + notaCredito.getId()));
             document.add(new Paragraph("Fecha de Emisión: " + notaCredito.getFechaEmision().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
             document.add(new Paragraph("Motivo: " + notaCredito.getMotivo()));
 
-            Cliente cliente = notaCredito.getCliente();
-            if (cliente != null && cliente.getUsuario() != null) {
-                document.add(new Paragraph("Cliente: "
-                        + cliente.getUsuario().getUsername() + " "
-                        + cliente.getApellido()));
-                document.add(new Paragraph("Email: " + cliente.getUsuario().getEmail()));
+            Persona persona = notaCredito.getPersona();
+            if (persona != null && persona.getUsuario() != null) {
+                document.add(new Paragraph("Persona: "
+                        + persona.getUsuario().getUsername() + " "
+                        + persona.getApellido()));
+                document.add(new Paragraph("Email: " + persona.getUsuario().getEmail()));
             }
 
 

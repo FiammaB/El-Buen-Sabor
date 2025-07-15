@@ -1,10 +1,9 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.ClientePerfilUpdateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaPerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.NombreDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PerfilDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
 import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
@@ -167,7 +166,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     // -------------------- PERFIL CLIENTE COMPLETO ---------------------
 
     @PutMapping("/perfil/cliente/{email}")
-    public ResponseEntity<?> actualizarPerfilCliente(@PathVariable String email, @RequestBody ClientePerfilUpdateDTO dto) {
+    public ResponseEntity<?> actualizarPerfilCliente(@PathVariable String email, @RequestBody PersonaPerfilUpdateDTO dto) {
         try {
             usuarioService.actualizarPerfilCliente(email, dto);
             return ResponseEntity.ok("Perfil actualizado correctamente");

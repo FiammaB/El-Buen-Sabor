@@ -16,7 +16,8 @@ import java.util.List;
         PaisMapper.class
 })
 public interface PersonaMapper {
-
+    @Mapping(source = "usuario.username", target = "nombre")
+    @Mapping(source = "usuario.email", target = "emailUsuario")
     PersonaDTO toDTO(Persona persona);
 
     Persona toEntity(PersonaDTO dto);

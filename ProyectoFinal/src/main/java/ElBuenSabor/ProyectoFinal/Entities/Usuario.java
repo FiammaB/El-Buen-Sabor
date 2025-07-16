@@ -24,4 +24,8 @@ public class Usuario extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
+
+    @Column(nullable = false)
+    private boolean primerInicio = true;
+
 }

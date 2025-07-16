@@ -1,9 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Controllers;
 
-import ElBuenSabor.ProyectoFinal.DTO.PersonaCreateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PersonaDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PersonaPerfilUpdateDTO;
-import ElBuenSabor.ProyectoFinal.DTO.PedidoDTO;
+import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.PersonaMapper;
@@ -280,6 +277,31 @@ public class PersonaController extends BaseController<Persona, Long> {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    @PostMapping("/empleado")
+    public ResponseEntity<?> registrarEmpleado(@Valid @RequestBody PersonaEmpleadoCreateDTO dto) {
+        try {
+            Usuario usuario = usuarioService.findById(dto.getUsuarioId());
+            if (usuario == null) {
+                return ResponseEntity.badRequest().body("Usuario no encontrado");
+            }
+            Persona persona = Persona.builder()
+                    .nombre(dto.getNombre())
+                    .apellido(dto.getApellido())
+                    .telefono(dto.getTelefono())
+                    .fechaNacimiento(dto.getFechaNacimiento())
+                    .usuario(usuario)
+                    .build();
+            // Si hace falta, setear imagen y domicilios...
+            Persona saved = personaService.save(persona);
+            return ResponseEntity.status(HttpStatus.CREATED).body(personaMapper.toDTO(saved));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+
+
 
     // Si tu BaseController también tiene un @DeleteMapping y quieres usarlo para el borrado lógico,
     // déjalo como está. Si quieres personalizarlo, lo sobrescribirías aquí.

@@ -7,6 +7,7 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 
 @Data
@@ -29,4 +30,6 @@ public class PromocionDTO {
     private List<ArticuloManufacturadoDTO> articulosManufacturados;
     private List<SucursalDTO> sucursales;
     private  boolean baja;
+    
+    private Set<ArticuloManufacturadoDetalleDTO> detalles;
 }

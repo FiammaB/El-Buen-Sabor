@@ -4,9 +4,12 @@ import ElBuenSabor.ProyectoFinal.DTO.PersonaPerfilUpdateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.NombreDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PerfilDTO;
 import ElBuenSabor.ProyectoFinal.DTO.UsuarioDTO;
+import ElBuenSabor.ProyectoFinal.Entities.Persona;
 import ElBuenSabor.ProyectoFinal.Entities.Rol;
 import ElBuenSabor.ProyectoFinal.Entities.Usuario;
+import ElBuenSabor.ProyectoFinal.Mappers.PerfilMapper;
 import ElBuenSabor.ProyectoFinal.Mappers.UsuarioMapper;
+import ElBuenSabor.ProyectoFinal.Service.PersonaService;
 import ElBuenSabor.ProyectoFinal.Service.UsuarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,16 +25,22 @@ import java.util.List;
 public class UsuarioController extends BaseController<Usuario, Long> {
 
     private final UsuarioMapper usuarioMapper;
+    private final PerfilMapper perfilMapper;
     private final UsuarioService usuarioService;
+    private final PersonaService personaService;
     private final PasswordEncoder passwordEncoder;
 
     public UsuarioController(
             UsuarioService usuarioService,
             UsuarioMapper usuarioMapper,
+            PerfilMapper perfilMapper,
+            PersonaService personaService,
             PasswordEncoder passwordEncoder) {
         super(usuarioService);
         this.usuarioService = usuarioService;
         this.usuarioMapper = usuarioMapper;
+        this.perfilMapper = perfilMapper;
+        this.personaService = personaService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -41,21 +50,13 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario usuario = usuarioMapper.toEntity(dto);
 
-            // ✅ Forzamos username siempre
             usuario.setUsername(dto.getUsername() != null && !dto.getUsername().isBlank()
                     ? dto.getUsername()
                     : dto.getEmail().split("@")[0]);
 
             usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-            // ✅ Si no viene rol, cliente por defecto
-            if (dto.getRol() == null) {
-                usuario.setRol(Rol.CLIENTE);
-            } else {
-                usuario.setRol(Rol.valueOf(dto.getRol().name()));
-            }
-
-            usuario.setPrimerInicio(false); // ✅ Los clientes NO necesitan cambiar contraseña al iniciar
+            usuario.setRol(dto.getRol() != null ? Rol.valueOf(dto.getRol().name()) : Rol.CLIENTE);
+            usuario.setPrimerInicio(false);
 
             Usuario saved = usuarioService.save(usuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(saved));
@@ -70,15 +71,13 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     public ResponseEntity<?> registrarCocinero(@RequestBody UsuarioDTO usuarioDTO) {
         try {
             Usuario nuevoCocinero = usuarioMapper.toEntity(usuarioDTO);
-
-            // ✅ Forzamos username si no viene
             nuevoCocinero.setUsername(usuarioDTO.getUsername() != null && !usuarioDTO.getUsername().isBlank()
                     ? usuarioDTO.getUsername()
                     : usuarioDTO.getEmail().split("@")[0]);
 
             nuevoCocinero.setRol(Rol.COCINERO);
             nuevoCocinero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-            nuevoCocinero.setPrimerInicio(true); // ✅ Cambiar contraseña al iniciar
+            nuevoCocinero.setPrimerInicio(true);
 
             Usuario saved = usuarioService.save(nuevoCocinero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cocinero creado con ID: " + saved.getId());
@@ -93,15 +92,13 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     public ResponseEntity<?> registrarCajero(@RequestBody UsuarioDTO usuarioDTO) {
         try {
             Usuario nuevoCajero = usuarioMapper.toEntity(usuarioDTO);
-
-            // ✅ Forzamos username si no viene
             nuevoCajero.setUsername(usuarioDTO.getUsername() != null && !usuarioDTO.getUsername().isBlank()
                     ? usuarioDTO.getUsername()
                     : usuarioDTO.getEmail().split("@")[0]);
 
             nuevoCajero.setRol(Rol.CAJERO);
             nuevoCajero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-            nuevoCajero.setPrimerInicio(true); // ✅ Cambiar contraseña al iniciar
+            nuevoCajero.setPrimerInicio(true);
 
             Usuario saved = usuarioService.save(nuevoCajero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cajero creado con ID: " + saved.getId());
@@ -161,7 +158,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         }
     }
 
-    // -------------------- PERFIL REDUCIDO ---------------------
+    // -------------------- PERFIL COMPLETO ---------------------
     @GetMapping("/perfil/{email}")
     public ResponseEntity<?> getPerfil(@PathVariable String email) {
         try {
@@ -170,13 +167,12 @@ public class UsuarioController extends BaseController<Usuario, Long> {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Usuario no encontrado\"}");
             }
 
-            PerfilDTO dto = new PerfilDTO();
-            dto.setId(usuario.getId());
-            dto.setUsuario(usuarioMapper.toDTO(usuario));
-
-            return ResponseEntity.ok(dto);
+            // ✅ Ahora buscamos Persona, porque el mapper recibe Persona
+            Persona persona = personaService.findById(usuario.getId());
+            return ResponseEntity.ok(perfilMapper.toPerfilDTO(persona));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
@@ -196,7 +192,6 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         }
     }
 
-    // -------------------- PERFIL CLIENTE COMPLETO ---------------------
     @PutMapping("/perfil/cliente/{email}")
     public ResponseEntity<?> actualizarPerfilCliente(@PathVariable String email, @RequestBody PersonaPerfilUpdateDTO dto) {
         try {
@@ -207,14 +202,14 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         }
     }
 
+    // -------------------- PATCHES ---------------------
     @PatchMapping("/{id}/nombre")
     public ResponseEntity<?> updateNombre(@PathVariable Long id, @RequestBody NombreDTO nombreDTO) {
         try {
             usuarioService.actualizarNombre(id, nombreDTO.nombre);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 

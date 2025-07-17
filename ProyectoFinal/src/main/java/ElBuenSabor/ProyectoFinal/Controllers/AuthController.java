@@ -42,6 +42,13 @@ public class AuthController {
 
         Persona persona = personaRepository.findByUsuario(usuario).orElse(null);
 
+        // ✅ Verificar si debe cambiar contraseña
+        boolean debeCambiarPassword =
+                usuario.isPrimerInicio() &&
+                        (usuario.getRol() == Rol.CAJERO ||
+                                usuario.getRol() == Rol.COCINERO ||
+                                usuario.getRol() == Rol.DELIVERY);
+
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),
                 persona != null ? persona.getNombre() : usuario.getUsername(),
@@ -51,7 +58,12 @@ public class AuthController {
                 usuario.getRol()
         );
 
-        return ResponseEntity.ok(response);
+        // ✅ Devolvemos usuario + flag de cambio de password
+        Map<String, Object> loginData = new HashMap<>();
+        loginData.put("usuario", response);
+        loginData.put("cambiarPassword", debeCambiarPassword);
+
+        return ResponseEntity.ok(loginData);
     }
 
     // 🧾 REGISTRO de persona común
@@ -71,6 +83,8 @@ public class AuthController {
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
             usuario.setUsername(request.getNombre());
             usuario.setRol(Rol.CLIENTE);
+            usuario.setPrimerInicio(true); // ✅ Por defecto
+
             Usuario nuevoUsuario = usuarioService.save(usuario);
 
             Persona persona = new Persona();
@@ -150,6 +164,30 @@ public class AuthController {
         return ResponseEntity.ok("Contraseña actualizada correctamente");
     }
 
+    // ✅ CAMBIO OBLIGATORIO DE CONTRASEÑA (primer inicio)
+    @PostMapping("/cambiar-password-inicial")
+    public ResponseEntity<?> cambiarPasswordInicial(@RequestParam String email, @RequestParam String nuevaPassword) {
+        Usuario usuario = usuarioService.findByEmail(email);
+
+        if (usuario == null) {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
+
+        if (!usuario.isPrimerInicio()) {
+            return ResponseEntity.status(400).body("El cambio de contraseña inicial ya fue realizado");
+        }
+
+        if (!esPasswordSegura(nuevaPassword)) {
+            return ResponseEntity.status(400).body("La nueva contraseña no cumple con los requisitos de seguridad");
+        }
+
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuario.setPrimerInicio(false); // ✅ Ya no es primer inicio
+        usuarioService.save(usuario);
+
+        return ResponseEntity.ok("Contraseña actualizada correctamente. Ahora puede iniciar sesión normalmente.");
+    }
+
     // ✅ LOGIN CON GOOGLE
     @PostMapping("/google")
     public ResponseEntity<?> loginConGoogle(@RequestBody Map<String, String> body) {
@@ -177,12 +215,12 @@ public class AuthController {
                 Persona persona = null;
 
                 if (usuario == null) {
-                    // Crear nuevo usuario y persona si no existe
                     usuario = new Usuario();
                     usuario.setEmail(email);
                     usuario.setUsername(nombre);
                     usuario.setRol(Rol.CLIENTE);
-                    usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // clave aleatoria
+                    usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                    usuario.setPrimerInicio(false);
                     usuario = usuarioService.save(usuario);
 
                     persona = new Persona();

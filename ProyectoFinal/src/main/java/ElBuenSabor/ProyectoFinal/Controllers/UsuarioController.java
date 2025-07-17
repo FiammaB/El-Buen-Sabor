@@ -36,12 +36,23 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- REGISTRO GENERAL ---------------------
-
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody UsuarioDTO dto) {
         try {
             Usuario usuario = usuarioMapper.toEntity(dto);
+
+            usuario.setUsername(dto.getUsername()); // ✅ Forzamos username
             usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+            // ✅ Si no viene rol, cliente por defecto
+            if (dto.getRol() == null) {
+                usuario.setRol(Rol.CLIENTE);
+            } else {
+                usuario.setRol(Rol.valueOf(dto.getRol().name()));
+            }
+
+            usuario.setPrimerInicio(true); // ✅ Por defecto true
+
             Usuario saved = usuarioService.save(usuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(saved));
         } catch (Exception e) {
@@ -50,14 +61,17 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- REGISTRO COCINERO (SOLO ADMIN) ---------------------
-
     @PostMapping("/registrar-cocinero")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<?> registrarCocinero(@RequestBody UsuarioDTO usuarioDTO) {
         try {
             Usuario nuevoCocinero = usuarioMapper.toEntity(usuarioDTO);
+
+            nuevoCocinero.setUsername(usuarioDTO.getUsername()); // ✅ Guardamos nombre
             nuevoCocinero.setRol(Rol.COCINERO);
             nuevoCocinero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            nuevoCocinero.setPrimerInicio(true); // ✅ Para que cambie contraseña al iniciar
+
             Usuario saved = usuarioService.save(nuevoCocinero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cocinero creado con ID: " + saved.getId());
         } catch (Exception e) {
@@ -66,14 +80,17 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- REGISTRO CAJERO (SOLO ADMIN) ---------------------
-
     @PostMapping("/registrar-cajero")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<?> registrarCajero(@RequestBody UsuarioDTO usuarioDTO) {
         try {
             Usuario nuevoCajero = usuarioMapper.toEntity(usuarioDTO);
+
+            nuevoCajero.setUsername(usuarioDTO.getUsername()); // ✅ Guardamos nombre
             nuevoCajero.setRol(Rol.CAJERO);
             nuevoCajero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            nuevoCajero.setPrimerInicio(true); // ✅ Para que cambie contraseña al iniciar
+
             Usuario saved = usuarioService.save(nuevoCajero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cajero creado con ID: " + saved.getId());
         } catch (Exception e) {
@@ -82,7 +99,6 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- LISTAR Y OBTENER USUARIOS ---------------------
-
     @GetMapping
     @Override
     public ResponseEntity<?> getAll() {
@@ -109,17 +125,21 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- ACTUALIZAR USUARIO ---------------------
-
     @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UsuarioDTO dto) {
         try {
             Usuario existente = usuarioService.findById(id);
             existente.setEmail(dto.getEmail());
-            existente.setUsername(dto.getUsername()); // ✅ CAMBIO
-            existente.setRol(dto.getRol());
+            existente.setUsername(dto.getUsername());
+
+            if (dto.getRol() != null) {
+                existente.setRol(Rol.valueOf(dto.getRol().name()));
+            }
+
             if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
                 existente.setPassword(passwordEncoder.encode(dto.getPassword()));
             }
+
             Usuario updated = usuarioService.update(id, existente);
             return ResponseEntity.ok(usuarioMapper.toDTO(updated));
         } catch (Exception e) {
@@ -128,7 +148,6 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- PERFIL REDUCIDO ---------------------
-
     @GetMapping("/perfil/{email}")
     public ResponseEntity<?> getPerfil(@PathVariable String email) {
         try {
@@ -164,7 +183,6 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     // -------------------- PERFIL CLIENTE COMPLETO ---------------------
-
     @PutMapping("/perfil/cliente/{email}")
     public ResponseEntity<?> actualizarPerfilCliente(@PathVariable String email, @RequestBody PersonaPerfilUpdateDTO dto) {
         try {
@@ -178,7 +196,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     @PatchMapping("/{id}/nombre")
     public ResponseEntity<?> updateNombre(@PathVariable Long id, @RequestBody NombreDTO nombreDTO) {
         try {
-            usuarioService.actualizarNombre(id, nombreDTO.nombre); // ⚠️ Este método debería llamarse actualizarUsername()
+            usuarioService.actualizarNombre(id, nombreDTO.nombre);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -187,12 +205,9 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     @PatchMapping("/{id}/baja")
-    public ResponseEntity<?> toggleBaja(
-            @PathVariable Long id,
-            @RequestParam boolean baja
-    ) {
+    public ResponseEntity<?> toggleBaja(@PathVariable Long id, @RequestParam boolean baja) {
         try {
-            Usuario actualizado = baseService.toggleBaja(id, baja);
+            baseService.toggleBaja(id, baja);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");

@@ -1,26 +1,39 @@
 // Archivo: ElBuenSabor/ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Service/PromocionServiceImpl.java
 package ElBuenSabor.ProyectoFinal.Service;
 
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Entities.Promocion;
+import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
+import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.PromocionRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.SucursalRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> implements PromocionService {
 
     private final PromocionRepository promocionRepository;
     private final SucursalRepository sucursalRepository;
+    private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
+    private final ArticuloInsumoRepository articuloInsumoRepository;
 
     public PromocionServiceImpl(PromocionRepository promocionRepository,
-                                SucursalRepository sucursalRepository) {
+                                SucursalRepository sucursalRepository,
+                                ArticuloManufacturadoRepository articuloManufacturadoRepository,
+                                ArticuloInsumoRepository articuloInsumoRepository) {
         super(promocionRepository);
         this.promocionRepository = promocionRepository;
         this.sucursalRepository = sucursalRepository;
+        this.articuloManufacturadoRepository = articuloManufacturadoRepository;
+        this.articuloInsumoRepository = articuloInsumoRepository;
     }
 
     @Override
@@ -35,48 +48,34 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
     @Override
     @Transactional
     public Promocion save(Promocion newEntity) throws Exception {
+        System.out.println("--- INICIO PromocionServiceImpl.save ---");
+        System.out.println("Entidad newEntity recibida en save: " + newEntity.getId());
+        System.out.println("  - Artículos Manufacturados en newEntity (antes de persistir): " + newEntity.getArticulosManufacturados().size());
+        System.out.println("  - Artículos Insumos en newEntity (antes de persistir): " + newEntity.getArticulosInsumos().size());
+
         if (newEntity.getSucursales() == null || newEntity.getSucursales().isEmpty()) {
             throw new Exception("La Promoción debe estar asociada al menos a una sucursal.");
         }
-        return super.save(newEntity);
+        Promocion saved = super.save(newEntity);
+        // Forzar la carga de las colecciones Lazy usando Hibernate.initialize
+        Hibernate.initialize(saved.getArticulosManufacturados());
+        Hibernate.initialize(saved.getArticulosInsumos());
+        Hibernate.initialize(saved.getSucursales());
+
+        System.out.println("Entidad 'saved' DESPUÉS de baseRepository.save y Hibernate.initialize:");
+        System.out.println("  - Artículos Manufacturados en 'saved': " + saved.getArticulosManufacturados().size() + " items. Contenido: " + saved.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
+        System.out.println("  - Artículos Insumos en 'saved': " + saved.getArticulosInsumos().size() + " items. Contenido: " + saved.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
+        System.out.println("--- FIN PromocionServiceImpl.save ---");
+        return saved;
     }
 
     @Override
     @Transactional
-    public Promocion update(Long id, Promocion updatedPromocion) throws Exception {
-        try {
-            Promocion actual = findById(id);
-
-            actual.setDenominacion(updatedPromocion.getDenominacion());
-            actual.setFechaDesde(updatedPromocion.getFechaDesde());
-            actual.setFechaHasta(updatedPromocion.getFechaHasta());
-            actual.setHoraDesde(updatedPromocion.getHoraDesde());
-            actual.setHoraHasta(updatedPromocion.getHoraHasta());
-            actual.setDescripcionDescuento(updatedPromocion.getDescripcionDescuento());
-            actual.setPrecioPromocional(updatedPromocion.getPrecioPromocional());
-            actual.setTipoPromocion(updatedPromocion.getTipoPromocion());
-            actual.setImagen(updatedPromocion.getImagen());
-
-            if (updatedPromocion.getArticulosManufacturados() != null) {
-                actual.getArticulosManufacturados().clear();
-                actual.getArticulosManufacturados().addAll(updatedPromocion.getArticulosManufacturados());
-            } else {
-                actual.getArticulosManufacturados().clear();
-            }
-
-            if (updatedPromocion.getSucursales() != null) {
-                actual.getSucursales().clear();
-                actual.getSucursales().addAll(updatedPromocion.getSucursales());
-            } else {
-                actual.getSucursales().clear();
-            }
-
-            return baseRepository.save(actual);
-        } catch (Exception e) {
-            throw new Exception("Error al actualizar la promoción: " + e.getMessage());
-        }
+    public Promocion update(Long id, Promocion existingPromocion) throws Exception {
+        // Solo los campos simples si querés
+        // O incluso directamente: return baseRepository.save(existingPromocion);
+        return baseRepository.save(existingPromocion);
     }
-
 
 
     // <-- NUEVA IMPLEMENTACIÓN: toggleBaja

@@ -22,7 +22,7 @@ public class PromocionCreateDTO {
     private Double precioPromocional;
     private TipoPromocion tipoPromocion;
     private Long imagenId;
-
+    private List<Long> articuloInsumoIds;
     private List<Long> articuloManufacturadoIds;
     private List<Long> sucursalIds;
 }

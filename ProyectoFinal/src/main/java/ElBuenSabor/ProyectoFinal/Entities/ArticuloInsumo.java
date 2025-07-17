@@ -6,6 +6,8 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "articulo_insumo")
@@ -24,4 +26,6 @@ public class ArticuloInsumo extends Articulo {
     @OneToMany(mappedBy = "articuloInsumo", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 
+    @ManyToMany(mappedBy = "articulosInsumos")
+    private List<Promocion> promociones = new ArrayList<>();
 }

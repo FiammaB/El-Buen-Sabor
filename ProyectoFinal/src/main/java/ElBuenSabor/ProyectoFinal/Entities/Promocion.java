@@ -42,7 +42,8 @@ public class Promocion extends BaseEntity {
             joinColumns = @JoinColumn(name = "promocion_id"),
             inverseJoinColumns = @JoinColumn(name = "articulo_manufacturado_id")
     )
-    private List<ArticuloManufacturado> articulosManufacturados;
+    @Builder.Default
+    private List<ArticuloManufacturado> articulosManufacturados= new ArrayList<>();
 
     @ManyToMany
     @JoinTable(
@@ -51,7 +52,8 @@ public class Promocion extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "articulo_insumo_id")
 
     )
-    private List<ArticuloInsumo> articulosInsumos;
+    @Builder.Default
+    private List<ArticuloInsumo> articulosInsumos = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(
@@ -59,8 +61,10 @@ public class Promocion extends BaseEntity {
             joinColumns = @JoinColumn(name = "promocion_id"),
             inverseJoinColumns = @JoinColumn(name = "sucursal_id")
     )
-    private List<Sucursal> sucursales;
+    @Builder.Default
+    private List<Sucursal> sucursales = new ArrayList<>();
 
     @OneToMany(mappedBy = "promocion", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+    @Builder.Default
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 }

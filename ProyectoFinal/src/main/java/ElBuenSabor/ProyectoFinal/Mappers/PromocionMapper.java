@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {ImagenMapper.class})
+@Mapper(componentModel = "spring", uses = {ImagenMapper.class, ArticuloInsumoMapper.class, ArticuloManufacturadoMapper.class, SucursalMapper.class})
 public interface PromocionMapper {
 
     // Este método ahora mapeará la imagen automáticamente gracias a 'uses = {ImagenMapper.class}'

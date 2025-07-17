@@ -26,10 +26,10 @@ public class PromocionDTO {
     private Double precioPromocional;
     private TipoPromocion tipoPromocion;
     private ImagenDTO imagen;
-
+    private List<ArticuloInsumoDTO> articulosInsumos;
     private List<ArticuloManufacturadoDTO> articulosManufacturados;
     private List<SucursalDTO> sucursales;
     private  boolean baja;
-    
+
     private Set<ArticuloManufacturadoDetalleDTO> detalles;
 }

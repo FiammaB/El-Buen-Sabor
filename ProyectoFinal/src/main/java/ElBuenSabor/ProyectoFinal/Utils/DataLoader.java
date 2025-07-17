@@ -209,6 +209,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona1 = Persona.builder()
+                    .nombre(usuarioCliente1.getUsername())
                     .apellido("Rodríguez")
                     .telefono("2611112233")
                     .fechaNacimiento(LocalDate.of(1993, 3, 10))
@@ -235,6 +236,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona2 = Persona.builder()
+                    .nombre(usuarioCliente2.getUsername())
                     .apellido("Fernández")
                     .telefono("2614445566")
                     .fechaNacimiento(LocalDate.of(1988, 7, 22))
@@ -261,6 +263,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona3 = Persona.builder()
+                    .nombre(usuarioCliente3.getUsername())
                     .apellido("Gómez")
                     .telefono("2617778899")
                     .fechaNacimiento(LocalDate.of(1995, 11, 5))
@@ -287,6 +290,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona4 = Persona.builder()
+                    .nombre(usuarioCliente4.getUsername())
                     .apellido("López")
                     .telefono("2613334455")
                     .fechaNacimiento(LocalDate.of(1985, 1, 18))
@@ -313,6 +317,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona5 = Persona.builder()
+                    .nombre(usuarioCliente5.getUsername())
                     .apellido("Fernández")
                     .telefono("2611122334")
                     .fechaNacimiento(LocalDate.of(1993, 3, 22))
@@ -339,6 +344,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona6 = Persona.builder()
+                    .nombre(usuarioCliente6.getUsername())
                     .apellido("Sánchez")
                     .telefono("2616677889")
                     .fechaNacimiento(LocalDate.of(1988, 6, 10))
@@ -365,6 +371,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona7 = Persona.builder()
+                    .nombre(usuarioCliente7.getUsername())
                     .apellido("Moreno")
                     .telefono("2613004567")
                     .fechaNacimiento(LocalDate.of(1997, 11, 12))
@@ -391,6 +398,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona8 = Persona.builder()
+                    .nombre(usuarioCliente8.getUsername())
                     .apellido("Quiroga")
                     .telefono("2619801234")
                     .fechaNacimiento(LocalDate.of(1991, 4, 27))
@@ -417,6 +425,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona9 = Persona.builder()
+                    .nombre(usuarioCliente9.getUsername())
                     .apellido("Montoya")
                     .telefono("2613407890")
                     .fechaNacimiento(LocalDate.of(1993, 2, 18))
@@ -443,6 +452,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona10 = Persona.builder()
+                    .nombre(usuarioCliente10.getUsername())
                     .apellido("Sánchez")
                     .telefono("2614109876")
                     .fechaNacimiento(LocalDate.of(1990, 10, 5))
@@ -469,6 +479,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona11 = Persona.builder()
+                    .nombre(usuarioCliente11.getUsername())
                     .apellido("Carrizo")
                     .telefono("2613004567")
                     .fechaNacimiento(LocalDate.of(1988, 4, 22))
@@ -495,6 +506,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona12 = Persona.builder()
+                    .nombre(usuarioCliente12.getUsername())
                     .apellido("Nieto")
                     .telefono("2613901234")
                     .fechaNacimiento(LocalDate.of(1995, 9, 9))
@@ -521,6 +533,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona13 = Persona.builder()
+                    .nombre(usuarioCliente13.getUsername())
                     .apellido("Toledo")
                     .telefono("2613809876")
                     .fechaNacimiento(LocalDate.of(1997, 6, 17))
@@ -547,6 +560,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
 
             Persona persona14 = Persona.builder()
+                    .nombre(usuarioCliente14.getUsername())
                     .apellido("Herrera")
                     .telefono("2613211122")
                     .fechaNacimiento(LocalDate.of(1989, 8, 12))

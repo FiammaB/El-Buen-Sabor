@@ -41,7 +41,11 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario usuario = usuarioMapper.toEntity(dto);
 
-            usuario.setUsername(dto.getUsername()); // ✅ Forzamos username
+            // ✅ Forzamos username siempre
+            usuario.setUsername(dto.getUsername() != null && !dto.getUsername().isBlank()
+                    ? dto.getUsername()
+                    : dto.getEmail().split("@")[0]);
+
             usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
 
             // ✅ Si no viene rol, cliente por defecto
@@ -51,7 +55,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
                 usuario.setRol(Rol.valueOf(dto.getRol().name()));
             }
 
-            usuario.setPrimerInicio(true); // ✅ Por defecto true
+            usuario.setPrimerInicio(false); // ✅ Los clientes NO necesitan cambiar contraseña al iniciar
 
             Usuario saved = usuarioService.save(usuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(saved));
@@ -67,10 +71,14 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario nuevoCocinero = usuarioMapper.toEntity(usuarioDTO);
 
-            nuevoCocinero.setUsername(usuarioDTO.getUsername()); // ✅ Guardamos nombre
+            // ✅ Forzamos username si no viene
+            nuevoCocinero.setUsername(usuarioDTO.getUsername() != null && !usuarioDTO.getUsername().isBlank()
+                    ? usuarioDTO.getUsername()
+                    : usuarioDTO.getEmail().split("@")[0]);
+
             nuevoCocinero.setRol(Rol.COCINERO);
             nuevoCocinero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-            nuevoCocinero.setPrimerInicio(true); // ✅ Para que cambie contraseña al iniciar
+            nuevoCocinero.setPrimerInicio(true); // ✅ Cambiar contraseña al iniciar
 
             Usuario saved = usuarioService.save(nuevoCocinero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cocinero creado con ID: " + saved.getId());
@@ -86,10 +94,14 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario nuevoCajero = usuarioMapper.toEntity(usuarioDTO);
 
-            nuevoCajero.setUsername(usuarioDTO.getUsername()); // ✅ Guardamos nombre
+            // ✅ Forzamos username si no viene
+            nuevoCajero.setUsername(usuarioDTO.getUsername() != null && !usuarioDTO.getUsername().isBlank()
+                    ? usuarioDTO.getUsername()
+                    : usuarioDTO.getEmail().split("@")[0]);
+
             nuevoCajero.setRol(Rol.CAJERO);
             nuevoCajero.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-            nuevoCajero.setPrimerInicio(true); // ✅ Para que cambie contraseña al iniciar
+            nuevoCajero.setPrimerInicio(true); // ✅ Cambiar contraseña al iniciar
 
             Usuario saved = usuarioService.save(nuevoCajero);
             return ResponseEntity.status(HttpStatus.CREATED).body("Cajero creado con ID: " + saved.getId());
@@ -130,7 +142,9 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario existente = usuarioService.findById(id);
             existente.setEmail(dto.getEmail());
-            existente.setUsername(dto.getUsername());
+            existente.setUsername(dto.getUsername() != null && !dto.getUsername().isBlank()
+                    ? dto.getUsername()
+                    : existente.getUsername());
 
             if (dto.getRol() != null) {
                 existente.setRol(Rol.valueOf(dto.getRol().name()));

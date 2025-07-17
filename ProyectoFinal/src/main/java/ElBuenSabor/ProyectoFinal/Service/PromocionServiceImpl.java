@@ -53,9 +53,7 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
         System.out.println("  - Artículos Manufacturados en newEntity (antes de persistir): " + newEntity.getArticulosManufacturados().size());
         System.out.println("  - Artículos Insumos en newEntity (antes de persistir): " + newEntity.getArticulosInsumos().size());
 
-        if (newEntity.getSucursales() == null || newEntity.getSucursales().isEmpty()) {
-            throw new Exception("La Promoción debe estar asociada al menos a una sucursal.");
-        }
+
         Promocion saved = super.save(newEntity);
         // Forzar la carga de las colecciones Lazy usando Hibernate.initialize
         Hibernate.initialize(saved.getArticulosManufacturados());

@@ -1,7 +1,12 @@
 // Archivo: ElBuenSabor/ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Service/PromocionServiceImpl.java
 package ElBuenSabor.ProyectoFinal.Service;
 
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
+import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
 import ElBuenSabor.ProyectoFinal.Entities.Promocion;
+import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
+import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
+import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.PromocionRepository;
 import ElBuenSabor.ProyectoFinal.Repositories.SucursalRepository;
 import org.hibernate.Hibernate;
@@ -17,12 +22,18 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
 
     private final PromocionRepository promocionRepository;
     private final SucursalRepository sucursalRepository;
+    private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
+    private final ArticuloInsumoRepository articuloInsumoRepository;
 
     public PromocionServiceImpl(PromocionRepository promocionRepository,
-                                SucursalRepository sucursalRepository) {
+                                SucursalRepository sucursalRepository,
+                                ArticuloManufacturadoRepository articuloManufacturadoRepository,
+                                ArticuloInsumoRepository articuloInsumoRepository) {
         super(promocionRepository);
         this.promocionRepository = promocionRepository;
         this.sucursalRepository = sucursalRepository;
+        this.articuloManufacturadoRepository = articuloManufacturadoRepository;
+        this.articuloInsumoRepository = articuloInsumoRepository;
     }
 
     @Override
@@ -60,86 +71,12 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
 
     @Override
     @Transactional
-    public Promocion update(Long id, Promocion updatedPromocion) throws Exception {
-        System.out.println("--- INICIO PromocionServiceImpl.update ---");
-        System.out.println("Entidad updatedPromocion recibida del controlador (ID: " + updatedPromocion.getId() + "):");
-        System.out.println("  - Artículos Manufacturados en updatedPromocion: " + updatedPromocion.getArticulosManufacturados().size() + " items. Contenido: " + updatedPromocion.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
-        System.out.println("  - Artículos Insumos en updatedPromocion: " + updatedPromocion.getArticulosInsumos().size() + " items. Contenido: " + updatedPromocion.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
-
-        try {
-            Promocion actual = findById(id);
-
-            // <-- ¡NUEVO! Forzar la inicialización de las colecciones de 'actual' antes de manipularlas
-            Hibernate.initialize(actual.getArticulosManufacturados());
-            Hibernate.initialize(actual.getArticulosInsumos());
-            Hibernate.initialize(actual.getSucursales());
-
-            System.out.println("Entidad 'actual' obtenida del repo para update (ID: " + actual.getId() + "):");
-            System.out.println("  - Artículos Manufacturados en 'actual' (DESPUÉS de fetch y initialize): " + actual.getArticulosManufacturados().size() + " items. Contenido: " + actual.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
-            System.out.println("  - Artículos Insumos en 'actual' (DESPUÉS de fetch y initialize): " + actual.getArticulosInsumos().size() + " items. Contenido: " + actual.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
-
-
-            actual.setDenominacion(updatedPromocion.getDenominacion());
-            actual.setFechaDesde(updatedPromocion.getFechaDesde());
-            actual.setFechaHasta(updatedPromocion.getFechaHasta());
-            actual.setHoraDesde(updatedPromocion.getHoraDesde());
-            actual.setHoraHasta(updatedPromocion.getHoraHasta());
-            actual.setDescripcionDescuento(updatedPromocion.getDescripcionDescuento());
-            actual.setPrecioPromocional(updatedPromocion.getPrecioPromocional());
-            actual.setTipoPromocion(updatedPromocion.getTipoPromocion());
-            actual.setImagen(updatedPromocion.getImagen());
-
-            // Procesamiento de Artículos Manufacturados
-            if (updatedPromocion.getArticulosManufacturados() != null) {
-                System.out.println("Actualizando Artículos Manufacturados en 'actual'. Source list size: " + updatedPromocion.getArticulosManufacturados().size());
-                System.out.println("Source Articulos Manufacturados (IDs): " + updatedPromocion.getArticulosManufacturados().stream().map(a -> a.getId()).collect(Collectors.toList()));
-                actual.getArticulosManufacturados().clear();
-                System.out.println("actual.ArticulosManufacturados DESPUÉS de clear: " + actual.getArticulosManufacturados().size());
-                actual.getArticulosManufacturados().addAll(updatedPromocion.getArticulosManufacturados());
-                System.out.println("actual.ArticulosManufacturados DESPUÉS de addAll: " + actual.getArticulosManufacturados().size() + " items. Contenido: " + actual.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
-            } else {
-                actual.getArticulosManufacturados().clear();
-                System.out.println("updatedPromocion.getArticulosManufacturados() era null, lista 'actual' vaciada.");
-            }
-
-            // Procesamiento de Artículos Insumos
-            if (updatedPromocion.getArticulosInsumos() != null) {
-                System.out.println("Actualizando Artículos Insumos en 'actual'. Source list size: " + updatedPromocion.getArticulosInsumos().size());
-                System.out.println("Source Articulos Insumos (IDs): " + updatedPromocion.getArticulosInsumos().stream().map(i -> i.getId()).collect(Collectors.toList()));
-                actual.getArticulosInsumos().clear();
-                System.out.println("actual.ArticulosInsumos DESPUÉS de clear: " + actual.getArticulosInsumos().size());
-                actual.getArticulosInsumos().addAll(updatedPromocion.getArticulosInsumos());
-                System.out.println("actual.ArticulosInsumos DESPUÉS de addAll: " + actual.getArticulosInsumos().size() + " items. Contenido: " + actual.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
-            } else {
-                actual.getArticulosInsumos().clear();
-                System.out.println("updatedPromocion.getArticulosInsumos() era null, lista 'actual' vaciada.");
-            }
-
-            if (updatedPromocion.getSucursales() != null) {
-                actual.getSucursales().clear();
-                actual.getSucursales().addAll(updatedPromocion.getSucursales());
-            } else {
-                actual.getSucursales().clear();
-            }
-
-            System.out.println("Entidad 'actual' ANTES de baseRepository.save (final check):");
-            System.out.println("  - Artículos Manufacturados: " + actual.getArticulosManufacturados().size() + " items. Contenido: " + actual.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
-            System.out.println("  - Artículos Insumos: " + actual.getArticulosInsumos().size() + " items. Contenido: " + actual.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
-
-
-            Promocion saved = baseRepository.save(actual);
-            // No es necesario inicializar aquí de nuevo, ya que se hizo al inicio del método
-            // y la entidad 'saved' debería reflejar el estado de 'actual'.
-            System.out.println("Entidad 'saved' DESPUÉS de baseRepository.save y Hibernate.initialize (final result):");
-            System.out.println("  - Artículos Manufacturados en 'saved': " + saved.getArticulosManufacturados().size() + " items. Contenido: " + saved.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
-            System.out.println("  - Artículos Insumos en 'saved': " + saved.getArticulosInsumos().size() + " items. Contenido: " + saved.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
-            System.out.println("--- FIN PromocionServiceImpl.update ---");
-            return saved;
-        } catch (Exception e) {
-            System.err.println("Error en PromocionServiceImpl.update: " + e.getMessage());
-            throw new Exception("Error al actualizar la promoción: " + e.getMessage());
-        }
+    public Promocion update(Long id, Promocion existingPromocion) throws Exception {
+        // Solo los campos simples si querés
+        // O incluso directamente: return baseRepository.save(existingPromocion);
+        return baseRepository.save(existingPromocion);
     }
+
 
     // <-- NUEVA IMPLEMENTACIÓN: toggleBaja
     @Override

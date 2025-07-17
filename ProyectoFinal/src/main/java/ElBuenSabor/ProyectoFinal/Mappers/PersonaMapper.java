@@ -2,6 +2,7 @@ package ElBuenSabor.ProyectoFinal.Mappers;
 
 import ElBuenSabor.ProyectoFinal.DTO.PersonaCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PersonaDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PersonaEmpleadoCreateDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Persona;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -23,6 +24,9 @@ public interface PersonaMapper {
     Persona toEntity(PersonaDTO dto);
 
     Persona toEntity(PersonaCreateDTO createDTO);
+
+    @Mapping(source = "nombre", target = "nombre")
+    Persona toEntity(PersonaEmpleadoCreateDTO dto);
 
     List<PersonaDTO> toDTOList(List<Persona> personas);
 }

@@ -62,26 +62,27 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
+    // ✅ AHORA GENÉRICO: Cliente, Cocinero, Cajero o Delivery
     @Override
     @Transactional
-    public void actualizarPerfilCliente(String email, PersonaPerfilUpdateDTO dto) throws Exception {
+    public void actualizarPerfil(String email, PersonaPerfilUpdateDTO dto) throws Exception {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new Exception("Usuario no encontrado con email: " + email));
 
         Persona persona = personaRepository.findByUsuario(usuario)
-                .orElseThrow(() -> new Exception("Persona no encontrado para el usuario con email: " + email));
+                .orElseThrow(() -> new Exception("Persona no encontrada para el usuario con email: " + email));
 
-        // Actualizar datos personales
+        // ✅ Actualizar datos personales
         persona.setNombre(dto.getNombre());
         persona.setApellido(dto.getApellido());
         persona.setTelefono(dto.getTelefono());
         persona.setFechaNacimiento(dto.getFechaNacimiento());
         personaRepository.save(persona);
 
-        // Actualizar email si cambió
+        // ✅ Actualizar email si cambió
         usuario.setEmail(dto.getEmail());
 
-        // Validar y cambiar contraseña si corresponde
+        // ✅ Validar y cambiar contraseña si corresponde
         if (dto.getPasswordActual() != null && !dto.getPasswordActual().isBlank()) {
             if (!passwordEncoder.matches(dto.getPasswordActual(), usuario.getPassword())) {
                 throw new Exception("La contraseña actual es incorrecta.");

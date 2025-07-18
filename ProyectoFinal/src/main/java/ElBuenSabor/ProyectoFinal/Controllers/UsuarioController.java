@@ -167,7 +167,6 @@ public class UsuarioController extends BaseController<Usuario, Long> {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Usuario no encontrado\"}");
             }
 
-            // ✅ Ahora buscamos Persona, porque el mapper recibe Persona
             Persona persona = personaService.findById(usuario.getId());
             return ResponseEntity.ok(perfilMapper.toPerfilDTO(persona));
         } catch (Exception e) {
@@ -177,25 +176,9 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     }
 
     @PutMapping("/perfil/{email}")
-    public ResponseEntity<?> actualizarPerfil(@PathVariable String email, @RequestBody PerfilDTO datos) {
+    public ResponseEntity<?> actualizarPerfil(@PathVariable String email, @RequestBody PersonaPerfilUpdateDTO dto) {
         try {
-            Usuario usuario = usuarioService.findByEmail(email);
-            if (usuario == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Usuario no encontrado\"}");
-            }
-
-            usuario.setEmail(datos.getUsuario().getEmail());
-            usuarioService.save(usuario);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
-        }
-    }
-
-    @PutMapping("/perfil/cliente/{email}")
-    public ResponseEntity<?> actualizarPerfilCliente(@PathVariable String email, @RequestBody PersonaPerfilUpdateDTO dto) {
-        try {
-            usuarioService.actualizarPerfilCliente(email, dto);
+            usuarioService.actualizarPerfil(email, dto); // ✅ MÉTODO GENÉRICO PARA TODOS LOS ROLES
             return ResponseEntity.ok("Perfil actualizado correctamente");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");

@@ -10,7 +10,8 @@ public interface UsuarioService extends BaseService<Usuario, Long> {
 
     Usuario save(Usuario usuario);
 
-    void actualizarPerfilCliente(String email, PersonaPerfilUpdateDTO dto) throws Exception;
+    // ✅ Ahora es genérico: sirve para Cliente, Cocinero, Cajero y Delivery
+    void actualizarPerfil(String email, PersonaPerfilUpdateDTO dto) throws Exception;
 
     Usuario registrarCocinero(UsuarioDTO usuarioDTO);
 

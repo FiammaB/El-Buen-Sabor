@@ -27,6 +27,6 @@ public class ArticuloManufacturado extends Articulo {
     @OneToMany(mappedBy = "articuloManufacturado", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticuloManufacturadoDetalle> detalles = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "articulosManufacturados")
-    private List<Promocion> promociones = new ArrayList<>();
+    @OneToMany(mappedBy = "articuloManufacturado", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PromocionDetalle> promocionDetalles = new HashSet<>();
 }

@@ -1,14 +1,11 @@
 // Archivo: ElBuenSabor/ProyectoFinal/src/main/java/ElBuenSabor/ProyectoFinal/Service/PromocionServiceImpl.java
 package ElBuenSabor.ProyectoFinal.Service;
 
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloInsumo;
-import ElBuenSabor.ProyectoFinal.Entities.ArticuloManufacturado;
-import ElBuenSabor.ProyectoFinal.Entities.Promocion;
-import ElBuenSabor.ProyectoFinal.Entities.Sucursal;
-import ElBuenSabor.ProyectoFinal.Repositories.ArticuloInsumoRepository;
-import ElBuenSabor.ProyectoFinal.Repositories.ArticuloManufacturadoRepository;
-import ElBuenSabor.ProyectoFinal.Repositories.PromocionRepository;
-import ElBuenSabor.ProyectoFinal.Repositories.SucursalRepository;
+import ElBuenSabor.ProyectoFinal.DTO.PromocionCreateDTO;
+import ElBuenSabor.ProyectoFinal.DTO.PromocionDetalleDTO;
+import ElBuenSabor.ProyectoFinal.Entities.*;
+import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
+import ElBuenSabor.ProyectoFinal.Repositories.*;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +21,21 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
     private final SucursalRepository sucursalRepository;
     private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
     private final ArticuloInsumoRepository articuloInsumoRepository;
+    private final ImagenRepository imagenRepository; // <-- 1. AÑADIR EL CAMPO
+
 
     public PromocionServiceImpl(PromocionRepository promocionRepository,
                                 SucursalRepository sucursalRepository,
                                 ArticuloManufacturadoRepository articuloManufacturadoRepository,
-                                ArticuloInsumoRepository articuloInsumoRepository) {
+                                ArticuloInsumoRepository articuloInsumoRepository,
+                                ImagenRepository imagenRepository) { // <-- 2. AÑADIR EL PARÁMETRO) {
         super(promocionRepository);
         this.promocionRepository = promocionRepository;
         this.sucursalRepository = sucursalRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
         this.articuloInsumoRepository = articuloInsumoRepository;
+        this.imagenRepository = imagenRepository; // <-- 3. ASIGNARLO
+
     }
 
     @Override
@@ -44,29 +46,124 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
     }
 
 
+    // ESTE ES EL NUEVO MÉTODO SAVE QUE RECIBE EL DTO
+    // En PromocionServiceImpl.java
 
+    @Transactional
+    public Promocion save(PromocionCreateDTO dto) throws Exception {
+        // 1. Crear la entidad Promocion principal con los datos simples
+        Promocion nuevaPromocion = Promocion.builder()
+                .denominacion(dto.getDenominacion())
+                .fechaDesde(dto.getFechaDesde())
+                .fechaHasta(dto.getFechaHasta())
+                .horaDesde(dto.getHoraDesde())
+                .horaHasta(dto.getHoraHasta())
+                .descripcionDescuento(dto.getDescripcionDescuento())
+                .precioPromocional(dto.getPrecioPromocional())
+                .tipoPromocion(dto.getTipoPromocion())
+                .build();
+        nuevaPromocion.setBaja(false);
+
+        // 2. Asignar la imagen
+        if (dto.getImagenId() != null) {
+            nuevaPromocion.setImagen(imagenRepository.findById(dto.getImagenId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada con ID: " + dto.getImagenId())));
+        }
+
+        // 3. Asignar los insumos (sin cantidad)
+        if (dto.getArticuloInsumoIds() != null && !dto.getArticuloInsumoIds().isEmpty()) {
+            List<ArticuloInsumo> insumos = articuloInsumoRepository.findAllById(dto.getArticuloInsumoIds());
+            nuevaPromocion.getArticulosInsumos().addAll(insumos);
+        }
+
+        // 4. ¡CAMBIO CLAVE! Guardamos la promoción ANTES de procesar los detalles
+        Promocion promocionGuardada = promocionRepository.save(nuevaPromocion);
+
+        // 5. Ahora, con la promoción ya guardada y con un ID, creamos y asignamos los detalles
+        if (dto.getPromocionDetalles() != null && !dto.getPromocionDetalles().isEmpty()) {
+            for (PromocionDetalleDTO detalleDTO : dto.getPromocionDetalles()) {
+                ArticuloManufacturado articulo = articuloManufacturadoRepository.findById(detalleDTO.getArticuloManufacturado().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado con ID: " + detalleDTO.getArticuloManufacturado().getId()));
+
+                PromocionDetalle nuevoDetalle = PromocionDetalle.builder()
+                        .promocion(promocionGuardada) // Usamos la promoción que ya tiene ID
+                        .articuloManufacturado(articulo)
+                        .cantidad(detalleDTO.getCantidad())
+                        .build();
+
+                promocionGuardada.getPromocionDetalles().add(nuevoDetalle);
+            }
+        }
+
+        // 6. Volvemos a guardar la promoción, ahora con sus detalles asociados.
+        return promocionRepository.save(promocionGuardada);
+    }
+
+
+    // EL MÉTODO SAVE ANTIGUO QUE RECIBÍA LA ENTIDAD YA NO ES NECESARIO DIRECTAMENTE DESDE EL CONTROLLER,
+// PERO BASE SERVICE LO USA, ASÍ QUE LO DEJAMOS.
     @Override
     @Transactional
     public Promocion save(Promocion newEntity) throws Exception {
-        System.out.println("--- INICIO PromocionServiceImpl.save ---");
-        System.out.println("Entidad newEntity recibida en save: " + newEntity.getId());
-        System.out.println("  - Artículos Manufacturados en newEntity (antes de persistir): " + newEntity.getArticulosManufacturados().size());
-        System.out.println("  - Artículos Insumos en newEntity (antes de persistir): " + newEntity.getArticulosInsumos().size());
-
-
-        Promocion saved = super.save(newEntity);
-        // Forzar la carga de las colecciones Lazy usando Hibernate.initialize
-        Hibernate.initialize(saved.getArticulosManufacturados());
-        Hibernate.initialize(saved.getArticulosInsumos());
-        Hibernate.initialize(saved.getSucursales());
-
-        System.out.println("Entidad 'saved' DESPUÉS de baseRepository.save y Hibernate.initialize:");
-        System.out.println("  - Artículos Manufacturados en 'saved': " + saved.getArticulosManufacturados().size() + " items. Contenido: " + saved.getArticulosManufacturados().stream().map(a -> a.getDenominacion() + "(ID:" + a.getId() + ")").collect(Collectors.joining(", ")));
-        System.out.println("  - Artículos Insumos en 'saved': " + saved.getArticulosInsumos().size() + " items. Contenido: " + saved.getArticulosInsumos().stream().map(i -> i.getDenominacion() + "(ID:" + i.getId() + ")").collect(Collectors.joining(", ")));
-        System.out.println("--- FIN PromocionServiceImpl.save ---");
-        return saved;
+        return super.save(newEntity);
     }
 
+    @Transactional
+    public Promocion update(Long id, PromocionCreateDTO dto) throws Exception {
+        // 1. Buscar la promoción existente en la base de datos.
+        // Esta entidad 'existingPromocion' está "gestionada" por la transacción.
+        Promocion existingPromocion = promocionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promoción no encontrada con ID: " + id));
+
+        // 2. Actualizar los campos simples
+        existingPromocion.setDenominacion(dto.getDenominacion());
+        existingPromocion.setFechaDesde(dto.getFechaDesde());
+        existingPromocion.setFechaHasta(dto.getFechaHasta());
+        existingPromocion.setHoraDesde(dto.getHoraDesde());
+        existingPromocion.setHoraHasta(dto.getHoraHasta());
+        existingPromocion.setDescripcionDescuento(dto.getDescripcionDescuento());
+        existingPromocion.setPrecioPromocional(dto.getPrecioPromocional());
+        existingPromocion.setTipoPromocion(dto.getTipoPromocion());
+
+        // 3. Actualizar la imagen (si se proporciona una nueva)
+        if (dto.getImagenId() != null) {
+            existingPromocion.setImagen(imagenRepository.findById(dto.getImagenId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada con ID: " + dto.getImagenId())));
+        }
+
+        // 4. Sincronizar las listas de artículos (la parte clave)
+
+        // --- LÓGICA PARA ARTÍCULOS MANUFACTURADOS CON CANTIDAD ---
+        existingPromocion.getPromocionDetalles().clear(); // Limpiar detalles existentes
+        if (dto.getPromocionDetalles() != null && !dto.getPromocionDetalles().isEmpty()) {
+            for (PromocionDetalleDTO detalleDTO : dto.getPromocionDetalles()) {
+                // Buscar el artículo manufacturado
+                ArticuloManufacturado articulo = articuloManufacturadoRepository.findById(detalleDTO.getArticuloManufacturado().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado con ID: " + detalleDTO.getArticuloManufacturado().getId()));
+
+                // Crear la nueva entidad de detalle
+                PromocionDetalle nuevoDetalle = PromocionDetalle.builder()
+                        .promocion(existingPromocion)
+                        .articuloManufacturado(articulo)
+                        .cantidad(detalleDTO.getCantidad())
+                        .build();
+
+                existingPromocion.getPromocionDetalles().add(nuevoDetalle);
+            }
+        }
+        // --- LÓGICA PARA ARTÍCULOS INSUMO (SIN CANTIDAD) ---
+        existingPromocion.getArticulosInsumos().clear(); // Limpiar la lista existente
+        if (dto.getArticuloInsumoIds() != null && !dto.getArticuloInsumoIds().isEmpty()) {
+            List<ArticuloInsumo> insumos = articuloInsumoRepository.findAllById(dto.getArticuloInsumoIds());
+            existingPromocion.getArticulosInsumos().addAll(insumos); // Añadir los nuevos
+        }
+
+
+        // 5. Guardar la entidad. Como está dentro de una transacción,
+        // JPA/Hibernate detectará todos los cambios (campos simples y colecciones) y los persistirá.
+        return promocionRepository.save(existingPromocion);
+    }
+    /*
     @Override
     @Transactional
     public Promocion update(Long id, Promocion existingPromocion) throws Exception {
@@ -74,7 +171,7 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
         // O incluso directamente: return baseRepository.save(existingPromocion);
         return baseRepository.save(existingPromocion);
     }
-
+*/
 
     // <-- NUEVA IMPLEMENTACIÓN: toggleBaja
     @Override

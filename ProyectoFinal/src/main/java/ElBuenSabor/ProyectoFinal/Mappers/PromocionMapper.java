@@ -1,6 +1,5 @@
 package ElBuenSabor.ProyectoFinal.Mappers;
 
-import ElBuenSabor.ProyectoFinal.DTO.PromocionCreateDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PromocionDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Promocion;
 import org.mapstruct.Mapper;
@@ -8,17 +7,25 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {ImagenMapper.class, ArticuloInsumoMapper.class, ArticuloManufacturadoMapper.class, SucursalMapper.class})
+
+// AÑADIMOS EL NUEVO MAPPER A LA LISTA DE 'uses'
+@Mapper(componentModel = "spring", uses = {
+        ImagenMapper.class,
+        ArticuloInsumoMapper.class,
+        SucursalMapper.class,
+        PromocionDetalleMapper.class // <-- ¡LA CLAVE ESTÁ AQUÍ!
+})
 public interface PromocionMapper {
 
     // Este método ahora mapeará la imagen automáticamente gracias a 'uses = {ImagenMapper.class}'
     PromocionDTO toDTO(Promocion entity);
 
+    @Mapping(target = "promocionDetalles", ignore = true)
     Promocion toEntity(PromocionDTO dto);
-
-    @Mapping(target = "articulosManufacturados", ignore = true)
-    @Mapping(target = "sucursales", ignore = true)
-    Promocion toEntity(PromocionCreateDTO dto);
+//
+//    @Mapping(target = "articulosManufacturados", ignore = true)
+//    @Mapping(target = "sucursales", ignore = true)
+//    Promocion toEntity(PromocionCreateDTO dto);
 
     List<PromocionDTO> toDTOList(List<Promocion> promociones);
 }

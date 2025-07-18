@@ -3458,89 +3458,109 @@ public class DataLoader implements CommandLineRunner {
             pedidoService.save(pedido30);
 
 
-            //PROMOCIONES
+            // --- PROMOCIONES ---
+// Se ha refactorizado la creación de promociones para usar la nueva entidad PromocionDetalle,
+// que permite especificar la cantidad de cada artículo manufacturado.
 
+// --- Promo Locura Hamburguesas ---
             Promocion promoBurgerPizza = Promocion.builder()
                     .denominacion("Promo Locura Hamburguesas")
-                    .fechaDesde(LocalDate.now())
-                    .fechaHasta(LocalDate.now().plusDays(10))
+                    .fechaDesde(LocalDate.of(2025, 7, 17))
+                    .fechaHasta(LocalDate.of(2025, 7, 27))
                     .horaDesde(LocalTime.of(18, 0))
                     .horaHasta(LocalTime.of(22, 0))
                     .descripcionDescuento("2x1 en Hamburguesa Clásica")
-                    .precioPromocional(9500.0) // O el precio que prefieras
+                    .precioPromocional(9500.0)
                     .tipoPromocion(TipoPromocion.HAPPY_HOUR)
                     .imagen(imgPromo1)
-                    .articulosManufacturados(
-                            List.of(hamburguesa, hamburguesa)
-                    )
                     .sucursales(List.of(sucursal))
                     .build();
-
+// Se crea el detalle con la cantidad
+            PromocionDetalle detalleBurger = PromocionDetalle.builder()
+                    .promocion(promoBurgerPizza)
+                    .articuloManufacturado(hamburguesa)
+                    .cantidad(2)
+                    .build();
+            promoBurgerPizza.getPromocionDetalles().add(detalleBurger);
             promocionService.save(promoBurgerPizza);
 
+
+// --- Pizza Night ---
             Promocion pizzaNight = Promocion.builder()
                     .denominacion("Pizza Night")
-                    .fechaDesde(LocalDate.now())
-                    .fechaHasta(LocalDate.now().plusDays(14))
+                    .fechaDesde(LocalDate.of(2025, 7, 17))
+                    .fechaHasta(LocalDate.of(2025, 7, 31))
                     .horaDesde(LocalTime.of(20, 0))
                     .horaHasta(LocalTime.of(23, 0))
                     .descripcionDescuento("¡Llevate 2 pizzas a precio especial solo por la noche! Aplica a Muzzarella")
-                    .precioPromocional(13900.0) // Precio por 2
+                    .precioPromocional(13900.0)
                     .tipoPromocion(TipoPromocion.PROMOCION_GENERAL)
                     .imagen(imgPromo2)
-                    .articulosManufacturados(List.of(pizzaMuzzarella, pizzaMuzzarella))
                     .sucursales(List.of(sucursal))
                     .build();
+            PromocionDetalle detallePizza = PromocionDetalle.builder()
+                    .promocion(pizzaNight)
+                    .articuloManufacturado(pizzaMuzzarella)
+                    .cantidad(2)
+                    .build();
+            pizzaNight.getPromocionDetalles().add(detallePizza);
             promocionService.save(pizzaNight);
 
+
+// --- Empanada Fest ---
             Promocion empanadaFest = Promocion.builder()
                     .denominacion("Empanada Fest")
-                    .fechaDesde(LocalDate.now())
-                    .fechaHasta(LocalDate.now().plusWeeks(1))
+                    .fechaDesde(LocalDate.of(2025, 7, 17))
+                    .fechaHasta(LocalDate.of(2025, 7, 24))
                     .horaDesde(LocalTime.of(12, 0))
                     .horaHasta(LocalTime.of(15, 0))
                     .descripcionDescuento("¡Promo mediodía! 12 empanadas surtidas por precio especial.")
                     .precioPromocional(6200.0)
                     .tipoPromocion(TipoPromocion.PROMOCION_GENERAL)
                     .imagen(imgPromo3)
-                    .articulosManufacturados(List.of(empanadasCarne, empanadasJyQ, empanadasCarneCuchillo, empanadasHumita, empanadasCarne, empanadasJyQ, empanadasCarneCuchillo, empanadasHumita, empanadasCarne, empanadasJyQ, empanadasCarneCuchillo, empanadasHumita))
                     .sucursales(List.of(sucursal))
                     .build();
-
+// Se crean los detalles para cada tipo de empanada
+            empanadaFest.getPromocionDetalles().add(PromocionDetalle.builder().promocion(empanadaFest).articuloManufacturado(empanadasCarne).cantidad(3).build());
+            empanadaFest.getPromocionDetalles().add(PromocionDetalle.builder().promocion(empanadaFest).articuloManufacturado(empanadasJyQ).cantidad(3).build());
+            empanadaFest.getPromocionDetalles().add(PromocionDetalle.builder().promocion(empanadaFest).articuloManufacturado(empanadasCarneCuchillo).cantidad(3).build());
+            empanadaFest.getPromocionDetalles().add(PromocionDetalle.builder().promocion(empanadaFest).articuloManufacturado(empanadasHumita).cantidad(3).build());
             promocionService.save(empanadaFest);
 
+
+// --- Sándwich + Papas ---
             Promocion sandwichYpapas = Promocion.builder()
                     .denominacion("Sándwich + Papas")
-                    .fechaDesde(LocalDate.now())
-                    .fechaHasta(LocalDate.now().plusDays(10))
+                    .fechaDesde(LocalDate.of(2025, 7, 17))
+                    .fechaHasta(LocalDate.of(2025, 7, 27))
                     .horaDesde(LocalTime.of(19, 0))
                     .horaHasta(LocalTime.of(23, 0))
                     .descripcionDescuento("Pedí un lomito y llevate papas clásicas al 50%.")
-                    .precioPromocional(9999.0) // Precio combo sugerido
+                    .precioPromocional(9999.0)
                     .tipoPromocion(TipoPromocion.HAPPY_HOUR)
                     .imagen(imgPromo4)
-                    .articulosManufacturados(List.of(lomitoSimple, papasFritas))
                     .sucursales(List.of(sucursal))
                     .build();
-
+            sandwichYpapas.getPromocionDetalles().add(PromocionDetalle.builder().promocion(sandwichYpapas).articuloManufacturado(lomitoSimple).cantidad(1).build());
+            sandwichYpapas.getPromocionDetalles().add(PromocionDetalle.builder().promocion(sandwichYpapas).articuloManufacturado(papasFritas).cantidad(1).build());
             promocionService.save(sandwichYpapas);
 
+
+// --- Mega Burger Lovers ---
             Promocion megaBurgerLovers = Promocion.builder()
                     .denominacion("Mega Burger Lovers")
-                    .fechaDesde(LocalDate.now())
-                    .fechaHasta(LocalDate.now().plusDays(7))
+                    .fechaDesde(LocalDate.of(2025, 7, 17))
+                    .fechaHasta(LocalDate.of(2025, 7, 24))
                     .horaDesde(LocalTime.of(11, 0))
                     .horaHasta(LocalTime.of(23, 0))
                     .descripcionDescuento("2 hamburguesas clasicas + Papas Cheddar Bacon por solo $18.900.")
                     .precioPromocional(18900.0)
                     .tipoPromocion(TipoPromocion.PROMOCION_GENERAL)
                     .imagen(imgPromo5)
-                    .articulosManufacturados(List.of(
-                            hamburguesa, hamburguesa, papasCheddarBacon
-                    ))
                     .sucursales(List.of(sucursal))
                     .build();
-
+            megaBurgerLovers.getPromocionDetalles().add(PromocionDetalle.builder().promocion(megaBurgerLovers).articuloManufacturado(hamburguesa).cantidad(2).build());
+            megaBurgerLovers.getPromocionDetalles().add(PromocionDetalle.builder().promocion(megaBurgerLovers).articuloManufacturado(papasCheddarBacon).cantidad(1).build());
             promocionService.save(megaBurgerLovers);
 
         } catch (Exception e) {

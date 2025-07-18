@@ -17,7 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 public class Promocion extends BaseEntity {
 
     private String denominacion;
@@ -36,14 +36,18 @@ public class Promocion extends BaseEntity {
     @JoinColumn(name = "imagen_id") // Una promoción puede tener una imagen
     private Imagen imagen;
 
+    /*
     @ManyToMany
     @JoinTable(
             name = "promocion_articulo_manufacturado",
             joinColumns = @JoinColumn(name = "promocion_id"),
             inverseJoinColumns = @JoinColumn(name = "articulo_manufacturado_id")
     )
+
+
     @Builder.Default
     private List<ArticuloManufacturado> articulosManufacturados= new ArrayList<>();
+*/
 
     @ManyToMany
     @JoinTable(
@@ -64,7 +68,14 @@ public class Promocion extends BaseEntity {
     @Builder.Default
     private List<Sucursal> sucursales = new ArrayList<>();
 
+    /*
     @OneToMany(mappedBy = "promocion", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     @Builder.Default
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
+
+     */
+    //-------------RELACIÓN CORRECTA
+    @OneToMany(mappedBy = "promocion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<PromocionDetalle> promocionDetalles = new HashSet<>();
 }

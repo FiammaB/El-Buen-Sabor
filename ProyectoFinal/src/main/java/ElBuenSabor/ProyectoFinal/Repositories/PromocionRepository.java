@@ -11,6 +11,6 @@ import java.util.Optional;
 @Repository
 public interface PromocionRepository extends JpaRepository<Promocion, Long> {
     List<Promocion> findByBajaFalse();
-    @EntityGraph(attributePaths = {"articulosManufacturados", "articulosInsumos", "sucursales"})
+    @EntityGraph(attributePaths = {"promocionDetalles.articuloManufacturado", "articulosInsumos", "sucursales", "imagen"})
     Optional<Promocion> findById(Long id);
 }

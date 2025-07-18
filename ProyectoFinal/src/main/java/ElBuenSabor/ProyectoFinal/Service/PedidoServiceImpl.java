@@ -660,107 +660,63 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
     @Transactional
     public Double calcularTotalCostoPedido(Pedido pedido) {
         double totalCosto = 0.0;
-        System.out.println("DEBUG Costo: Iniciando cálculo de totalCosto para Pedido ID: " + (pedido.getId() != null ? pedido.getId() : "nuevo"));
-
-        if (pedido.getDetallesPedidos() == null || pedido.getDetallesPedidos().isEmpty()) {
-            System.out.println("DEBUG Costo: Pedido no tiene detalles de pedido o colección vacía. Costo = 0.");
-            return 0.0;
-        }
+        if (pedido.getDetallesPedidos() == null) return 0.0;
 
         for (DetallePedido detalle : pedido.getDetallesPedidos()) {
             double costoDetalle = 0.0;
-
-            // 1. Caso: ArticuloInsumo directo en el detalle de pedido
+            // CASO 1: ArticuloInsumo directo
             if (detalle.getArticuloInsumo() != null) {
-                ArticuloInsumo insumo = detalle.getArticuloInsumo();
-                if (insumo.getPrecioCompra() != null) {
-                    costoDetalle = insumo.getPrecioCompra() * detalle.getCantidad();
-                    System.out.println("DEBUG Costo: Insumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") - Cant: " + detalle.getCantidad() + " x Precio Compra: " + insumo.getPrecioCompra() + " = " + costoDetalle);
-                } else {
-                    System.err.println("ADVERTENCIA Costo: ArticuloInsumo '" + insumo.getDenominacion() + "' (ID: " + insumo.getId() + ") no tiene precio de compra definido. No se suma al costo.");
+                if (detalle.getArticuloInsumo().getPrecioCompra() != null) {
+                    costoDetalle = detalle.getArticuloInsumo().getPrecioCompra() * detalle.getCantidad();
                 }
             }
-            // 2. Caso: ArticuloManufacturado directo en el detalle de pedido
+            // CASO 2: ArticuloManufacturado directo
             else if (detalle.getArticuloManufacturado() != null) {
                 ArticuloManufacturado am = detalle.getArticuloManufacturado();
-                System.out.println("DEBUG Costo: Procesando ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
-
                 double costoManufacturadoUnitario = 0.0;
-                if (am.getDetalles() != null && !am.getDetalles().isEmpty()) {
+                if (am.getDetalles() != null) {
                     for (ArticuloManufacturadoDetalle amd : am.getDetalles()) {
-                        ArticuloInsumo insumoReceta = amd.getArticuloInsumo();
-                        if (insumoReceta != null && insumoReceta.getPrecioCompra() != null) {
-                            double costoInsumoReceta = insumoReceta.getPrecioCompra() * amd.getCantidad();
-                            costoManufacturadoUnitario += costoInsumoReceta;
-                            System.out.println("DEBUG Costo:  - Receta Insumo '" + insumoReceta.getDenominacion() + "' (ID: " + insumoReceta.getId() + ") - Cant: " + amd.getCantidad() + " x Precio Compra: " + insumoReceta.getPrecioCompra() + " = " + costoInsumoReceta);
-                        } else {
-                            System.err.println("ADVERTENCIA Costo: Insumo en receta (ID: " + (insumoReceta != null ? insumoReceta.getId() : "N/A") + ") no tiene precio de compra o es nulo. No se suma al costo del AM.");
+                        if (amd.getArticuloInsumo() != null && amd.getArticuloInsumo().getPrecioCompra() != null) {
+                            costoManufacturadoUnitario += amd.getArticuloInsumo().getPrecioCompra() * amd.getCantidad();
                         }
                     }
-                    costoDetalle = costoManufacturadoUnitario * detalle.getCantidad();
-                    System.out.println("DEBUG Costo:  - Costo Unitario AM '" + am.getDenominacion() + "': " + costoManufacturadoUnitario + " x Cant. Pedido: " + detalle.getCantidad() + " = " + costoDetalle);
-                } else {
-                    System.err.println("ADVERTENCIA Costo: ArticuloManufacturado '" + am.getDenominacion() + "' (ID: " + am.getId() + ") no tiene receta (detalles) definida. Costo = 0 para este AM.");
                 }
+                costoDetalle = costoManufacturadoUnitario * detalle.getCantidad();
             }
-            // 3. Caso: Promoción en el detalle de pedido
+            // CASO 3: Promoción
             else if (detalle.getPromocion() != null) {
                 Promocion promo = detalle.getPromocion();
-                System.out.println("DEBUG Costo: Procesando Promocion '" + promo.getDenominacion() + "' (ID: " + promo.getId() + ") - Cantidad Pedida: " + detalle.getCantidad());
-
                 double costoPromoUnitario = 0.0;
 
-                // Sumar costos de ArticulosManufacturados dentro de la promoción
-                if (promo.getArticulosManufacturados() != null) {
-                    for (ArticuloManufacturado amPromo : promo.getArticulosManufacturados()) {
-                        if (amPromo.getDetalles() != null) {
-                            double costoAM = 0.0;
-                            for (ArticuloManufacturadoDetalle amdPromo : amPromo.getDetalles()) {
-                                ArticuloInsumo insumoReceta = amdPromo.getArticuloInsumo();
-                                if (insumoReceta != null && insumoReceta.getPrecioCompra() != null) {
-                                    double costoInsumoReceta = insumoReceta.getPrecioCompra() * amdPromo.getCantidad();
-                                    costoAM += costoInsumoReceta;
-                                    System.out.println("DEBUG Costo PROMO: AM '" + amPromo.getDenominacion() + "' -> Insumo '" + insumoReceta.getDenominacion() + "' (ID: " + insumoReceta.getId() + ") - Cant: " + amdPromo.getCantidad() + " x Precio Compra: " + insumoReceta.getPrecioCompra() + " = " + costoInsumoReceta);
+                // CORREGIDO: Sumar costos de ArticulosManufacturados desde promocionDetalles
+                if (promo.getPromocionDetalles() != null) {
+                    for (PromocionDetalle promoDetalle : promo.getPromocionDetalles()) {
+                        ArticuloManufacturado amPromo = promoDetalle.getArticuloManufacturado();
+                        Integer cantidadEnPromo = promoDetalle.getCantidad();
+                        if (amPromo != null && amPromo.getDetalles() != null && cantidadEnPromo != null) {
+                            double costoAMUnitario = 0.0;
+                            for (ArticuloManufacturadoDetalle detalleReceta : amPromo.getDetalles()) {
+                                if (detalleReceta.getArticuloInsumo() != null && detalleReceta.getArticuloInsumo().getPrecioCompra() != null) {
+                                    costoAMUnitario += detalleReceta.getArticuloInsumo().getPrecioCompra() * detalleReceta.getCantidad();
                                 }
                             }
-                            costoPromoUnitario += costoAM;
-                            System.out.println("DEBUG Costo PROMO: Suma de costo AM '" + amPromo.getDenominacion() + "': " + costoAM);
+                            costoPromoUnitario += (costoAMUnitario * cantidadEnPromo);
                         }
                     }
                 }
 
-                // Sumar costos de ArticulosInsumos directos dentro de la promoción (NUEVO)
+                // CORREGIDO: Sumar costos de ArticulosInsumos directos de la promoción
                 if (promo.getArticulosInsumos() != null) {
                     for (ArticuloInsumo aiPromo : promo.getArticulosInsumos()) {
                         if (aiPromo.getPrecioCompra() != null) {
-                            costoPromoUnitario += aiPromo.getPrecioCompra(); // Se asume que es una unidad de insumo por promoción
-                            System.out.println("DEBUG Costo PROMO: Insumo directo '" + aiPromo.getDenominacion() + "' (ID: " + aiPromo.getId() + ") x Precio Compra: " + aiPromo.getPrecioCompra());
+                            costoPromoUnitario += aiPromo.getPrecioCompra();
                         }
                     }
                 }
-
-                // Sumar costos de los detalles de insumo propios de la promoción (NUEVO)
-                if (promo.getDetalles() != null) {
-                    for (ArticuloManufacturadoDetalle amdPromoDetalle : promo.getDetalles()) {
-                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
-                        if (insumoDetalle != null && insumoDetalle.getPrecioCompra() != null) {
-                            double costoInsumoDetalle = insumoDetalle.getPrecioCompra() * amdPromoDetalle.getCantidad();
-                            costoPromoUnitario += costoInsumoDetalle;
-                            System.out.println("DEBUG Costo PROMO: Detalle propio de promo -> Insumo '" + insumoDetalle.getDenominacion() + "' (ID: " + insumoDetalle.getId() + ") - Cant: " + amdPromoDetalle.getCantidad() + " x Precio Compra: " + insumoDetalle.getPrecioCompra() + " = " + costoInsumoDetalle);
-                        }
-                    }
-                }
-
                 costoDetalle = costoPromoUnitario * detalle.getCantidad();
-                System.out.println("DEBUG Costo PROMO: Costo unitario promoción '" + promo.getDenominacion() + "': " + costoPromoUnitario + " x Cant. Pedido: " + detalle.getCantidad() + " = " + costoDetalle);
-            }
-            // 4. Caso desconocido
-            else {
-                System.err.println("ADVERTENCIA Costo: Detalle de pedido sin ArticuloInsumo, ArticuloManufacturado ni Promocion asociado. Se ignora para el costo.");
             }
             totalCosto += costoDetalle;
         }
-        System.out.println("DEBUG Costo: Cálculo totalCosto finalizado. Costo total del pedido: " + totalCosto);
         return totalCosto;
     }
     @Transactional
@@ -804,101 +760,70 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // 🔵 CASO 3: Promoción (si el detalle de pedido hace referencia a una promoción)
             Promocion promocion = detalle.getPromocion();
             if (promocion != null) {
-                // Obtener el estado más reciente de Promocion y sus componentes
                 Promocion fullPromo = promocionRepository.findById(promocion.getId())
                         .orElseThrow(() -> new ResourceNotFoundException("Promocion no encontrada con ID: " + promocion.getId()));
 
-                // Procesar ArticulosManufacturados dentro de la promoción
-                if (fullPromo.getArticulosManufacturados() != null) {
-                    for (ArticuloManufacturado amPromo : fullPromo.getArticulosManufacturados()) {
-                        ArticuloManufacturado currentAmPromo = articuloManufacturadoRepository.findById(amPromo.getId())
-                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado en promocion no encontrado: " + amPromo.getId()));
-                        if (currentAmPromo.getDetalles() != null) {
-                            for (ArticuloManufacturadoDetalle detPromo : currentAmPromo.getDetalles()) {
-                                ArticuloInsumo insumoPromo = detPromo.getArticuloInsumo();
-                                if (insumoPromo != null) {
-                                    ArticuloInsumo currentInsumoPromo = articuloInsumoRepository.findById(insumoPromo.getId())
-                                            .orElseThrow(() -> new ResourceNotFoundException("Insumo de ArticuloManufacturado en promocion no encontrado: " + insumoPromo.getId()));
-                                    double cantidadAReducir = (double) detalle.getCantidad() * detPromo.getCantidad();
-                                    performStockDeductionForInsumo(currentInsumoPromo, cantidadAReducir, currentAmPromo, articulosManufacturadosToUpdate);
+                // --- Procesar ArticulosManufacturados con cantidad desde PromocionDetalle ---
+                if (fullPromo.getPromocionDetalles() != null) {
+                    for (PromocionDetalle promoDetalle : fullPromo.getPromocionDetalles()) {
+                        ArticuloManufacturado amPromo = promoDetalle.getArticuloManufacturado();
+                        Integer cantidadEnPromo = promoDetalle.getCantidad();
+
+                        if (amPromo.getDetalles() != null) {
+                            for (ArticuloManufacturadoDetalle detalleReceta : amPromo.getDetalles()) {
+                                ArticuloInsumo insumoReceta = detalleReceta.getArticuloInsumo();
+                                if (insumoReceta != null) {
+                                    double cantidadAReducir = (double) detalle.getCantidad() * cantidadEnPromo * detalleReceta.getCantidad();
+                                    performStockDeductionForInsumo(insumoReceta, cantidadAReducir, amPromo, articulosManufacturadosToUpdate);
                                 }
                             }
-                        } else {
-                            System.out.println("DEBUG Stock (Descuento): ArticuloManufacturado '" + amPromo.getDenominacion() + "' (ID: " + amPromo.getId() + ") dentro de promoción no tiene detalles de insumo definidos.");
                         }
                     }
-                } else {
-                    System.out.println("DEBUG Stock (Descuento): Promoción '" + promocion.getDenominacion() + "' (ID: " + promocion.getId() + ") no tiene artículos manufacturados asociados.");
                 }
 
-                // Procesar ArticulosInsumos directos dentro de la promoción (NUEVO)
+                // --- Procesar ArticulosInsumos directos de la promoción ---
                 if (fullPromo.getArticulosInsumos() != null) {
                     for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
-                        ArticuloInsumo currentAiPromo = articuloInsumoRepository.findById(aiPromo.getId())
-                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo en promocion no encontrado: " + aiPromo.getId()));
-                        if (!currentAiPromo.getEsParaElaborar()) {
+                        if (!aiPromo.getEsParaElaborar()) {
                             double cantidadAReducir = detalle.getCantidad();
-                            performStockDeductionForInsumo(currentAiPromo, cantidadAReducir, null, articulosManufacturadosToUpdate);
-                        } else {
-                            System.out.println("DEBUG Stock (Descuento): ArticuloInsumo directo de promoción '" + aiPromo.getDenominacion() + "' (ID: " + aiPromo.getId() + ") es para elaborar. No se descuenta directamente.");
-                        }
-                    }
-                }
-
-                // Procesar insumos definidos en los detalles propios de la promoción (NUEVO)
-                if (fullPromo.getDetalles() != null) {
-                    for (ArticuloManufacturadoDetalle amdPromoDetalle : fullPromo.getDetalles()) {
-                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
-                        if (insumoDetalle != null) {
-                            ArticuloInsumo currentInsumoDetalle = articuloInsumoRepository.findById(insumoDetalle.getId())
-                                    .orElseThrow(() -> new ResourceNotFoundException("Insumo en detalle de promocion no encontrado: " + insumoDetalle.getId()));
-                            double cantidadAReducir = (double) detalle.getCantidad() * amdPromoDetalle.getCantidad();
-                            performStockDeductionForInsumo(currentInsumoDetalle, cantidadAReducir, null, articulosManufacturadosToUpdate);
+                            performStockDeductionForInsumo(aiPromo, cantidadAReducir, null, articulosManufacturadosToUpdate);
                         }
                     }
                 }
             }
         }
-
         // Segunda pasada: determinar si las promociones deben ser dadas de baja
         Set<Promocion> promocionesToSetBaja = new HashSet<>(); // Para guardar Promociones que irán a baja
 
         for (DetallePedido detalle : pedido.getDetallesPedidos()) {
             if (detalle.getPromocion() != null) {
-                Promocion promo = detalle.getPromocion();
-                // Obtener el estado más reciente de la Promocion para verificar sus componentes
-                Promocion fullPromo = promocionRepository.findById(promo.getId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Promocion no encontrada con ID: " + promo.getId()));
+                Promocion fullPromo = promocionRepository.findById(detalle.getPromocion().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Promocion no encontrada con ID: " + detalle.getPromocion().getId()));
 
-                boolean promoShouldBeBaja = false; // Bandera para indicar si la promoción debe ir a baja
+                boolean promoShouldBeBaja = false;
 
-                // Verificar si algún ArticuloManufacturado en la promoción está de baja
-                if (fullPromo.getArticulosManufacturados() != null) {
-                    for (ArticuloManufacturado amPromo : fullPromo.getArticulosManufacturados()) {
-                        // Cargar el estado más reciente del AM para ver si está de baja
-                        ArticuloManufacturado currentAmPromo = articuloManufacturadoRepository.findById(amPromo.getId())
-                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado en promocion no encontrado: " + amPromo.getId()));
-                        if (currentAmPromo.getBaja()) {
+                // Verificar ArticuloManufacturado en la promoción
+                if (fullPromo.getPromocionDetalles() != null) {
+                    for (PromocionDetalle promoDetalle : fullPromo.getPromocionDetalles()) {
+                        if (promoDetalle.getArticuloManufacturado().getBaja()) {
                             promoShouldBeBaja = true;
-                            break; // Si uno está de baja, la promo completa debe ir a baja
+                            break;
                         }
                     }
                 }
+
 
                 // Verificar si algún ArticuloInsumo directo en la promoción está de baja
-                // Solo si la promoción aún no ha sido marcada para baja por un AM
                 if (!promoShouldBeBaja && fullPromo.getArticulosInsumos() != null) {
                     for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
-                        // Cargar el estado más reciente del insumo para ver si está de baja
-                        ArticuloInsumo currentAiPromo = articuloInsumoRepository.findById(aiPromo.getId())
-                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo en promocion no encontrado: " + aiPromo.getId()));
-                        if (currentAiPromo.getBaja()) {
+                        if (aiPromo.getBaja()) {
                             promoShouldBeBaja = true;
-                            break; // Si uno está de baja, la promo completa debe ir a baja
+                            break;
                         }
                     }
                 }
 
+                /*-------------------------------------------------------------------------------------------------
                 // Verificar si algún insumo de los detalles propios de la promoción está de baja
                 // Solo si la promoción aún no ha sido marcada para baja
                 if (!promoShouldBeBaja && fullPromo.getDetalles() != null) {
@@ -915,7 +840,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                         }
                     }
                 }
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------*/
                 // Si la promoción debe ser dada de baja y aún no lo está, la añadimos al set
                 if (promoShouldBeBaja && !fullPromo.getBaja()) {
                     fullPromo.setBaja(true);
@@ -1000,17 +925,19 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 }
             }
 
-            // 🔵 CASO 3: Promoción
+            // 🔵 CASO 3: Promoción (CORREGIDO)
             Promocion promocion = detalle.getPromocion();
             if (promocion != null) {
                 // Sumar insumos de ArticulosManufacturados dentro de la promoción
-                if (promocion.getArticulosManufacturados() != null) {
-                    for (ArticuloManufacturado am : promocion.getArticulosManufacturados()) {
+                if (promocion.getPromocionDetalles() != null) {
+                    for (PromocionDetalle promoDetalle : promocion.getPromocionDetalles()) {
+                        ArticuloManufacturado am = promoDetalle.getArticuloManufacturado();
+                        Integer cantidadEnPromo = promoDetalle.getCantidad();
                         if (am.getDetalles() != null) {
-                            for (ArticuloManufacturadoDetalle det : am.getDetalles()) {
-                                ArticuloInsumo insumo = det.getArticuloInsumo();
+                            for (ArticuloManufacturadoDetalle detalleReceta : am.getDetalles()) {
+                                ArticuloInsumo insumo = detalleReceta.getArticuloInsumo();
                                 if (insumo != null) {
-                                    double cantidadNecesaria = detalle.getCantidad() * det.getCantidad();
+                                    double cantidadNecesaria = (double) detalle.getCantidad() * cantidadEnPromo * detalleReceta.getCantidad();
                                     insumosNecesarios.merge(insumo.getId(), cantidadNecesaria, Double::sum);
                                 }
                             }
@@ -1026,6 +953,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                         }
                     }
                 }
+                /*--------------------------------------------------------------------------------------------
                 // Sumar insumos definidos en los detalles propios de la promoción (NUEVO)
                 if (promocion.getDetalles() != null) {
                     for (ArticuloManufacturadoDetalle amdPromoDetalle : promocion.getDetalles()) {
@@ -1035,7 +963,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                             insumosNecesarios.merge(insumoDetalle.getId(), cantidadNecesaria, Double::sum);
                         }
                     }
-                }
+                }*/
             }
         }
 

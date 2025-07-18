@@ -16,6 +16,7 @@ import ElBuenSabor.ProyectoFinal.Service.PromocionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/promociones")
+@CrossOrigin(origins = "http://localhost:5173") // <-- ¡AÑADIR ESTA LÍNEA!
 public class PromocionController extends BaseController<Promocion, Long> {
     private final PromocionService promocionService;
     private final PromocionMapper promocionMapper;
@@ -75,6 +77,7 @@ public class PromocionController extends BaseController<Promocion, Long> {
         }
     }
 
+    /*
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody PromocionCreateDTO dto) {
         try {
@@ -127,7 +130,32 @@ public class PromocionController extends BaseController<Promocion, Long> {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+*/
 
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<?> create(@RequestBody PromocionCreateDTO dto) {
+        try {
+            // Delegamos toda la lógica de creación al servicio
+            Promocion savedPromocion = promocionService.save(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(promocionMapper.toDTO(savedPromocion));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PromocionCreateDTO dto) {
+        try {
+            // Toda la lógica ahora está en el servicio. El controlador solo delega.
+            Promocion updatedPromocion = promocionService.update(id, dto);
+            return ResponseEntity.ok(promocionMapper.toDTO(updatedPromocion));
+        } catch (Exception e) {
+            System.err.println("Error en PromocionController.update: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    /*
     @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PromocionCreateDTO dto) {
         try {
@@ -224,7 +252,7 @@ public class PromocionController extends BaseController<Promocion, Long> {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-
+*/
     @PatchMapping("/{id}/activate")
     public ResponseEntity<?> activate(@PathVariable Long id) {
         try {

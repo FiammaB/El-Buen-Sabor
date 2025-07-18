@@ -27,8 +27,9 @@ public class PromocionDTO {
     private TipoPromocion tipoPromocion;
     private ImagenDTO imagen;
     private List<ArticuloInsumoDTO> articulosInsumos;
-    private List<ArticuloManufacturadoDTO> articulosManufacturados;
     private List<SucursalDTO> sucursales;
+    private Set<PromocionDetalleDTO> promocionDetalles;
+
     private  boolean baja;
 
     private Set<ArticuloManufacturadoDetalleDTO> detalles;

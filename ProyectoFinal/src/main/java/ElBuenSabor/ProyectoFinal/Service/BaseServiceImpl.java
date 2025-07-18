@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
-@Service // Aunque es abstracta, Spring puede gestionarla para inyección
+ // Aunque es abstracta, Spring puede gestionarla para inyección
 public abstract class BaseServiceImpl<E extends BaseEntity, ID extends Serializable> implements BaseService<E, ID> {
 
     protected JpaRepository<E, ID> baseRepository; // Repositorio genérico

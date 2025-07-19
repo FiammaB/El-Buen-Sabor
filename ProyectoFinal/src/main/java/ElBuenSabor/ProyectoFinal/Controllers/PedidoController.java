@@ -490,7 +490,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
     }
 
     // NUEVO ENDPOINT PARA HISTORIAL DE PEDIDOS POR CLIENTE
-    @GetMapping("/cliente/{personaId}")
+    @GetMapping("/persona/{personaId}")
     public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long personaId) {
         try {
             // Asegúrate de que el persona exista para evitar errores con un ID inexistente

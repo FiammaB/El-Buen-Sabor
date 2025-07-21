@@ -5,6 +5,7 @@ import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
+import com.itextpdf.text.log.SysoCounter;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
@@ -998,6 +999,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             throw new IllegalStateException("Solo se puede marcar como PAGADO un pedido en estado A_CONFIRMAR");
         }
         pedido.setEstado(Estado.PAGADO);
+        System.out.println("DEBUG Estado: Pedido '" + pedido.getEstado());
 
         // Descontar stock (puede estar en otro método según tu estructura)
         descontarInsumosDelStock(pedido);

@@ -237,10 +237,6 @@ public class PedidoController extends BaseController<Pedido, Long> {
                         .build();
                 pedidoParaPersistir.setFactura(factura); // Asignar al pedidoParaPersistir
 
-                // Descontar el stock inmediatamente para pedidos en efectivo
-                // Asumo que descontarInsumosDelStock es @Transactional y maneja las bajas.
-                pedidoService.descontarInsumosDelStock(pedidoParaPersistir);
-
                 Pedido saved = pedidoService.save(pedidoParaPersistir); // Guarda el pedido completo
                 return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved));
             } else {
@@ -430,16 +426,17 @@ public class PedidoController extends BaseController<Pedido, Long> {
     public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
             String nuevoEstado = request.get("estado");
+            Pedido actualizado = pedidoService.findById(id);
             if (nuevoEstado == null) {
                 return ResponseEntity.badRequest().body("{\"error\": \"El estado es requerido\"}");
             }
-            if (Estado.valueOf(nuevoEstado) == Estado.PAGADO) {
-                Pedido actualizado = pedidoService.marcarPedidoComoPagadoYFacturar(id);
+            if (Estado.valueOf(nuevoEstado) == Estado.PAGADO && actualizado.getFormaPago() == FormaPago.EFECTIVO) {
+                actualizado = pedidoService.marcarPedidoComoPagadoYFacturar(id);
                 return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
             } else {
                 Pedido pedido = pedidoService.findById(id);
                 pedido.setEstado(Estado.valueOf(nuevoEstado));
-                Pedido actualizado = pedidoService.save(pedido);
+                actualizado = pedidoService.save(pedido);
                 return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
             }
         } catch (Exception e) {

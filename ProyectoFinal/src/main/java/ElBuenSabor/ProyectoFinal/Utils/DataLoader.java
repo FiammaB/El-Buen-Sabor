@@ -80,9 +80,28 @@ public class DataLoader implements CommandLineRunner {
             // 1. Ubicación
             Pais pais = paisService.save(Pais.builder().nombre("Argentina").build());
             Provincia provincia = provinciaService.save(Provincia.builder().nombre("Mendoza").pais(pais).build());
-            Localidad localidad = localidadService.save(Localidad.builder().nombre("Maipú").provincia(provincia).build());
 
-            // 2. Imágenes
+            Localidad localidad1 = localidadService.save(Localidad.builder().nombre("Maipú").provincia(provincia).build());
+            Localidad localidad2= localidadService.save(Localidad.builder().nombre("Coquimbito").provincia(provincia).build());
+            Localidad localidad3 = localidadService.save(Localidad.builder().nombre("Cruz de Piedra").provincia(provincia).build());
+            Localidad localidad4 = localidadService.save(Localidad.builder().nombre("Fray Luis Beltrán").provincia(provincia).build());
+            Localidad localidad5 = localidadService.save(Localidad.builder().nombre("General Gutiérrez").provincia(provincia).build());
+            Localidad localidad6 = localidadService.save(Localidad.builder().nombre("Luzuriaga").provincia(provincia).build());
+            Localidad localidad7 = localidadService.save(Localidad.builder().nombre("Rodeo del Medio").provincia(provincia).build());
+            Localidad localidad8 = localidadService.save(Localidad.builder().nombre("Russell").provincia(provincia).build());
+            Localidad localidad9 = localidadService.save(Localidad.builder().nombre("San Roque").provincia(provincia).build());
+
+            Localidad localidad10 = localidadService.save(Localidad.builder().nombre("Mendoza").provincia(provincia).build());
+            Localidad localidad11 = localidadService.save(Localidad.builder().nombre("El Challao").provincia(provincia).build());
+
+
+
+            Localidad localidad12 = localidadService.save(Localidad.builder().nombre("Godoy Cruz").provincia(provincia).build());
+            Localidad localidad13 = localidadService.save(Localidad.builder().nombre("Gobernador Benegas").provincia(provincia).build());
+            Localidad localidad14 = localidadService.save(Localidad.builder().nombre("Las Tortugas").provincia(provincia).build());
+            Localidad localidad15 = localidadService.save(Localidad.builder().nombre("Presidente Sarmiento").provincia(provincia).build());
+            Localidad localidad16 = localidadService.save(Localidad.builder().nombre("Villa Hipódromo").provincia(provincia).build());
+
             Imagen imgCliente = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
             Imagen imgCliente1 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
             Imagen imgCliente2 = imagenService.save(Imagen.builder().denominacion("https://example.com/cliente.jpg").build());
@@ -170,7 +189,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Calle Falsa")
                     .numero(123)
                     .cp(5515)
-                    .localidad(localidad)//Siempre misma localidad
+                    .localidad(localidad1)//Siempre misma localidad
                     .build());
 
             // 4. Usuario CLIENTE
@@ -198,7 +217,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Av. Belgrano")
                     .numero(456)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad1)
                     .build());
 
             Usuario usuarioCliente1 = usuarioService.save(Usuario.builder()
@@ -225,7 +244,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Calle Las Heras")
                     .numero(789)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad2)
                     .build());
 
             Usuario usuarioCliente2 = usuarioService.save(Usuario.builder()
@@ -252,7 +271,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("San Martín")
                     .numero(321)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad3)
                     .build());
 
             Usuario usuarioCliente3 = usuarioService.save(Usuario.builder()
@@ -279,7 +298,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Patricias Mendocinas")
                     .numero(654)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad4)
                     .build());
 
             Usuario usuarioCliente4 = usuarioService.save(Usuario.builder()
@@ -306,7 +325,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Godoy Cruz")
                     .numero(88)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad4)
                     .build());
 
             Usuario usuarioCliente5 = usuarioService.save(Usuario.builder()
@@ -333,7 +352,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Maipú")
                     .numero(456)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad5)
                     .build());
 
             Usuario usuarioCliente6 = usuarioService.save(Usuario.builder()
@@ -360,7 +379,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("25 de Mayo")
                     .numero(1025)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad5)
                     .build());
 
             Usuario usuarioCliente7 = usuarioService.save(Usuario.builder()
@@ -387,7 +406,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Tucumán")
                     .numero(731)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad6)
                     .build());
 
             Usuario usuarioCliente8 = usuarioService.save(Usuario.builder()
@@ -414,7 +433,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Av. San Martín")
                     .numero(856)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad7)
                     .build());
 
             Usuario usuarioCliente9 = usuarioService.save(Usuario.builder()
@@ -441,7 +460,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("España")
                     .numero(1290)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad8)
                     .build());
 
             Usuario usuarioCliente10 = usuarioService.save(Usuario.builder()
@@ -468,7 +487,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Av. Libertador")
                     .numero(707)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad8)
                     .build());
 
             Usuario usuarioCliente11 = usuarioService.save(Usuario.builder()
@@ -495,7 +514,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Av. Godoy Cruz")
                     .numero(315)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad8)
                     .build());
 
             Usuario usuarioCliente12 = usuarioService.save(Usuario.builder()
@@ -522,7 +541,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("Ituzaingó")
                     .numero(444)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad9)
                     .build());
 
             Usuario usuarioCliente13 = usuarioService.save(Usuario.builder()
@@ -549,7 +568,7 @@ public class DataLoader implements CommandLineRunner {
                     .calle("José Ingenieros")
                     .numero(672)
                     .cp(5515)
-                    .localidad(localidad)
+                    .localidad(localidad10)
                     .build());
 
             Usuario usuarioCliente14 = usuarioService.save(Usuario.builder()

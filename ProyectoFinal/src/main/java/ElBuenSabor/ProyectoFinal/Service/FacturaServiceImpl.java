@@ -3,7 +3,7 @@ package ElBuenSabor.ProyectoFinal.Service;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Repositories.FacturaRepository;
 
-import com.itextpdf.io.source.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.element.Paragraph;
@@ -104,15 +104,23 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
                     double precioUnitario = 0.0;
                     int tiempoEstimado = 0;
 
-                    if (detalle.getArticuloManufacturado() != null) {
+                    if (detalle.getPromocion() != null) {
+                        // ---- CASO PROMOCIÓN ----
+                        descripcion = "[PROMO] " + detalle.getPromocion().getDenominacion();
+                        precioUnitario = detalle.getPromocion().getPrecioPromocional();
+                        tiempoEstimado = 0; // Si tu promoción tiene un tiempo estimado, podés mostrarlo aquí
+
+                    } else if (detalle.getArticuloManufacturado() != null) {
                         descripcion = detalle.getArticuloManufacturado().getDenominacion();
                         precioUnitario = detalle.getArticuloManufacturado().getPrecioVenta();
                         tiempoEstimado = detalle.getArticuloManufacturado().getTiempoEstimadoMinutos();
+
                     } else if (detalle.getArticuloInsumo() != null) {
                         descripcion = detalle.getArticuloInsumo().getDenominacion();
                         precioUnitario = detalle.getArticuloInsumo().getPrecioVenta();
-                        tiempoEstimado = 0; // Insumos no suelen tener tiempo estimado directo en el detalle
+                        tiempoEstimado = 0; // Insumos no suelen tener tiempo estimado
                     }
+
                     double subtotalDetalle = detalle.getCantidad() * precioUnitario;
                     totalArticulos += subtotalDetalle;
 

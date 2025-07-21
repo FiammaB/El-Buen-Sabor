@@ -26,6 +26,6 @@ public interface PedidoService extends BaseService<Pedido, Long> {
     Double calcularTotalCostoPedido(Pedido pedido);
     void descontarInsumosDelStock(Pedido pedido);
     boolean verificarStockParaPedido(Pedido pedido);
-
+    Pedido marcarPedidoComoPagadoYFacturar(Long pedidoId) throws Exception;
 
 }

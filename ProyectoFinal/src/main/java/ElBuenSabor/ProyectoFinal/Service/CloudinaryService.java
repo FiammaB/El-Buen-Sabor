@@ -2,7 +2,7 @@ package ElBuenSabor.ProyectoFinal.Service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.itextpdf.io.source.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,14 +21,6 @@ public class CloudinaryService {
         return uploadResult.get("url").toString(); // URL de la imagen
     }
 
-
-    /**
-     * Sube un ByteArrayOutputStream (ej. un PDF) a Cloudinary.
-     * @param outputStream El ByteArrayOutputStream que contiene los bytes del archivo.
-     * @param publicId El ID público deseado para el archivo en Cloudinary (ej. "factura_123").
-     * @return La URL segura del archivo subido.
-     * @throws IOException Si ocurre un error durante la subida.
-     */
     public String uploadByteArray(ByteArrayOutputStream outputStream, String publicId) throws IOException {
         // Convierte el ByteArrayOutputStream a un array de bytes
         byte[] fileBytes = outputStream.toByteArray();

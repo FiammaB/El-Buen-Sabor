@@ -11,5 +11,5 @@ public interface FacturaService extends BaseService<Factura, Long>{
 
     ByteArrayOutputStream generarFacturaPdf(Pedido pedido) throws Exception;
 
-    com.itextpdf.io.source.ByteArrayOutputStream generarNotaCreditoPdf(NotaCredito notaCredito) throws Exception;
+    java.io.ByteArrayOutputStream generarNotaCreditoPdf(NotaCredito notaCredito) throws Exception;
 }

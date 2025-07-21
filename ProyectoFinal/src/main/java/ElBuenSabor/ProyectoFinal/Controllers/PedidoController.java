@@ -12,7 +12,7 @@ import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
 // Ya no es necesario si se inyecta por constructor explícito al padre
 // import lombok.RequiredArgsConstructor;
-import com.itextpdf.io.source.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -433,14 +433,20 @@ public class PedidoController extends BaseController<Pedido, Long> {
             if (nuevoEstado == null) {
                 return ResponseEntity.badRequest().body("{\"error\": \"El estado es requerido\"}");
             }
-            Pedido pedido = pedidoService.findById(id);
-            pedido.setEstado(Estado.valueOf(nuevoEstado));
-            Pedido actualizado = pedidoService.save(pedido);
-            return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
+            if (Estado.valueOf(nuevoEstado) == Estado.PAGADO) {
+                Pedido actualizado = pedidoService.marcarPedidoComoPagadoYFacturar(id);
+                return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
+            } else {
+                Pedido pedido = pedidoService.findById(id);
+                pedido.setEstado(Estado.valueOf(nuevoEstado));
+                Pedido actualizado = pedidoService.save(pedido);
+                return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
+            }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
 
     @PatchMapping("/{id}/hora-estimada")
     public ResponseEntity<?> actualizarHoraEstimada(@PathVariable Long id, @RequestBody Map<String, String> body) {

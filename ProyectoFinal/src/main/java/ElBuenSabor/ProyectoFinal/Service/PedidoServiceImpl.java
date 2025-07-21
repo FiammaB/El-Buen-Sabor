@@ -1,6 +1,6 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
-import com.itextpdf.io.source.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream;
 import ElBuenSabor.ProyectoFinal.DTO.*;
 import ElBuenSabor.ProyectoFinal.Entities.*;
 import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
@@ -988,4 +988,48 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
         return true; // Hay stock para todos los insumos
     }
+
+    @Override
+    @Transactional
+    public Pedido marcarPedidoComoPagadoYFacturar(Long pedidoId) throws Exception {
+        Pedido pedido = findById(pedidoId);
+
+        if (pedido.getEstado() != Estado.A_CONFIRMAR) {
+            throw new IllegalStateException("Solo se puede marcar como PAGADO un pedido en estado A_CONFIRMAR");
+        }
+        pedido.setEstado(Estado.PAGADO);
+
+        // Descontar stock (puede estar en otro método según tu estructura)
+        descontarInsumosDelStock(pedido);
+
+        // Generar PDF de la factura
+        ByteArrayOutputStream pdfBytes = facturaService.generarFacturaPdf(pedido);
+
+        // Subir a Cloudinary (la carpeta la maneja CloudinaryService)
+        String publicId = "factura_pedido_" + pedido.getId();
+        String urlPdf = cloudinaryService.uploadByteArray(pdfBytes, publicId);
+
+        // Actualizar/crear Factura asociada
+        Factura factura = pedido.getFactura();
+        if (factura == null) {
+            factura = new Factura();
+            pedido.setFactura(factura);
+        }
+        factura.setUrlPdf(urlPdf);
+        factura.setFechaFacturacion(LocalDate.now());
+        factura.setFormaPago(pedido.getFormaPago());
+        factura.setTotalVenta(pedido.getTotal());
+
+        // Enviar email al cliente
+        String destinatario = pedido.getPersona().getUsuario().getEmail();
+        String subject = "Factura de tu pedido #" + pedido.getId() + " - El Buen Sabor";
+        String body = "¡Gracias por tu compra! Adjuntamos la factura de tu pedido #" + pedido.getId() + ".";
+        String attachment = "factura_" + pedido.getId() + ".pdf";
+        emailService.sendEmail(destinatario, subject, body, pdfBytes, attachment);
+
+        return save(pedido);
+    }
+
+
+
 }

@@ -107,6 +107,27 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         }
     }
 
+    // -------------------- REGISTRO DELIVERY (SOLO ADMIN) ---------------------
+    @PostMapping("/registrar-delivery")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<?> registrarDelivery(@RequestBody UsuarioDTO usuarioDTO) {
+        try {
+            Usuario nuevoDelivery = usuarioMapper.toEntity(usuarioDTO);
+            nuevoDelivery.setUsername(usuarioDTO.getUsername() != null && !usuarioDTO.getUsername().isBlank()
+                    ? usuarioDTO.getUsername()
+                    : usuarioDTO.getEmail().split("@")[0]);
+
+            nuevoDelivery.setRol(Rol.DELIVERY);
+            nuevoDelivery.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+            nuevoDelivery.setPrimerInicio(true); // ✅ IMPORTANTE
+
+            Usuario saved = usuarioService.save(nuevoDelivery);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Delivery creado con ID: " + saved.getId());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
+        }
+    }
+
     // -------------------- LISTAR Y OBTENER USUARIOS ---------------------
     @GetMapping
     @Override

@@ -17,5 +17,8 @@ public interface UsuarioService extends BaseService<Usuario, Long> {
 
     Usuario registrarCajero(UsuarioDTO usuarioDTO);
 
+    // ✅ Nuevo: Registrar Delivery con primerInicio = true
+    Usuario registrarDelivery(UsuarioDTO usuarioDTO);
+
     void actualizarNombre(Long id, String nuevoNombre);
 }

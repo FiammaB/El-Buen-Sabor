@@ -62,7 +62,7 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ AHORA GENÉRICO: Cliente, Cocinero, Cajero o Delivery
+    // ✅ Ahora genérico: Cliente, Cocinero, Cajero o Delivery
     @Override
     @Transactional
     public void actualizarPerfil(String email, PersonaPerfilUpdateDTO dto) throws Exception {
@@ -118,6 +118,7 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
         usuario.setRol(Rol.COCINERO);
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        usuario.setPrimerInicio(true);
         return usuarioRepository.save(usuario);
     }
 
@@ -135,6 +136,25 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
         usuario.setRol(Rol.CAJERO);
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        usuario.setPrimerInicio(true);
+        return usuarioRepository.save(usuario);
+    }
+
+    // ✅ Método para registrar delivery
+    @Override
+    public Usuario registrarDelivery(UsuarioDTO usuarioDTO) {
+        if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario registrado con ese email.");
+        }
+
+        if (!esPasswordSegura(usuarioDTO.getPassword())) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un símbolo.");
+        }
+
+        Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
+        usuario.setRol(Rol.DELIVERY);
+        usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
+        usuario.setPrimerInicio(true); // ✅ Para forzar cambio de contraseña en primer login
         return usuarioRepository.save(usuario);
     }
 

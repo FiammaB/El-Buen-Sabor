@@ -1,6 +1,7 @@
 package ElBuenSabor.ProyectoFinal.Repositories;
 
 import ElBuenSabor.ProyectoFinal.DTO.PersonaReporteDTO;
+import ElBuenSabor.ProyectoFinal.DTO.ReporteMonetarioDiarioDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Estado;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,6 +31,18 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             @Param("hasta") LocalDate hasta,
             @Param("orden") String orden);
 
+    @Query("SELECT new ElBuenSabor.ProyectoFinal.DTO.ReporteMonetarioDiarioDTO(" +
+            "p.fechaPedido as fecha, " +
+            "SUM(p.total) as ingresos, " +
+            "SUM(p.totalCosto) as costos, " +
+            "(SUM(p.total) - SUM(p.totalCosto)) as ganancia) " +
+            "FROM Pedido p " +
+            "WHERE p.fechaPedido BETWEEN :desde AND :hasta AND p.estado = 'PAGADO' " +
+            "GROUP BY p.fechaPedido " +
+            "ORDER BY p.fechaPedido ASC")
+    List<ReporteMonetarioDiarioDTO> obtenerReporteMonetarioDiario(
+            @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta);
 
 
 }

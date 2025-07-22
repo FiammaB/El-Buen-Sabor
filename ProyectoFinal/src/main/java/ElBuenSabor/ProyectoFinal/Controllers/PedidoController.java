@@ -106,6 +106,15 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
+    // En PedidoController.java o ReporteController.java
+
+    @GetMapping("/reporte/monetario-diario")
+    public ResponseEntity<List<ReporteMonetarioDiarioDTO>> obtenerReporteMonetarioDiario(
+            @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<ReporteMonetarioDiarioDTO> reporte = pedidoService.obtenerReporteMonetarioDiario(desde, hasta);
+        return ResponseEntity.ok(reporte);
+    }
     // Sobrescribir getOne para devolver un DTO y manejar excepciones
     @GetMapping("/{id}")
     @Override // Sobrescribe el getOne del BaseController

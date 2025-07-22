@@ -490,18 +490,14 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             Set<DetallePedido> detallesNotaCredito = new HashSet<>();
             if (pedido.getDetallesPedidos() != null) {
                 for (DetallePedido detalleOriginal : pedido.getDetallesPedidos()) {
-                    // Crear una nueva instancia de DetallePedido para la Nota de Crédito
-                    // Importante: No es el mismo objeto DetallePedido de la BD, es una copia
                     DetallePedido nuevoDetalleNC = DetallePedido.builder()
                             .cantidad(detalleOriginal.getCantidad())
                             .subTotal(detalleOriginal.getSubTotal())
-                            .articuloInsumo(detalleOriginal.getArticuloInsumo()) // Copia la referencia
-                            .articuloManufacturado(detalleOriginal.getArticuloManufacturado()) // Copia la referencia
-
+                            .articuloInsumo(detalleOriginal.getArticuloInsumo())
+                            .articuloManufacturado(detalleOriginal.getArticuloManufacturado())
+                            .promocion(detalleOriginal.getPromocion()) // <--- AGREGALO ACÁ
                             .build();
-                    // El nuevoDetalleNC.setPedido(null) o .setNotaCredito(notaCredito) dependiendo de la relación
-                    // En NotaCredito, DetallePedido tiene @JoinColumn(name = "nota_credito_id")
-                    nuevoDetalleNC.setNotaCredito(notaCredito); // Establecer la relación inversa
+                    nuevoDetalleNC.setNotaCredito(notaCredito);
                     detallesNotaCredito.add(nuevoDetalleNC);
                 }
             }

@@ -481,7 +481,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     .motivo(motivoAnulacion)
                     .facturaAnulada(facturaAnulada) // Referencia a la factura que anula
                     .pedidoOriginal(pedido) // Referencia al pedido original
-                    .persona(pedido.getPersona()) // Referencia al persona del pedido
+                    .persona(pedido.getPersona())
+
+                    // Referencia al persona del pedido
                     .build();
 
             // Copiar detalles del pedido original a la Nota de Crédito
@@ -495,6 +497,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                             .subTotal(detalleOriginal.getSubTotal())
                             .articuloInsumo(detalleOriginal.getArticuloInsumo()) // Copia la referencia
                             .articuloManufacturado(detalleOriginal.getArticuloManufacturado()) // Copia la referencia
+
                             .build();
                     // El nuevoDetalleNC.setPedido(null) o .setNotaCredito(notaCredito) dependiendo de la relación
                     // En NotaCredito, DetallePedido tiene @JoinColumn(name = "nota_credito_id")
@@ -539,6 +542,8 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // 6. Opcional: Marcar el pedido como anulado o cambiar su estado
             pedido.setAnulado(true); // Asumiendo que añades 'anulado' a Pedido
             pedido.setEstado(Estado.CANCELADO); // O un nuevo estado como 'ANULADO_CON_NC'
+            pedido.setFormaPago(pedido.getFormaPago());
+            pedido.setSucursal(pedido.getSucursal());
             baseRepository.save(pedido); // Guarda el pedido con la factura y el estado actualizado
 
             System.out.println("Factura " + facturaAnulada.getId() + " anulada exitosamente. Nota de Crédito " + notaCredito.getId() + " generada.");

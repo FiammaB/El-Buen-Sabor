@@ -593,6 +593,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
         }
     }
 
+    @Override
+    public List<ReporteMonetarioDiarioDTO> obtenerReporteMonetarioDiario(LocalDate desde, LocalDate hasta) {
+        return pedidoRepository.obtenerReporteMonetarioDiario(desde, hasta);
+    }
     // --- Nuevo método para calcular el tiempo estimado de finalización ---
     @Override // Implementa el método de la interfaz
     public LocalTime calcularTiempoEstimadoFinalizacion(Pedido pedido) throws Exception {

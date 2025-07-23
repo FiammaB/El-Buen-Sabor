@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -119,7 +120,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
 
             nuevoDelivery.setRol(Rol.DELIVERY);
             nuevoDelivery.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-            nuevoDelivery.setPrimerInicio(true); // ✅ IMPORTANTE
+            nuevoDelivery.setPrimerInicio(true);
 
             Usuario saved = usuarioService.save(nuevoDelivery);
             return ResponseEntity.status(HttpStatus.CREATED).body("Delivery creado con ID: " + saved.getId());
@@ -185,11 +186,18 @@ public class UsuarioController extends BaseController<Usuario, Long> {
         try {
             Usuario usuario = usuarioService.findByEmail(email);
             if (usuario == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Usuario no encontrado\"}");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("{\"error\": \"Usuario no encontrado con email: " + email + "\"}");
             }
 
-            Persona persona = personaService.findById(usuario.getId());
-            return ResponseEntity.ok(perfilMapper.toPerfilDTO(persona));
+            // ✅ Mejor búsqueda de la Persona asociada al Usuario
+            Optional<Persona> personaOpt = personaService.findByUsuario(usuario);
+            if (personaOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("{\"error\": \"No hay datos de perfil para este usuario\"}");
+            }
+
+            return ResponseEntity.ok(perfilMapper.toPerfilDTO(personaOpt.get()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -199,8 +207,8 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     @PutMapping("/perfil/{email}")
     public ResponseEntity<?> actualizarPerfil(@PathVariable String email, @RequestBody PersonaPerfilUpdateDTO dto) {
         try {
-            usuarioService.actualizarPerfil(email, dto); // ✅ MÉTODO GENÉRICO PARA TODOS LOS ROLES
-            return ResponseEntity.ok("Perfil actualizado correctamente");
+            Persona personaActualizada = usuarioService.actualizarPerfil(email, dto);
+            return ResponseEntity.ok(perfilMapper.toPerfilDTO(personaActualizada));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }

@@ -6,9 +6,10 @@ import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Repositories.PersonaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ElBuenSabor.ProyectoFinal.DTO.ClienteAdminUpdateDTO; // <-- AÑADIR IMPORT
-import org.springframework.beans.factory.annotation.Autowired; // <-- AÑADIR IMPORT
+import ElBuenSabor.ProyectoFinal.DTO.ClienteAdminUpdateDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Optional;
 
 @Service
 public class PersonaServiceImpl extends BaseServiceImpl<Persona, Long> implements PersonaService {
@@ -16,28 +17,24 @@ public class PersonaServiceImpl extends BaseServiceImpl<Persona, Long> implement
     private final PersonaRepository personaRepository;
     private final UsuarioService usuarioService;
 
-    @Autowired // <-- Se puede poner en el constructor
+    @Autowired
     public PersonaServiceImpl(PersonaRepository personaRepository, UsuarioService usuarioService) {
         super(personaRepository);
-        this.personaRepository = personaRepository; // Guardar la referencia si se usa directamente
-        this.usuarioService = usuarioService;      // Guardar la referencia del nuevo servicio
+        this.personaRepository = personaRepository;
+        this.usuarioService = usuarioService;
     }
 
-    // <-- 2. AÑADIR LA IMPLEMENTACIÓN DEL NUEVO MÉTODO
     @Override
     @Transactional
     public void actualizarClienteDesdeAdmin(Long personaId, ClienteAdminUpdateDTO dto) throws Exception {
-        // Buscar la persona o lanzar un error
         Persona persona = personaRepository.findById(personaId)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró la persona con id: " + personaId));
 
-        // Actualizar el teléfono en la entidad Persona
         persona.setTelefono(dto.getTelefono());
 
-        // Actualizar el estado en la entidad Usuario asociada
         Usuario usuario = persona.getUsuario();
         if (usuario != null) {
-            boolean nuevaBaja = !dto.isActivo(); // Convertir 'activo' a 'baja'
+            boolean nuevaBaja = !dto.isActivo();
             if (usuario.isBaja() != nuevaBaja) {
                 usuarioService.toggleBaja(usuario.getId(), nuevaBaja);
             }
@@ -46,14 +43,12 @@ public class PersonaServiceImpl extends BaseServiceImpl<Persona, Long> implement
         }
     }
 
-
     @Override
     @Transactional
     public Persona update(Long id, Persona updatedPersona) throws Exception {
         try {
             Persona existente = findById(id);
 
-            // ✅ Actualizar datos simples
             existente.setNombre(updatedPersona.getNombre());
             existente.setApellido(updatedPersona.getApellido());
             existente.setTelefono(updatedPersona.getTelefono());
@@ -61,13 +56,11 @@ public class PersonaServiceImpl extends BaseServiceImpl<Persona, Long> implement
             existente.setBaja(updatedPersona.getBaja());
             existente.setImagen(updatedPersona.getImagen());
 
-            // ✅ Actualizar datos de Usuario embebido (solo username)
             if (existente.getUsuario() != null && updatedPersona.getUsuario() != null
                     && updatedPersona.getUsuario().getUsername() != null) {
                 existente.getUsuario().setUsername(updatedPersona.getUsuario().getUsername());
             }
 
-            // ✅ Actualizar domicilio principal (si existe)
             if (!updatedPersona.getDomicilios().isEmpty() && !existente.getDomicilios().isEmpty()) {
                 var domicilioNuevo = updatedPersona.getDomicilios().get(0);
                 var domicilioExistente = existente.getDomicilios().get(0);
@@ -83,7 +76,13 @@ public class PersonaServiceImpl extends BaseServiceImpl<Persona, Long> implement
 
             return baseRepository.save(existente);
         } catch (Exception e) {
-            throw new Exception("Error al actualizar el persona: " + e.getMessage());
+            throw new Exception("Error al actualizar la persona: " + e.getMessage());
         }
+    }
+
+    // ✅ Nuevo método para buscar Persona asociada a un Usuario
+    @Override
+    public Optional<Persona> findByUsuario(Usuario usuario) {
+        return personaRepository.findByUsuario(usuario);
     }
 }

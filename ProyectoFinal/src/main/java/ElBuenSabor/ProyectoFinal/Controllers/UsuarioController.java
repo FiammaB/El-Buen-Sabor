@@ -228,7 +228,7 @@ public class UsuarioController extends BaseController<Usuario, Long> {
     @PatchMapping("/{id}/baja")
     public ResponseEntity<?> toggleBaja(@PathVariable Long id, @RequestParam boolean baja) {
         try {
-            baseService.toggleBaja(id, baja);
+            usuarioService.toggleBaja(id, baja);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");

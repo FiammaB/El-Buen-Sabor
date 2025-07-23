@@ -4,6 +4,7 @@ import ElBuenSabor.ProyectoFinal.DTO.PersonaReporteDTO;
 import ElBuenSabor.ProyectoFinal.DTO.PedidoCreateDTO;
 
 import ElBuenSabor.ProyectoFinal.DTO.ProductoRankingDTO;
+import ElBuenSabor.ProyectoFinal.DTO.ReporteMonetarioDiarioDTO;
 import ElBuenSabor.ProyectoFinal.Entities.Estado;
 import ElBuenSabor.ProyectoFinal.Entities.NotaCredito;
 import ElBuenSabor.ProyectoFinal.Entities.Pedido;
@@ -25,7 +26,8 @@ public interface PedidoService extends BaseService<Pedido, Long> {
     List<PersonaReporteDTO> obtenerReporteClientes(LocalDate desde, LocalDate hasta, String orden);
     Double calcularTotalCostoPedido(Pedido pedido);
     void descontarInsumosDelStock(Pedido pedido);
-    boolean verificarStockParaPedido(Pedido pedido);
+    List<String> verificarStockParaPedido(Pedido pedido);
     Pedido marcarPedidoComoPagadoYFacturar(Long pedidoId) throws Exception;
+    List<ReporteMonetarioDiarioDTO> obtenerReporteMonetarioDiario(LocalDate desde, LocalDate hasta);
 
 }

@@ -12,9 +12,60 @@ import java.util.List;
 
 @Repository
 public interface DetallePedidoRepository extends JpaRepository<DetallePedido, Long> {
-    @Query("SELECT new ElBuenSabor.ProyectoFinal.DTO.ProductoRankingDTO(d.articuloManufacturado.denominacion, SUM(d.cantidad)) " +
-            "FROM DetallePedido d " +
-            "WHERE d.pedido.fechaPedido BETWEEN :desde AND :hasta AND d.pedido.estado = 'ENTREGADO' " +
-            "GROUP BY d.articuloManufacturado.denominacion " +
-            "ORDER BY SUM(d.cantidad) DESC")
+
+// En DetallePedidoRepository.java
+
+    @Query(value = """
+    SELECT
+        sub.nombreProducto,
+        CAST(SUM(sub.cantidadVendida) AS SIGNED) as cantidadVendida,
+        sub.precioVenta,
+        sub.fechaVenta
+    FROM (
+        -- Ventas de Artículos Manufacturados Individuales
+        SELECT a.denominacion AS nombreProducto, SUM(dp.cantidad) AS cantidadVendida, a.precio_venta as precioVenta, p.fecha_pedido as fechaVenta
+        FROM detalle_pedido dp
+        JOIN articulo a ON dp.articulo_manufacturado_id = a.id
+        JOIN pedido p ON dp.id_pedido = p.id
+        WHERE p.fecha_pedido BETWEEN :desde AND :hasta AND p.estado = 'PAGADO'
+        GROUP BY a.denominacion, a.precio_venta, p.fecha_pedido
+
+        UNION ALL
+
+        -- Ventas de Artículos Insumo Individuales
+        SELECT a.denominacion AS nombreProducto, SUM(dp.cantidad) AS cantidadVendida, a.precio_venta as precioVenta, p.fecha_pedido as fechaVenta
+        FROM detalle_pedido dp
+        JOIN articulo a ON dp.id_articulo = a.id
+        JOIN articulo_insumo ai ON a.id = ai.id
+        JOIN pedido p ON dp.id_pedido = p.id
+        WHERE p.fecha_pedido BETWEEN :desde AND :hasta AND p.estado = 'PAGADO' AND ai.es_para_elaborar = false
+        GROUP BY a.denominacion, a.precio_venta, p.fecha_pedido
+
+        UNION ALL
+
+        -- Ventas de Artículos Manufacturados DENTRO de Promociones
+        SELECT a.denominacion AS nombreProducto, SUM(dp.cantidad * prd.cantidad) AS cantidadVendida, a.precio_venta as precioVenta, p.fecha_pedido as fechaVenta
+        FROM detalle_pedido dp
+        JOIN promocion_detalle prd ON dp.id_promocion = prd.promocion_id
+        JOIN articulo a ON prd.articulo_manufacturado_id = a.id
+        JOIN pedido p ON dp.id_pedido = p.id
+        WHERE p.fecha_pedido BETWEEN :desde AND :hasta AND p.estado = 'PAGADO'
+        GROUP BY a.denominacion, a.precio_venta, p.fecha_pedido
+
+        UNION ALL
+
+        -- Ventas de Artículos Insumo DENTRO de Promociones
+        SELECT a.denominacion AS nombreProducto, SUM(dp.cantidad) AS cantidadVendida, a.precio_venta as precioVenta, p.fecha_pedido as fechaVenta
+        FROM detalle_pedido dp
+        JOIN promocion_articulo_insumo pai ON dp.id_promocion = pai.promocion_id
+        JOIN articulo a ON pai.articulo_insumo_id = a.id
+        JOIN articulo_insumo ai ON a.id = ai.id
+        JOIN pedido p ON dp.id_pedido = p.id
+        WHERE p.fecha_pedido BETWEEN :desde AND :hasta AND p.estado = 'PAGADO' AND ai.es_para_elaborar = false
+        GROUP BY a.denominacion, a.precio_venta, p.fecha_pedido
+    ) AS sub
+    GROUP BY sub.nombreProducto, sub.precioVenta, sub.fechaVenta
+    ORDER BY sub.fechaVenta ASC, cantidadVendida DESC
+    """,
+            nativeQuery = true)
     List<ProductoRankingDTO> rankingProductosMasVendidos(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);}

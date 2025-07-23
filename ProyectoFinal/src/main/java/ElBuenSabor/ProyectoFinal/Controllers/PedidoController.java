@@ -10,15 +10,13 @@ import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.PedidoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
-// Ya no es necesario si se inyecta por constructor explícito al padre
-// import lombok.RequiredArgsConstructor;
-import java.io.ByteArrayOutputStream;
+import com.itextpdf.io.source.ByteArrayOutputStream;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize; // Importa si usas seguridad Spring
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,60 +25,48 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/pedidos") // Define la URL base para este controlador
-@CrossOrigin(origins = "http://localhost:5173") // Mantén CrossOrigin si es necesario
-// PedidoController ahora extiende BaseController
+@RequestMapping("/api/pedidos")
+@CrossOrigin(origins = "http://localhost:5173") // Mantén si tu frontend está en 5173
 public class PedidoController extends BaseController<Pedido, Long> {
 
     private final PedidoMapper pedidoMapper;
-    private final PedidoService pedidoService;
-    // Repositorios necesarios para resolver relaciones en el controlador
-    private final ArticuloInsumoRepository articuloInsumoRepository;
-    private final ArticuloManufacturadoRepository articuloManufacturadoRepository;
-    private final PersonaRepository personaRepository;
-    private final DomicilioRepository domicilioRepository;
-    private final SucursalRepository sucursalRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final ArticuloRepository articuloRepository; // Aunque no se usa en el create/update, se mantiene si es una dependencia general.
-    private final UsuarioService usuarioService; // Asegúrate de que ya está, o añádelo
+    private final PedidoService pedidoService; // Inyectado desde el constructor del padre y aquí
+    private final ArticuloInsumoRepository articuloInsumoRepository; // Inyectado para validación/carga
+    private final ArticuloManufacturadoRepository articuloManufacturadoRepository; // Inyectado para validación/carga
+    private final PromocionRepository promocionRepository; // ✨ INYECTA ESTO
+    private final UsuarioService usuarioService; // Para buscar el usuario anulador
     private final NotaCreditoMapper notaCreditoMapper;
     private final MPController mpController;
     private final PersonaService personaService;
     private final DomicilioService domicilioService;
     private final SucursalService sucursalService;
-    private final FacturaService facturaService;
-    private final PromocionRepository promocionRepository;
+    private final FacturaService facturaService; // Para descarga de PDF
 
-    // El constructor inyecta el servicio específico de Pedido y todas las dependencias adicionales
+    // Constructor actualizado con todas las inyecciones
     public PedidoController(
-            PedidoService pedidoService, // Servicio específico
-            PedidoMapper pedidoMapper, PedidoService pedidoService1,
+            PedidoService pedidoService,
+            PedidoMapper pedidoMapper,
             ArticuloInsumoRepository articuloInsumoRepository,
             ArticuloManufacturadoRepository articuloManufacturadoRepository,
-            PersonaRepository personaRepository,
-            DomicilioRepository domicilioRepository,
-            SucursalRepository sucursalRepository,
-            UsuarioRepository usuarioRepository,
-            ArticuloRepository articuloRepository,
-            UsuarioService usuarioService, // Asegúrate de que ya esté en el constructor
+            PersonaRepository personaRepository, // Aunque no se use directamente en este controller, si es parte del constructor BaseController lo necesita
+            DomicilioRepository domicilioRepository, // Similar al anterior
+            SucursalRepository sucursalRepository, // Similar al anterior
+            UsuarioRepository usuarioRepository, // Similar al anterior
+            ArticuloRepository articuloRepository, // Similar al anterior
+            UsuarioService usuarioService,
             NotaCreditoMapper notaCreditoMapper,
             MPController mpController,
             PersonaService personaService,
             DomicilioService domicilioService,
             SucursalService sucursalService,
-            PromocionRepository promocionRepository,
-
+            PromocionRepository promocionRepository, // ✨ Asegúrate de que está aquí
             FacturaService facturaService) {
         super(pedidoService); // Pasa el servicio al constructor del BaseController
         this.pedidoMapper = pedidoMapper;
-        this.pedidoService = pedidoService;
+        this.pedidoService = pedidoService; // Asignación aquí también
         this.articuloInsumoRepository = articuloInsumoRepository;
         this.articuloManufacturadoRepository = articuloManufacturadoRepository;
-        this.personaRepository = personaRepository;
-        this.domicilioRepository = domicilioRepository;
-        this.sucursalRepository = sucursalRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.articuloRepository = articuloRepository;
+        // Mantener para el super
         this.usuarioService = usuarioService;
         this.notaCreditoMapper = notaCreditoMapper;
         this.mpController = mpController;
@@ -88,15 +74,16 @@ public class PedidoController extends BaseController<Pedido, Long> {
         this.domicilioService = domicilioService;
         this.sucursalService = sucursalService;
         this.facturaService = facturaService;
-        this.promocionRepository = promocionRepository;
+        this.promocionRepository = promocionRepository; // Asignación de la nueva inyección
     }
 
-    // Sobrescribir getAll para devolver DTOs y manejar excepciones
+    // --- MÉTODOS EXISTENTES (sin cambios funcionales, solo limpieza o refactor) ---
+
     @GetMapping
-    @Override // Sobrescribe el getAll del BaseController
+    @Override
     public ResponseEntity<?> getAll() {
         try {
-            List<Pedido> pedidos = baseService.findAll(); // Llama al findAll del padre
+            List<Pedido> pedidos = baseService.findAll();
             List<PedidoDTO> dtos = pedidos.stream()
                     .map(pedidoMapper::toDTO)
                     .toList();
@@ -106,31 +93,33 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
-    // Sobrescribir getOne para devolver un DTO y manejar excepciones
+    @GetMapping("/reporte/monetario-diario")
+    public ResponseEntity<List<ReporteMonetarioDiarioDTO>> obtenerReporteMonetarioDiario(
+            @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<ReporteMonetarioDiarioDTO> reporte = pedidoService.obtenerReporteMonetarioDiario(desde, hasta);
+        return ResponseEntity.ok(reporte);
+    }
+
     @GetMapping("/{id}")
-    @Override // Sobrescribe el getOne del BaseController
+    @Override
     public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
-            Pedido pedido = baseService.findById(id); // Llama al findById del padre
+            Pedido pedido = baseService.findById(id);
             return ResponseEntity.ok(pedidoMapper.toDTO(pedido));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
+    // --- MÉTODO CREATE (CON LA NUEVA LÓGICA DE VALIDACIÓN DE STOCK AL INICIO) ---
 
-
-    @PostMapping(consumes = "application/json")
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE) // Especifica el tipo de consumo
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
         try {
-            Pedido pedidoParaPersistir = new Pedido(); // Renombrado para mayor claridad
+            Pedido pedidoParaPersistir = new Pedido();
 
-            // Validaciones de IDs obligatorios
-            if (dto.getPersonaId() == null) {
-                return ResponseEntity.badRequest().body("El ID del persona no puede ser nulo.");
-            }
-
-            // Asignación de entidades básicas
+            // 1. Asignación de relaciones obligatorias y opcionales
             pedidoParaPersistir.setPersona(personaService.findById(dto.getPersonaId()));
             if (dto.getDomicilioId() != null) {
                 pedidoParaPersistir.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
@@ -142,158 +131,127 @@ public class PedidoController extends BaseController<Pedido, Long> {
                 pedidoParaPersistir.setEmpleado(usuarioService.findById(dto.getEmpleadoId()));
             }
 
-            // Construcción de detalles del pedido y cálculo de sub-totales
+            // 2. Construcción de detalles del pedido y cálculo de sub-totales
             double totalCalculadoPedido = 0.0;
-            if (dto.getDetalles() != null && !dto.getDetalles().isEmpty()) {
-                Set<DetallePedido> detalles = new HashSet<>();
-                for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
-                    DetallePedido detalle = new DetallePedido();
-                    detalle.setCantidad(detalleDTO.getCantidad());
-                    double subTotalDetalle = 0.0;
-
-                    if (detalleDTO.getArticuloId() != null) {
-                        // Intentamos encontrarlo como ArticuloInsumo, luego como ArticuloManufacturado
-                        ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                        if (insumo != null) {
-                            detalle.setArticuloInsumo(insumo);
-                            subTotalDetalle = insumo.getPrecioVenta() * detalle.getCantidad();
-                        } else {
-                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
-                                    .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado."));
-                            detalle.setArticuloManufacturado(manufacturado);
-                            subTotalDetalle = manufacturado.getPrecioVenta() * detalle.getCantidad(); // Usar precioVenta del manufacturado
-                        }
-                    } else if (detalleDTO.getPromocionId() != null) { // Si no es artículo, podría ser promoción
-                        Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada."));
-                        detalle.setPromocion(promo);
-                        subTotalDetalle = promo.getPrecioPromocional() * detalle.getCantidad(); // Usar precioPromocional de la promo
-                    } else {
-                        return ResponseEntity.badRequest().body("Cada detalle del pedido debe tener un articuloId o un promocionId.");
-                    }
-
-                    detalle.setSubTotal(subTotalDetalle);
-                    totalCalculadoPedido += subTotalDetalle; // Acumular el total
-                    detalle.setPedido(pedidoParaPersistir); // Asignar el pedido al detalle
-                    detalles.add(detalle);
-                }
-                pedidoParaPersistir.setDetallesPedidos(detalles);
-            } else {
-                return ResponseEntity.badRequest().body("El pedido debe contener al menos un detalle.");
+            if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "El pedido debe contener al menos un detalle."));
             }
 
-            // Aplicar descuento por Retiro en Local
+            Set<DetallePedido> detalles = new HashSet<>();
+            for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
+                DetallePedido detalle = new DetallePedido();
+                detalle.setCantidad(detalleDTO.getCantidad());
+                double subTotalDetalle = 0.0;
+
+                if (detalleDTO.getArticuloId() != null) {
+                    ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                    if (insumo != null) {
+                        detalle.setArticuloInsumo(insumo);
+                        subTotalDetalle = insumo.getPrecioVenta() * detalle.getCantidad();
+                    } else {
+                        ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado."));
+                        detalle.setArticuloManufacturado(manufacturado);
+                        subTotalDetalle = manufacturado.getPrecioVenta() * detalle.getCantidad();
+                    }
+                } else if (detalleDTO.getPromocionId() != null) {
+                    Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada."));
+                    detalle.setPromocion(promo);
+                    subTotalDetalle = promo.getPrecioPromocional() * detalle.getCantidad();
+                } else {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Cada detalle del pedido debe tener un articuloId o un promocionId."));
+                }
+
+                detalle.setSubTotal(subTotalDetalle);
+                totalCalculadoPedido += subTotalDetalle;
+                detalle.setPedido(pedidoParaPersistir);
+                detalles.add(detalle);
+            }
+            pedidoParaPersistir.setDetallesPedidos(detalles);
+
+            // 3. Aplicar descuento por Retiro en Local
             if (dto.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL) {
                 double descuento = totalCalculadoPedido * 0.10;
                 totalCalculadoPedido -= descuento;
-                System.out.println("DEBUG Descuento: Aplicado 10% por Retiro en Local. Total Original: " + String.format("%.2f", totalCalculadoPedido + descuento) + ", Final: " + String.format("%.2f", totalCalculadoPedido));
-            } else {
-                System.out.println("DEBUG Descuento: No aplica descuento. Tipo de Envío: " + dto.getTipoEnvio());
             }
-            pedidoParaPersistir.setTotal(totalCalculadoPedido); // Asignar el total final al pedido
+            pedidoParaPersistir.setTotal(totalCalculadoPedido);
 
-            // --- ¡NUEVA UBICACIÓN: CALCULAR Y ASIGNAR EL COSTO TOTAL DEL PEDIDO! ---
-            Double costoTotalCalculado = pedidoService.calcularTotalCostoPedido(pedidoParaPersistir);
-            pedidoParaPersistir.setTotalCosto(costoTotalCalculado);
-            System.out.println("DEBUG Costo: Costo total del pedido asignado: " + String.format("%.2f", costoTotalCalculado));
+            // 4. Calcular y asignar el costo total del pedido y la hora estimada
+            pedidoParaPersistir.setTotalCosto(pedidoService.calcularTotalCostoPedido(pedidoParaPersistir));
+            pedidoParaPersistir.setHoraEstimadaFinalizacion(pedidoService.calcularTiempoEstimadoFinalizacion(pedidoParaPersistir));
 
-            // --- ¡NUEVA UBICACIÓN: CALCULAR Y ASIGNAR LA HORA ESTIMADA DE FINALIZACIÓN! ---
-            LocalTime horaEstimada = pedidoService.calcularTiempoEstimadoFinalizacion(pedidoParaPersistir);
-            pedidoParaPersistir.setHoraEstimadaFinalizacion(horaEstimada);
-            System.out.println("DEBUG Tiempo Estimado: Hora estimada finalización asignada: " + horaEstimada);
-
-            // Asignar el resto de propiedades del DTO al pedidoParaPersistir
-            pedidoParaPersistir.setFechaPedido(LocalDate.now()); // Usar la fecha actual del servidor
-            pedidoParaPersistir.setEstado(Estado.A_CONFIRMAR); // Estado inicial
-            pedidoParaPersistir.setBaja(false); // No dado de baja por defecto
+            // 5. Asignar el resto de propiedades básicas del DTO
+            pedidoParaPersistir.setFechaPedido(LocalDate.now());
+            pedidoParaPersistir.setEstado(Estado.A_CONFIRMAR);
+            pedidoParaPersistir.setBaja(false);
             pedidoParaPersistir.setFormaPago(dto.getFormaPago());
             pedidoParaPersistir.setTipoEnvio(dto.getTipoEnvio());
 
-            System.out.println("pasa antes de l if");
-            // --- ¡PUNTO CLAVE: VERIFICACIÓN DE STOCK ANTES DE CUALQUIER PAGO! ---
-            if (!pedidoService.verificarStockParaPedido(pedidoParaPersistir)) {
-                System.out.println("entra al if de verificarStockParaPedido");
-                return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED) // O BAD_REQUEST
-                        .body("{\"error\": \"No hay stock suficiente para algunos productos del pedido. Por favor, ajuste su carrito.\"}");
-                // Podrías devolver más detalles aquí sobre qué insumos faltan si tu método verificarStockParaPedido los devuelve
+            // 6. ✨ PUNTO CLAVE: VERIFICACIÓN DE STOCK ANTES DE CUALQUIER PAGO O PERSISTENCIA
+            List<String> erroresStock = pedidoService.verificarStockParaPedido(pedidoParaPersistir);
+            if (!erroresStock.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", erroresStock)); // Devuelve el array de mensajes de error
             }
 
-            // --- LÓGICA DE DECISIÓN POR FORMA DE PAGO ---
+            // 7. LÓGICA DE DECISIÓN POR FORMA DE PAGO (solo si el stock es válido)
             if (dto.getFormaPago() == FormaPago.MERCADO_PAGO) {
-                // Antes de delegar a MP, asegúrate de que el DTO tenga el total correcto
-                dto.setTotal(pedidoParaPersistir.getTotal()); // Importantísimo para el pago
-                // NOTA: mpController.crearPreferencia debería guardar el pedido en base de datos
-                // después de una respuesta exitosa de Mercado Pago, o al menos
-                // antes de redirigir al persona para el pago.
-                System.out.println("entra al decicion forma pago MP");
+                dto.setTotal(pedidoParaPersistir.getTotal());
                 return mpController.crearPreferencia(dto); // Delega al MPController
-
             } else if (dto.getFormaPago() == FormaPago.EFECTIVO) {
-                // Para efectivo, se procesa directamente
                 Factura factura = Factura.builder()
                         .fechaFacturacion(LocalDate.now())
                         .formaPago(FormaPago.EFECTIVO)
-                        .totalVenta(pedidoParaPersistir.getTotal()) // Usar el total ya calculado
+                        .totalVenta(pedidoParaPersistir.getTotal())
                         .build();
-                pedidoParaPersistir.setFactura(factura); // Asignar al pedidoParaPersistir
+                pedidoParaPersistir.setFactura(factura);
 
                 Pedido saved = pedidoService.save(pedidoParaPersistir); // Guarda el pedido completo
                 return ResponseEntity.status(HttpStatus.CREATED).body(pedidoMapper.toDTO(saved));
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Forma de pago no válida.\"}");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Forma de pago no válida."));
             }
 
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            // Un manejo de errores más específico podría ser útil aquí.
-            e.printStackTrace(); // Para ver la traza completa en la consola del servidor
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al crear el pedido: " + e.getMessage() + "\"}");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error al crear el pedido: " + e.getMessage()));
         }
     }
 
-    // Sobrescribir update para aceptar un DTO de entrada, mapear y manejar excepciones
-    // (Tu controlador original no tenía un PUT explícito, pero es buena práctica añadirlo)
-    @PutMapping(value = "/{id}", consumes = "application/json")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PedidoCreateDTO dto) { // Usa PedidoCreateDTO para update también
-        try {
-            Pedido existingPedido = baseService.findById(id); // Obtén el pedido existente
 
-            // Actualiza las propiedades básicas
-            existingPedido.setFechaPedido(dto.getFechaPedido());
-            // No hay hora estimada en PedidoCreateDTO, si la necesitas, agrégala al DTO
-            existingPedido.setEstado(Estado.valueOf(dto.getEstado()));
-            System.out.println(dto.getEstado());//me parece q lo actualizo aca o no ?
-            existingPedido.setTipoEnvio(dto.getTipoEnvio()); // Convertir String a Enum
-            existingPedido.setFormaPago(dto.getFormaPago()); // Convertir String a Enum
+    // --- MÉTODO UPDATE ---
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PedidoCreateDTO dto) {
+        try {
+            Pedido existingPedido = baseService.findById(id);
+
+            // Actualiza propiedades básicas
+            existingPedido.setFechaPedido(dto.getFechaPedido() != null ? dto.getFechaPedido() : existingPedido.getFechaPedido());
+            // Para la hora estimada, si no viene en el DTO, no la actualizamos
+            // Si el DTO.getEstado() es un String y necesitas convertirlo a Enum Estado:
+            if (dto.getEstado() != null) {
+                existingPedido.setEstado(Estado.valueOf(dto.getEstado()));
+            }
+            existingPedido.setTipoEnvio(dto.getTipoEnvio());
+            existingPedido.setFormaPago(dto.getFormaPago());
             existingPedido.setTotal(dto.getTotal());
 
-            // Si hay Observaciones en Pedido, asegúrate de que el DTO las tenga
-            // existingPedido.setObservaciones(dto.getObservaciones());
+            // Actualizar relaciones (asegurando manejo de nulls si es opcional)
+            existingPedido.setPersona(personaService.findById(dto.getPersonaId()));
+            existingPedido.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
 
-            // Actualizar relaciones
-            existingPedido.setPersona(personaRepository.findById(dto.getPersonaId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrado")));
-            existingPedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Domicilio no encontrado")));
-
-            if (dto.getSucursalId() != null) {
-                existingPedido.setSucursal(sucursalRepository.findById(dto.getSucursalId()).orElse(null));
-            } else {
-                existingPedido.setSucursal(null);
-            }
-            if (dto.getEmpleadoId() != null) {
-                existingPedido.setEmpleado(usuarioRepository.findById(dto.getEmpleadoId()).orElse(null));
-            } else {
-                existingPedido.setEmpleado(null);
-            }
+            existingPedido.setSucursal(dto.getSucursalId() != null ? sucursalService.findById(dto.getSucursalId()) : null);
+            existingPedido.setEmpleado(dto.getEmpleadoId() != null ? usuarioService.findById(dto.getEmpleadoId()) : null);
 
             // Actualizar Factura (si se proporciona en el DTO)
             if (dto.getFactura() != null) {
                 FacturaCreateDTO f = dto.getFactura();
                 Factura facturaToUpdate = existingPedido.getFactura();
-                if (facturaToUpdate == null) { // Si no tenía factura, crea una nueva
-                    facturaToUpdate = Factura.builder().build();
+                if (facturaToUpdate == null) {
+                    facturaToUpdate = new Factura();
                     existingPedido.setFactura(facturaToUpdate);
                 }
                 facturaToUpdate.setFechaFacturacion(f.getFechaFacturacion());
@@ -301,101 +259,106 @@ public class PedidoController extends BaseController<Pedido, Long> {
                 facturaToUpdate.setMpMerchantOrderId(f.getMpMerchantOrderId());
                 facturaToUpdate.setMpPreferenceId(f.getMpPreferenceId());
                 facturaToUpdate.setMpPaymentType(f.getMpPaymentType());
-                facturaToUpdate.setFormaPago(FormaPago.valueOf(String.valueOf(f.getFormaPago())));
+                facturaToUpdate.setFormaPago(f.getFormaPago()); // Ya es FormaPago, no necesita valueOf
                 facturaToUpdate.setTotalVenta(f.getTotalVenta());
             } else {
-                existingPedido.setFactura(null); // Si el DTO no trae factura, la eliminamos
+                existingPedido.setFactura(null);
             }
 
             // Sincronizar Detalles del Pedido
+            // Considera si quieres que el update borre y recree o actualice existentes
             if (dto.getDetalles() != null) {
                 existingPedido.getDetallesPedidos().clear(); // Limpia los detalles existentes
                 for (DetallePedidoCreateDTO detalleDTO : dto.getDetalles()) {
-                    DetallePedido detalle = new DetallePedido(); // Crea nuevo detalle (o busca si necesitas actualizar)
+                    DetallePedido detalle = new DetallePedido();
                     detalle.setCantidad(detalleDTO.getCantidad());
-                    detalle.setSubTotal(detalleDTO.getSubTotal());
+                    detalle.setSubTotal(detalleDTO.getSubTotal()); // Asume que subTotal viene en DTO para update
 
-                    // Resolver el tipo de artículo
-                    ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
-                    if (insumo != null) {
-                        detalle.setArticuloInsumo(insumo);
+                    // Resolver el tipo de artículo o promoción
+                    if (detalleDTO.getArticuloId() != null) {
+                        ArticuloInsumo insumo = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                        if (insumo != null) {
+                            detalle.setArticuloInsumo(insumo);
+                        } else {
+                            ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Artículo manufacturado con ID " + detalleDTO.getArticuloId() + " no encontrado."));
+                            detalle.setArticuloManufacturado(manufacturado);
+                        }
+                    } else if (detalleDTO.getPromocionId() != null) {
+                        Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada."));
+                        detalle.setPromocion(promo);
                     } else {
-                        ArticuloManufacturado manufacturado = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Artículo no encontrado"));
-                        detalle.setArticuloManufacturado(manufacturado);
+                        throw new IllegalArgumentException("El detalle del pedido debe tener articuloId o promocionId.");
                     }
-                    detalle.setPedido(existingPedido); // Establecer la relación inversa
+                    detalle.setPedido(existingPedido);
                     existingPedido.getDetallesPedidos().add(detalle);
-
-
                 }
-
             } else {
-                existingPedido.getDetallesPedidos().clear(); // Si no se envían detalles, limpiar los existentes
+                existingPedido.getDetallesPedidos().clear();
             }
 
-            System.out.println("CONTROLADOR: Estado en DTO -> " + dto.getEstado());
-            Pedido updated = baseService.update(id, existingPedido); // Llama al update del padre con la entidad EXISTENTE
-            return ResponseEntity.ok(pedidoMapper.toDTO(updated)); // Convierte a DTO para la respuesta
+            // Antes de guardar, podrías volver a calcular totales o validaciones
+            existingPedido.setTotalCosto(pedidoService.calcularTotalCostoPedido(existingPedido));
+            // Recalcular hora estimada si el estado o detalles cambian y afecta el tiempo
+            existingPedido.setHoraEstimadaFinalizacion(pedidoService.calcularTiempoEstimadoFinalizacion(existingPedido));
+
+
+            Pedido updated = baseService.update(id, existingPedido);
+            return ResponseEntity.ok(pedidoMapper.toDTO(updated));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Error al actualizar el pedido: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/{id}/factura-pdf") // Nuevo endpoint para obtener la URL del PDF
+
+    // --- OTROS ENDPOINTS (Mantenidos sin cambios significativos) ---
+
+    @GetMapping("/{id}/factura-pdf")
     public ResponseEntity<?> getFacturaPdfUrl(@PathVariable Long id) {
         try {
-            Pedido pedido = baseService.findById(id); // Obtener el pedido usando el servicio base
+            Pedido pedido = baseService.findById(id);
 
-            if (pedido == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Pedido no encontrado.\"}");
-            }
-            if (pedido.getFactura() == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Factura no asociada al pedido.\"}");
-            }
-            String urlPdf = pedido.getFactura().getUrlPdf();
-            if (urlPdf == null || urlPdf.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"URL del PDF de la factura no disponible.\"}");
+            if (pedido == null || pedido.getFactura() == null || pedido.getFactura().getUrlPdf() == null || pedido.getFactura().getUrlPdf().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Factura o URL del PDF no disponible para el pedido con ID: " + id));
             }
 
-            // Devolver la URL del PDF
-            // El frontend redirigirá a esta URL o la usará para un enlace de descarga
-            return ResponseEntity.ok(urlPdf);
+            return ResponseEntity.ok(pedido.getFactura().getUrlPdf());
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener la URL del PDF de la factura: " + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error al obtener la URL del PDF de la factura: " + e.getMessage()));
         }
     }
 
-    @PatchMapping("/{pedidoId}/anular") // Endpoint para anular factura y generar NC
+    @PatchMapping("/{pedidoId}/anular")
     public ResponseEntity<?> anularFactura(@PathVariable Long pedidoId, @RequestBody AnulacionRequestDTO anulacionRequest) {
         try {
-            // Obtener el usuario que realiza la anulación
             Usuario usuarioAnulador = usuarioService.findById(anulacionRequest.getUsuarioAnuladorId());
             if (usuarioAnulador == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"Usuario anulador no encontrado.\"}");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Usuario anulador no encontrado."));
             }
 
-            // Llamar al servicio para realizar la anulación
             NotaCredito notaCreditoGenerada = pedidoService.anularFacturaYGenerarNotaCredito(
                     pedidoId,
                     anulacionRequest.getMotivoAnulacion(),
                     usuarioAnulador
             );
 
-            // Devolver la Nota de Crédito generada como DTO
             return ResponseEntity.status(HttpStatus.CREATED).body(notaCreditoMapper.toDTO(notaCreditoGenerada));
 
-        } catch (ResourceNotFoundException e) { // Capturar si el pedido/factura no se encuentra
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"" + e.getMessage() + "\"}");
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al anular factura y generar nota de crédito: " + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error al anular factura y generar nota de crédito: " + e.getMessage()));
         }
     }
+
     @GetMapping("/cocinero")
     public ResponseEntity<?> getPedidosCocina() {
         try {
-            // Filtrar ambos estados
             List<Pedido> pedidos = pedidoService.findPedidosByEstados(Arrays.asList(Estado.EN_PREPARACION, Estado.EN_COCINA));
             List<PedidoDTO> dtos = pedidos.stream()
                     .map(pedidoMapper::toDTO)
@@ -403,10 +366,11 @@ public class PedidoController extends BaseController<Pedido, Long> {
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\": \"Error al obtener los pedidos en cocina/preparacion: " + e.getMessage() + "\"}");
+                    .body(Map.of("message", "Error al obtener los pedidos en cocina/preparacion: " + e.getMessage()));
         }
     }
-    @PreAuthorize("hasRole('CAJERO')")
+
+    @PreAuthorize("hasRole('CAJERO')") // Mantenido si usas seguridad
     @GetMapping("/cajero")
     public ResponseEntity<?> getPedidosParaCobrar() {
         try {
@@ -417,7 +381,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\": \"Error al obtener pedidos para cajero: " + e.getMessage() + "\"}");
+                    .body(Map.of("message", "Error al obtener pedidos para cajero: " + e.getMessage()));
         }
     }
 
@@ -425,22 +389,28 @@ public class PedidoController extends BaseController<Pedido, Long> {
     @PatchMapping("/{id}/estado")
     public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
-            String nuevoEstado = request.get("estado");
-            Pedido actualizado = pedidoService.findById(id);
-            if (nuevoEstado == null) {
-                return ResponseEntity.badRequest().body("{\"error\": \"El estado es requerido\"}");
+            String nuevoEstadoStr = request.get("estado");
+            if (nuevoEstadoStr == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "El estado es requerido."));
             }
-            if (Estado.valueOf(nuevoEstado) == Estado.PAGADO && actualizado.getFormaPago() == FormaPago.EFECTIVO) {
-                actualizado = pedidoService.marcarPedidoComoPagadoYFacturar(id);
+            Estado nuevoEstado = Estado.valueOf(nuevoEstadoStr); // Convertir String a Enum
+
+            Pedido pedido = pedidoService.findById(id); // Obtener el pedido siempre
+
+            if (nuevoEstado == Estado.PAGADO && pedido.getFormaPago() == FormaPago.EFECTIVO) {
+                // Si el nuevo estado es PAGADO y la forma de pago es EFECTIVO, llama al método específico
+                Pedido actualizado = pedidoService.marcarPedidoComoPagadoYFacturar(id);
                 return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
             } else {
-                Pedido pedido = pedidoService.findById(id);
-                pedido.setEstado(Estado.valueOf(nuevoEstado));
-                actualizado = pedidoService.save(pedido);
+                // Para cualquier otro cambio de estado
+                pedido.setEstado(nuevoEstado);
+                Pedido actualizado = pedidoService.save(pedido);
                 return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
             }
+        } catch (IllegalArgumentException e) { // Captura si el estado no es válido
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Estado '" + request.get("estado") + "' no válido."));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.badRequest().body(Map.of("message", "Error al actualizar el estado del pedido: " + e.getMessage()));
         }
     }
 
@@ -455,108 +425,158 @@ public class PedidoController extends BaseController<Pedido, Long> {
                 pedidoService.save(pedido);
                 return ResponseEntity.ok().build();
             }
-            return ResponseEntity.badRequest().body("Falta horaEstimadaFinalizacion");
+            return ResponseEntity.badRequest().body(Map.of("message", "Falta horaEstimadaFinalizacion."));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
+
     @GetMapping("/ranking")
     public List<ProductoRankingDTO> obtenerRanking(@RequestParam LocalDate desde, @RequestParam LocalDate hasta) {
         return pedidoService.obtenerRankingProductosMasVendidos(desde, hasta);
     }
 
-    //-------------------------------RANKING PEDIDOS-CLIENTES---------------------------
     @GetMapping("/reporte/clientes")
     public ResponseEntity<List<PersonaReporteDTO>> obtenerReporteClientes(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @RequestParam("orden") String orden // "cantidad" o "importe"
+            @RequestParam("orden") String orden
     ) {
         List<PersonaReporteDTO> reporte = pedidoService.obtenerReporteClientes(desde, hasta, orden);
         return ResponseEntity.ok(reporte);
     }
 
-    // GET /api/pedidos/estado/{estado}
     @GetMapping("/estado/{estado}")
     public ResponseEntity<?> getPedidosByEstado(@PathVariable String estado) {
         try {
-            Estado estadoEnum = Estado.valueOf(estado); // Convierte string a Enum (A_CONFIRMAR, LISTO, etc.)
+            Estado estadoEnum = Estado.valueOf(estado);
             List<Pedido> pedidos = pedidoService.findPedidosByEstados(Collections.singletonList(estadoEnum));
             List<PedidoDTO> dtos = pedidos.stream()
                     .map(pedidoMapper::toDTO)
                     .toList();
             return ResponseEntity.ok(dtos);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) { // Captura para Enum.valueOf
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("{\"error\": \"Estado inválido o error al filtrar pedidos: " + e.getMessage() + "\"}");
+                    .body(Map.of("message", "Estado '" + estado + "' no válido."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error al filtrar pedidos por estado: " + e.getMessage()));
         }
     }
 
-    // NUEVO ENDPOINT PARA HISTORIAL DE PEDIDOS POR CLIENTE
     @GetMapping("/persona/{personaId}")
     public ResponseEntity<?> getPedidosByClienteId(@PathVariable Long personaId) {
         try {
-            // Asegúrate de que el persona exista para evitar errores con un ID inexistente
             Persona persona = personaService.findById(personaId);
             if (persona == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\": \"Persona no encontrado con ID: " + personaId + "\"}");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Persona no encontrado con ID: " + personaId));
             }
 
-            // Llama al servicio que ya tienes para obtener los pedidos del persona
             List<Pedido> pedidos = pedidoService.findPedidosByClienteId(personaId);
-
-            // Mapea las entidades Pedido a DTOs para la respuesta
             List<PedidoDTO> dtos = pedidos.stream()
                     .map(pedidoMapper::toDTO)
-                    .collect(Collectors.toList()); // Usar toList() o collect(Collectors.toList())
+                    .collect(Collectors.toList());
 
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"Error al obtener el historial de pedidos: " + e.getMessage() + "\"}");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error al obtener el historial de pedidos: " + e.getMessage()));
         }
     }
 
-    // CAMBIO AQUI: NUEVO ENDPOINT PARA SERVIR EL PDF DIRECTAMENTE
-    @GetMapping(value = "/{id}/descargar-factura", produces = MediaType.APPLICATION_PDF_VALUE) // <-- Nota el nuevo path y produces
+    @GetMapping(value = "/{id}/descargar-factura", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> downloadFacturaPdf(@PathVariable Long id) {
         try {
-            Pedido pedido = pedidoService.findById(id); // Usa el pedidoService para encontrar el pedido
+            Pedido pedido = pedidoService.findById(id);
 
-            if (pedido == null) {
-                return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(null); // O un mensaje de error como byte[]
-            }
-            if (pedido.getFactura() == null || pedido.getFactura().getUrlPdf() == null || pedido.getFactura().getUrlPdf().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // O un mensaje de error
+            if (pedido == null || pedido.getFactura() == null || pedido.getFactura().getUrlPdf() == null || pedido.getFactura().getUrlPdf().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new byte[0]); // Devuelve un array vacío para 404
             }
 
-            // AHORA NECESITAMOS DESCARGAR EL PDF DESDE LA URL (ej. Cloudinary) o REGENERARLO
-            // Opción A: Descargar desde la URL (si ya está en Cloudinary)
-            // Necesitarías una instancia de RestTemplate o WebClient para hacer una petición HTTP a la URL del PDF.
-            // O una lógica para que tu CloudinaryService o FacturaService te dé los bytes directamente.
-            // Por ejemplo, si tu CloudinaryService tiene un método como downloadFile(url):
-            // byte[] pdfBytes = cloudinaryService.downloadFile(pedido.getFactura().getUrlPdf());
-
-            // Opción B (Más directa si ya generas el PDF en el backend):
-            // Si FacturaService.generarFacturaPdf(pedido) devuelve un ByteArrayOutputStream:
-            ByteArrayOutputStream pdfStream = (ByteArrayOutputStream) facturaService.generarFacturaPdf(pedido); // <-- Accede a FacturaService a través de PedidoService (o inyéctalo aquí)
+            ByteArrayOutputStream pdfStream = (ByteArrayOutputStream) facturaService.generarFacturaPdf(pedido);
             byte[] pdfBytes = pdfStream.toByteArray();
 
             HttpHeaders headers = new HttpHeaders();
-            // Esto le dice al navegador que el archivo es un adjunto y sugerirá el nombre de archivo
             headers.setContentDispositionFormData("attachment", "factura_pedido_" + id + ".pdf");
-            // Para que se abra en una nueva pestaña y ofrezca descarga, puedes probar con 'inline'
-            // headers.setContentDispositionFormData("inline", "factura_pedido_" + id + ".pdf");
-            headers.setContentType(MediaType.APPLICATION_PDF); // Importante: tipo de contenido PDF
-            headers.setContentLength(pdfBytes.length); // Tamaño del archivo
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentLength(pdfBytes.length);
 
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 
-        } catch (ResourceNotFoundException e) { // Si PedidoService lanza esta excepción
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new byte[0]);
         } catch (Exception e) {
             System.err.println("Error al servir el PDF de la factura para el pedido " + id + ": " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new byte[0]);
         }
     }
+
+    // ✨ NUEVO ENDPOINT PARA VALIDAR STOCK
+    @PostMapping("/validar-stock")
+    public ResponseEntity<?> validarStock(@RequestBody PedidoStockValidationRequest request) {
+        try {
+            Pedido dummyPedido = new Pedido();
+            Set<DetallePedido> dummyDetalles = new HashSet<>();
+
+            if (request.getDetalles() == null || request.getDetalles().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", List.of("El pedido no contiene detalles para validar.")));
+            }
+
+            for (DetallePedidoCreateDTO detalleDTO : request.getDetalles()) {
+                System.out.println("DEBUG: Procesando detalleDTO: " + detalleDTO); // Log el DTO recibido
+                DetallePedido dp = new DetallePedido();
+                dp.setCantidad(detalleDTO.getCantidad());
+
+                if (detalleDTO.getArticuloId() != null) {
+                    System.out.println("DEBUG: Buscando Articulo con ID: " + detalleDTO.getArticuloId());
+                    ArticuloInsumo ai = articuloInsumoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                    if (ai != null) {
+                        dp.setArticuloInsumo(ai);
+                        System.out.println("DEBUG: Encontrado ArticuloInsumo: " + ai.getDenominacion());
+                    } else {
+                        ArticuloManufacturado am = articuloManufacturadoRepository.findById(detalleDTO.getArticuloId()).orElse(null);
+                        if (am != null) {
+                            dp.setArticuloManufacturado(am);
+                            System.out.println("DEBUG: Encontrado ArticuloManufacturado: " + am.getDenominacion());
+                        } else {
+                            System.out.println("ERROR: Articulo con ID " + detalleDTO.getArticuloId() + " no encontrado como Insumo ni Manufacturado.");
+                            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", List.of("Artículo con ID " + detalleDTO.getArticuloId() + " no encontrado o tipo desconocido.")));
+                        }
+                    }
+                } else if (detalleDTO.getPromocionId() != null) {
+                    System.out.println("DEBUG: Buscando Promocion con ID: " + detalleDTO.getPromocionId());
+                    Promocion promo = promocionRepository.findById(detalleDTO.getPromocionId()).orElse(null);
+                    if (promo != null) {
+                        dp.setPromocion(promo);
+                        System.out.println("DEBUG: Encontrada Promoción: " + promo.getDenominacion());
+                    } else {
+                        System.out.println("ERROR: Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada.");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", List.of("Promoción con ID " + detalleDTO.getPromocionId() + " no encontrada.")));
+                    }
+                } else {
+                    System.out.println("ERROR: Detalle sin articuloId ni promocionId.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", List.of("Cada detalle debe tener un 'articuloId' o 'promocionId'.")));
+                }
+                dummyDetalles.add(dp);
+            }
+            dummyPedido.setDetallesPedidos(dummyDetalles);
+
+            List<String> errores = pedidoService.verificarStockParaPedido(dummyPedido);
+            System.out.println("DEBUG: Errores de stock del servicio: " + errores); // Log los errores del servicio
+
+            if (!errores.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", errores));
+            } else {
+                return ResponseEntity.ok(Map.of("message", "Stock disponible."));
+            }
+        } catch (ResourceNotFoundException e) {
+            System.err.println("ERROR: ResourceNotFoundException en validarStock: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", List.of(e.getMessage())));
+        } catch (Exception e) {
+            System.err.println("ERROR: Excepción general en validarStock: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", List.of("Error interno al validar stock: " + e.getMessage())));
+        }
+    }
+
 }

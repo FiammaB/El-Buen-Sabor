@@ -169,4 +169,12 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
             throw new RuntimeException("No se pudo actualizar el nombre de usuario: " + e.getMessage(), e);
         }
     }
+
+    @Transactional
+    public Usuario toggleBaja(Long id, boolean baja) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        usuario.setBaja(baja);
+        return usuarioRepository.save(usuario); // <<< Esto es lo que PERSISTE
+    }
 }

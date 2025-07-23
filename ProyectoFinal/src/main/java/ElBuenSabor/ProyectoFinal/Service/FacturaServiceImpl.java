@@ -222,7 +222,10 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
                     String descripcion = "N/A";
                     double precioUnitario = 0.0;
 
-                    if (detalle.getArticuloManufacturado() != null) {
+                    if (detalle.getPromocion() != null) {
+                        descripcion = "[PROMO] " + detalle.getPromocion().getDenominacion();
+                        precioUnitario = detalle.getPromocion().getPrecioPromocional();
+                    } else if (detalle.getArticuloManufacturado() != null) {
                         descripcion = detalle.getArticuloManufacturado().getDenominacion();
                         precioUnitario = detalle.getArticuloManufacturado().getPrecioVenta();
                     } else if (detalle.getArticuloInsumo() != null) {

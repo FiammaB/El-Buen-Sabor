@@ -906,21 +906,40 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 ". Stock Antes: " + stockAntes + ". Stock Después: " + insumo.getStockActual() +
                 (insumoDadoDeBaja ? " (INSUMO DADO DE BAJA)" : ""));
     }
-    @Transactional
-    public boolean verificarStockParaPedido(Pedido pedido) {
-        // Usamos un mapa para llevar la cuenta de las cantidades totales de cada insumo
-        // que se necesitarían para el pedido, para evitar múltiples consultas o cálculos.
+    // ... (imports existentes)
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> verificarStockParaPedido(Pedido pedido) {
+        List<String> erroresStock = new ArrayList<>();
         Map<Long, Double> insumosNecesarios = new HashMap<>();
+        // Mapa para rastrear qué productos/promociones necesitan cada insumo
+        Map<Long, Map<String, Double>> insumoProductoMap = new HashMap<>();
 
         for (DetallePedido detalle : pedido.getDetallesPedidos()) {
+            String nombreItem = "";
+            double cantidadItem = detalle.getCantidad();
+
             // 🟠 CASO 1: Artículo Manufacturado
             ArticuloManufacturado manufacturado = detalle.getArticuloManufacturado();
             if (manufacturado != null) {
-                for (ArticuloManufacturadoDetalle det : manufacturado.getDetalles()) {
-                    ArticuloInsumo insumo = det.getArticuloInsumo();
-                    if (insumo != null) {
-                        double cantidadNecesaria = detalle.getCantidad() * det.getCantidad();
-                        insumosNecesarios.merge(insumo.getId(), cantidadNecesaria, Double::sum);
+                ArticuloManufacturado fullAm = articuloManufacturadoRepository.findById(manufacturado.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado no encontrado con ID: " + manufacturado.getId()));
+                nombreItem = fullAm.getDenominacion();
+
+                if (fullAm.getDetalles() != null) {
+                    for (ArticuloManufacturadoDetalle det : fullAm.getDetalles()) {
+                        ArticuloInsumo insumo = det.getArticuloInsumo();
+                        if (insumo != null) {
+                            double cantidadNecesaria = cantidadItem * det.getCantidad();
+                            insumosNecesarios.merge(insumo.getId(), cantidadNecesaria, Double::sum);
+
+                            // Registrar relación insumo-producto
+                            insumoProductoMap.computeIfAbsent(insumo.getId(), k -> new HashMap<>())
+                                    .merge(nombreItem, cantidadNecesaria, Double::sum);
+                        }
                     }
                 }
             }
@@ -928,76 +947,111 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // 🟢 CASO 2: Artículo Insumo directo
             ArticuloInsumo insumoDirecto = detalle.getArticuloInsumo();
             if (insumoDirecto != null) {
-                // Solo considera insumos directos que no son 'para elaborar'
-                if (!insumoDirecto.getEsParaElaborar()) {
-                    double cantidadNecesaria = detalle.getCantidad();
-                    insumosNecesarios.merge(insumoDirecto.getId(), cantidadNecesaria, Double::sum);
+                ArticuloInsumo fullInsumoDirecto = articuloInsumoRepository.findById(insumoDirecto.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo no encontrado con ID: " + insumoDirecto.getId()));
+
+                if (!fullInsumoDirecto.getEsParaElaborar()) {
+                    nombreItem = fullInsumoDirecto.getDenominacion();
+                    insumosNecesarios.merge(fullInsumoDirecto.getId(), cantidadItem, Double::sum);
+
+                    // Registrar relación insumo-producto (en este caso es el mismo)
+                    insumoProductoMap.computeIfAbsent(fullInsumoDirecto.getId(), k -> new HashMap<>())
+                            .merge(nombreItem, cantidadItem, Double::sum);
                 }
             }
 
-            // 🔵 CASO 3: Promoción (CORREGIDO)
+            // 🔵 CASO 3: Promoción
             Promocion promocion = detalle.getPromocion();
             if (promocion != null) {
+                Promocion fullPromo = promocionRepository.findById(promocion.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Promocion no encontrada con ID: " + promocion.getId()));
+                nombreItem = "Promoción: " + fullPromo.getDenominacion();
+
                 // Sumar insumos de ArticulosManufacturados dentro de la promoción
-                if (promocion.getPromocionDetalles() != null) {
-                    for (PromocionDetalle promoDetalle : promocion.getPromocionDetalles()) {
-                        ArticuloManufacturado am = promoDetalle.getArticuloManufacturado();
+                if (fullPromo.getPromocionDetalles() != null) {
+                    for (PromocionDetalle promoDetalle : fullPromo.getPromocionDetalles()) {
+                        ArticuloManufacturado amPromo = promoDetalle.getArticuloManufacturado();
                         Integer cantidadEnPromo = promoDetalle.getCantidad();
-                        if (am.getDetalles() != null) {
-                            for (ArticuloManufacturadoDetalle detalleReceta : am.getDetalles()) {
-                                ArticuloInsumo insumo = detalleReceta.getArticuloInsumo();
-                                if (insumo != null) {
-                                    double cantidadNecesaria = (double) detalle.getCantidad() * cantidadEnPromo * detalleReceta.getCantidad();
-                                    insumosNecesarios.merge(insumo.getId(), cantidadNecesaria, Double::sum);
+                        ArticuloManufacturado fullAmPromo = articuloManufacturadoRepository.findById(amPromo.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado en promo no encontrado con ID: " + amPromo.getId()));
+
+                        if (fullAmPromo.getDetalles() != null) {
+                            for (ArticuloManufacturadoDetalle detalleReceta : fullAmPromo.getDetalles()) {
+                                ArticuloInsumo insumoReceta = detalleReceta.getArticuloInsumo();
+                                if (insumoReceta != null) {
+                                    double cantidadNecesaria = cantidadItem * cantidadEnPromo * detalleReceta.getCantidad();
+                                    insumosNecesarios.merge(insumoReceta.getId(), cantidadNecesaria, Double::sum);
+
+                                    // Registrar relación insumo-promoción
+                                    insumoProductoMap.computeIfAbsent(insumoReceta.getId(), k -> new HashMap<>())
+                                            .merge(nombreItem, cantidadNecesaria, Double::sum);
                                 }
                             }
                         }
                     }
                 }
-                // Sumar ArticulosInsumos directos dentro de la promoción (NUEVO)
-                if (promocion.getArticulosInsumos() != null) {
-                    for (ArticuloInsumo aiPromo : promocion.getArticulosInsumos()) {
-                        if (!aiPromo.getEsParaElaborar()) {
-                            double cantidadNecesaria = detalle.getCantidad(); // Se asume que es 1 unidad de insumo por cada promo pedida
-                            insumosNecesarios.merge(aiPromo.getId(), cantidadNecesaria, Double::sum);
+
+                // Sumar ArticulosInsumos directos de la promoción
+                if (fullPromo.getArticulosInsumos() != null) {
+                    for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
+                        ArticuloInsumo fullAiPromo = articuloInsumoRepository.findById(aiPromo.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("ArticuloInsumo en promo no encontrado con ID: " + aiPromo.getId()));
+                        if (!fullAiPromo.getEsParaElaborar()) {
+                            double cantidadNecesaria = cantidadItem;
+                            insumosNecesarios.merge(fullAiPromo.getId(), cantidadNecesaria, Double::sum);
+
+                            // Registrar relación insumo-promoción
+                            insumoProductoMap.computeIfAbsent(fullAiPromo.getId(), k -> new HashMap<>())
+                                    .merge(nombreItem, cantidadNecesaria, Double::sum);
                         }
                     }
                 }
-                /*--------------------------------------------------------------------------------------------
-                // Sumar insumos definidos en los detalles propios de la promoción (NUEVO)
-                if (promocion.getDetalles() != null) {
-                    for (ArticuloManufacturadoDetalle amdPromoDetalle : promocion.getDetalles()) {
-                        ArticuloInsumo insumoDetalle = amdPromoDetalle.getArticuloInsumo();
-                        if (insumoDetalle != null) {
-                            double cantidadNecesaria = detalle.getCantidad() * amdPromoDetalle.getCantidad();
-                            insumosNecesarios.merge(insumoDetalle.getId(), cantidadNecesaria, Double::sum);
-                        }
-                    }
-                }*/
             }
         }
 
-        // Ahora, recorremos el mapa de insumos necesarios y comparamos con el stock actual
+        // Paso 2: Verificar el stock real de cada insumo y recolectar errores
         for (Map.Entry<Long, Double> entry : insumosNecesarios.entrySet()) {
             Long insumoId = entry.getKey();
             Double cantidadRequerida = entry.getValue();
 
-            // Buscar el insumo por ID (podrías tener un mapa de insumos cargados previamente para optimizar)
-            // Es crucial cargar el insumo directamente de la base de datos para obtener el stock más reciente
-            ArticuloInsumo insumo = articuloInsumoRepository.findById(insumoId)
-                    .orElseThrow(() -> new RuntimeException("Insumo no encontrado: " + insumoId));
+            ArticuloInsumo insumoActual = articuloInsumoRepository.findById(insumoId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Insumo no encontrado: " + insumoId));
 
-            // Si el insumo está dado de baja o el stock es insuficiente, el pedido no es viable
-            if (insumo.getBaja() || insumo.getStockActual() < cantidadRequerida) {
-                System.out.println("DEBUG Verificación Stock: Insuficiente stock para '" + insumo.getDenominacion() +
-                        "'. Requerido: " + cantidadRequerida + ", Disponible: " + insumo.getStockActual() +
-                        (insumo.getBaja() ? " (El insumo está dado de baja)" : ""));
-                return false; // No hay stock, retorna false inmediatamente
+            // Verificar si el insumo está de baja
+            if (insumoActual.getBaja()) {
+                // Construir mensaje con los productos/promociones afectados
+                StringBuilder mensaje = new StringBuilder();
+                mensaje.append("No hay stock disponible para: ");
+
+                insumoProductoMap.get(insumoId).forEach((producto, cantidad) -> {
+                    mensaje.append(String.format("%s (necesita %.2f), ", producto, cantidad));
+                });
+
+                mensaje.append("porque el insumo '").append(insumoActual.getDenominacion())
+                        .append("' está agotado o dado de baja.");
+
+                erroresStock.add(mensaje.toString());
+            }
+            // Verificar si el stock es insuficiente
+            else if (insumoActual.getStockActual() < cantidadRequerida) {
+                StringBuilder mensaje = new StringBuilder();
+                mensaje.append("Stock insuficiente para: ");
+
+                insumoProductoMap.get(insumoId).forEach((producto, cantidad) -> {
+                    mensaje.append(String.format("%s (necesita %.2f), ", producto, cantidad));
+                });
+
+                mensaje.append("porque el insumo '").append(insumoActual.getDenominacion())
+                        .append("' solo tiene ").append(String.format("%.2f", insumoActual.getStockActual()))
+                        .append(" unidades disponibles (se necesitan ")
+                        .append(String.format("%.2f", cantidadRequerida)).append(").");
+
+                erroresStock.add(mensaje.toString());
             }
         }
-
-        return true; // Hay stock para todos los insumos
+        return erroresStock;
     }
+
 
     @Override
     @Transactional

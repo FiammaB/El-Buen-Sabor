@@ -971,6 +971,7 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     for (PromocionDetalle promoDetalle : fullPromo.getPromocionDetalles()) {
                         ArticuloManufacturado amPromo = promoDetalle.getArticuloManufacturado();
                         Integer cantidadEnPromo = promoDetalle.getCantidad();
+
                         ArticuloManufacturado fullAmPromo = articuloManufacturadoRepository.findById(amPromo.getId())
                                 .orElseThrow(() -> new ResourceNotFoundException("ArticuloManufacturado en promo no encontrado con ID: " + amPromo.getId()));
 
@@ -989,17 +990,17 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                         }
                     }
                 }
-<<<<<<< HEAD
                 // Sumar ArticulosInsumos directos dentro de la promoción (NUEVO)
                 if (promocion.getPromocionInsumoDetalles() != null) {
                     for (PromocionInsumoDetalle insumoDetalle : promocion.getPromocionInsumoDetalles()) {
                         ArticuloInsumo aiPromo = insumoDetalle.getArticuloInsumo();
                         Integer cantidadEnPromo = insumoDetalle.getCantidad();
+
                         if (!aiPromo.getEsParaElaborar()) {
                             double cantidadNecesaria = (double) detalle.getCantidad() * cantidadEnPromo; // Se asume que es 1 unidad de insumo por cada promo pedida
                             insumosNecesarios.merge(aiPromo.getId(), cantidadNecesaria, Double::sum);
-=======
 
+                            /*
                 // Sumar ArticulosInsumos directos de la promoción
                 if (fullPromo.getArticulosInsumos() != null) {
                     for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
@@ -1008,11 +1009,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                         if (!fullAiPromo.getEsParaElaborar()) {
                             double cantidadNecesaria = cantidadItem;
                             insumosNecesarios.merge(fullAiPromo.getId(), cantidadNecesaria, Double::sum);
-
+*/
                             // Registrar relación insumo-promoción
-                            insumoProductoMap.computeIfAbsent(fullAiPromo.getId(), k -> new HashMap<>())
+                            insumoProductoMap.computeIfAbsent(aiPromo.getId(), k -> new HashMap<>())
                                     .merge(nombreItem, cantidadNecesaria, Double::sum);
->>>>>>> c23433584c9b32f15c478c39489487a1e0051081
                         }
                     }
                 }

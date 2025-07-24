@@ -13,7 +13,8 @@ import java.util.List;
         ImagenMapper.class,
         ArticuloInsumoMapper.class,
         SucursalMapper.class,
-        PromocionDetalleMapper.class // <-- ¡LA CLAVE ESTÁ AQUÍ!
+        PromocionDetalleMapper.class, // <-- ¡LA CLAVE ESTÁ AQUÍ!
+        PromocionInsumoDetalleMapper.class // <-- ¡AÑADIR ESTA LÍNEA!
 })
 public interface PromocionMapper {
 

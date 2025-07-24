@@ -23,10 +23,14 @@ public class PromocionCreateDTO {
     private Double precioPromocional;
     private TipoPromocion tipoPromocion;
     private Long imagenId;
-    @Builder.Default
-    private List<PromocionDetalleDTO> promocionDetalles = new ArrayList<>();
 
     @Builder.Default
-    private List<Long> articuloInsumoIds = new ArrayList<>();
-    private List<Long> sucursalIds;
+    private List<PromocionDetalleCreateDTO> promocionDetalles = new ArrayList<>();
+
+    @Builder.Default
+    private List<Long> sucursalIds = new ArrayList<>();
+
+    // 👇 LA CORRECCIÓN CLAVE ESTÁ AQUÍ
+    @Builder.Default
+    private List<PromocionInsumoDetalleCreateDTO> promocionInsumoDetalles = new ArrayList<>();
 }

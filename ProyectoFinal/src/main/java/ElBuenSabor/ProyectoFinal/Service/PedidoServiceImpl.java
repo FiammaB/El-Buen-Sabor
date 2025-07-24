@@ -716,10 +716,10 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 }
 
                 // CORREGIDO: Sumar costos de ArticulosInsumos directos de la promoción
-                if (promo.getArticulosInsumos() != null) {
-                    for (ArticuloInsumo aiPromo : promo.getArticulosInsumos()) {
-                        if (aiPromo.getPrecioCompra() != null) {
-                            costoPromoUnitario += aiPromo.getPrecioCompra();
+                if (promo.getPromocionInsumoDetalles() != null) {
+                    for (PromocionInsumoDetalle insumoDetalle : promo.getPromocionInsumoDetalles()) {
+                        if (insumoDetalle.getArticuloInsumo() != null && insumoDetalle.getArticuloInsumo().getPrecioCompra() != null) {
+                            costoPromoUnitario += insumoDetalle.getArticuloInsumo().getPrecioCompra() * insumoDetalle.getCantidad();
                         }
                     }
                 }
@@ -792,10 +792,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                 }
 
                 // --- Procesar ArticulosInsumos directos de la promoción ---
-                if (fullPromo.getArticulosInsumos() != null) {
-                    for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
+                if (fullPromo.getPromocionInsumoDetalles() != null) {
+                    for (PromocionInsumoDetalle insumoDetalle : fullPromo.getPromocionInsumoDetalles()) {
+                        ArticuloInsumo aiPromo = insumoDetalle.getArticuloInsumo();
+                        Integer cantidadEnPromo = insumoDetalle.getCantidad();
                         if (!aiPromo.getEsParaElaborar()) {
-                            double cantidadAReducir = detalle.getCantidad();
+                            double cantidadAReducir = detalle.getCantidad() * cantidadEnPromo;
                             performStockDeductionForInsumo(aiPromo, cantidadAReducir, null, articulosManufacturadosToUpdate);
                         }
                     }
@@ -824,15 +826,16 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
 
 
                 // Verificar si algún ArticuloInsumo directo en la promoción está de baja
-                if (!promoShouldBeBaja && fullPromo.getArticulosInsumos() != null) {
-                    for (ArticuloInsumo aiPromo : fullPromo.getArticulosInsumos()) {
-                        if (aiPromo.getBaja()) {
+                if (!promoShouldBeBaja && fullPromo.getPromocionInsumoDetalles() != null) {
+                    for (PromocionInsumoDetalle detalleInsumo : fullPromo.getPromocionInsumoDetalles()) {
+                        // Obtenemos el insumo desde el objeto de detalle
+                        ArticuloInsumo aiPromo = detalleInsumo.getArticuloInsumo();
+                        if (aiPromo != null && aiPromo.getBaja()) {
                             promoShouldBeBaja = true;
                             break;
                         }
                     }
                 }
-
                 /*-------------------------------------------------------------------------------------------------
                 // Verificar si algún insumo de los detalles propios de la promoción está de baja
                 // Solo si la promoción aún no ha sido marcada para baja
@@ -955,10 +958,12 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
                     }
                 }
                 // Sumar ArticulosInsumos directos dentro de la promoción (NUEVO)
-                if (promocion.getArticulosInsumos() != null) {
-                    for (ArticuloInsumo aiPromo : promocion.getArticulosInsumos()) {
+                if (promocion.getPromocionInsumoDetalles() != null) {
+                    for (PromocionInsumoDetalle insumoDetalle : promocion.getPromocionInsumoDetalles()) {
+                        ArticuloInsumo aiPromo = insumoDetalle.getArticuloInsumo();
+                        Integer cantidadEnPromo = insumoDetalle.getCantidad();
                         if (!aiPromo.getEsParaElaborar()) {
-                            double cantidadNecesaria = detalle.getCantidad(); // Se asume que es 1 unidad de insumo por cada promo pedida
+                            double cantidadNecesaria = (double) detalle.getCantidad() * cantidadEnPromo; // Se asume que es 1 unidad de insumo por cada promo pedida
                             insumosNecesarios.merge(aiPromo.getId(), cantidadNecesaria, Double::sum);
                         }
                     }

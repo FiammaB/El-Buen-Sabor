@@ -10,7 +10,7 @@ import ElBuenSabor.ProyectoFinal.Exceptions.ResourceNotFoundException;
 import ElBuenSabor.ProyectoFinal.Mappers.PedidoMapper;
 import ElBuenSabor.ProyectoFinal.Repositories.*;
 import ElBuenSabor.ProyectoFinal.Service.*;
-import com.itextpdf.io.source.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -390,29 +390,41 @@ public class PedidoController extends BaseController<Pedido, Long> {
     public ResponseEntity<?> actualizarEstado(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
             String nuevoEstadoStr = request.get("estado");
+            String empleadoIdStr = request.get("empleadoId"); // <-- Nuevo: lo buscamos del request
+
             if (nuevoEstadoStr == null) {
                 return ResponseEntity.badRequest().body(Map.of("message", "El estado es requerido."));
             }
-            Estado nuevoEstado = Estado.valueOf(nuevoEstadoStr); // Convertir String a Enum
+            Estado nuevoEstado = Estado.valueOf(nuevoEstadoStr);
 
-            Pedido pedido = pedidoService.findById(id); // Obtener el pedido siempre
+            Pedido pedido = pedidoService.findById(id);
 
             if (nuevoEstado == Estado.PAGADO && pedido.getFormaPago() == FormaPago.EFECTIVO) {
-                // Si el nuevo estado es PAGADO y la forma de pago es EFECTIVO, llama al método específico
                 Pedido actualizado = pedidoService.marcarPedidoComoPagadoYFacturar(id);
                 return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
             } else {
-                // Para cualquier otro cambio de estado
+                // --- ACÁ asignás el empleado si corresponde ---
+                if (empleadoIdStr != null && !empleadoIdStr.isBlank()) {
+                    try {
+                        Long empleadoId = Long.parseLong(empleadoIdStr);
+                        Usuario empleado = usuarioService.findById(empleadoId);
+                        pedido.setEmpleado(empleado); // <--- ACA se asigna el cajero o quien cambió el estado
+                    } catch (Exception ex) {
+                        // Si te mandan un empleadoId inválido, lo ignorás o podés devolver error
+                        return ResponseEntity.badRequest().body(Map.of("message", "Empleado no válido."));
+                    }
+                }
                 pedido.setEstado(nuevoEstado);
                 Pedido actualizado = pedidoService.save(pedido);
                 return ResponseEntity.ok(pedidoMapper.toDTO(actualizado));
             }
-        } catch (IllegalArgumentException e) { // Captura si el estado no es válido
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Estado '" + request.get("estado") + "' no válido."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Error al actualizar el estado del pedido: " + e.getMessage()));
         }
     }
+
 
 
     @PatchMapping("/{id}/hora-estimada")

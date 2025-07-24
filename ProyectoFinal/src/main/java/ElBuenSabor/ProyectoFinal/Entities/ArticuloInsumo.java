@@ -26,6 +26,8 @@ public class ArticuloInsumo extends Articulo {
     @OneToMany(mappedBy = "articuloInsumo", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<ArticuloManufacturadoDetalle> detalles = new HashSet<>();
 
-    @ManyToMany(mappedBy = "articulosInsumos")
-    private List<Promocion> promociones = new ArrayList<>();
+    // AÑADIR ESTO EN SU LUGAR
+    @OneToMany(mappedBy = "articuloInsumo")
+    private Set<PromocionInsumoDetalle> promocionInsumoDetalles = new HashSet<>();
+
 }

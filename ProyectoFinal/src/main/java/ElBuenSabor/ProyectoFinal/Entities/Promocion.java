@@ -36,15 +36,19 @@ public class Promocion extends BaseEntity {
     @JoinColumn(name = "imagen_id") // Una promoción puede tener una imagen
     private Imagen imagen;
 
-    @ManyToMany
-    @JoinTable(
-            name = "promocion_articulo_insumo",
-            joinColumns = @JoinColumn(name = "promocion_id"),
-            inverseJoinColumns = @JoinColumn(name = "articulo_insumo_id")
-
-    )
+    @OneToMany(mappedBy = "promocion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<ArticuloInsumo> articulosInsumos = new ArrayList<>();
+    private Set<PromocionInsumoDetalle> promocionInsumoDetalles = new HashSet<>();
+
+//    @ManyToMany
+//    @JoinTable(
+//            name = "promocion_articulo_insumo",
+//            joinColumns = @JoinColumn(name = "promocion_id"),
+//            inverseJoinColumns = @JoinColumn(name = "articulo_insumo_id")
+//
+//    )
+//    @Builder.Default
+//    private List<ArticuloInsumo> articulosInsumos = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(

@@ -1,9 +1,15 @@
 package ElBuenSabor.ProyectoFinal.Service;
 
 import ElBuenSabor.ProyectoFinal.Entities.Persona;
-import ElBuenSabor.ProyectoFinal.DTO.ClienteAdminUpdateDTO; // <-- AÑADIR IMPORTACIÓN
+import ElBuenSabor.ProyectoFinal.Entities.Usuario;
+import ElBuenSabor.ProyectoFinal.DTO.ClienteAdminUpdateDTO;
 
-public interface PersonaService extends BaseService<Persona, Long>{
+import java.util.Optional;
+
+public interface PersonaService extends BaseService<Persona, Long> {
+
     void actualizarClienteDesdeAdmin(Long personaId, ClienteAdminUpdateDTO dto) throws Exception;
 
+    // ✅ Nuevo método: buscar Persona asociada a un Usuario
+    Optional<Persona> findByUsuario(Usuario usuario);
 }

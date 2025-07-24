@@ -56,7 +56,16 @@ public class PromocionController extends BaseController<Promocion, Long> {
     @Override
     public ResponseEntity<?> getAll() {
         try {
-            List<Promocion> promociones = baseService.findAll();
+            // 👇 CORRECCIÓN AQUÍ: Llamamos al método que sí carga los detalles
+            List<Promocion> promociones = promocionService.getPromocionesActivas();
+            // ----- LÍNEA DE PRUEBA TEMPORAL -----
+            System.out.println("--- INFO DE DEPURACIÓN ---");
+            for (Promocion p : promociones) {
+                System.out.println("Promo ID " + p.getId() + " tiene " + p.getPromocionInsumoDetalles().size() + " insumos.");
+            }
+            System.out.println("--------------------------");
+            // ------------------------------------
+
             List<PromocionDTO> dtos = promociones.stream()
                     .map(promocionMapper::toDTO)
                     .toList();

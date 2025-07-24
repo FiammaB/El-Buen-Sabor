@@ -62,10 +62,10 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ Ahora genérico: Cliente, Cocinero, Cajero o Delivery
+    // ✅ Ahora devuelve la Persona actualizada
     @Override
     @Transactional
-    public void actualizarPerfil(String email, PersonaPerfilUpdateDTO dto) throws Exception {
+    public Persona actualizarPerfil(String email, PersonaPerfilUpdateDTO dto) throws Exception {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new Exception("Usuario no encontrado con email: " + email));
 
@@ -94,6 +94,8 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         }
 
         usuarioRepository.save(usuario);
+
+        return persona; // ✅ Devolvemos la Persona ya actualizada
     }
 
     // 🔒 Validación de contraseña segura
@@ -104,7 +106,6 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
                 password.matches(".*[!@#$%^&*(),.?\":{}|<>_\\-+=].*");
     }
 
-    // ✅ Método para registrar cocinero
     @Override
     public Usuario registrarCocinero(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -122,7 +123,6 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ Método para registrar cajero
     @Override
     public Usuario registrarCajero(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -140,7 +140,6 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         return usuarioRepository.save(usuario);
     }
 
-    // ✅ Método para registrar delivery
     @Override
     public Usuario registrarDelivery(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -154,7 +153,7 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
         usuario.setRol(Rol.DELIVERY);
         usuario.setPassword(passwordEncoder.encode(usuarioDTO.getPassword()));
-        usuario.setPrimerInicio(true); // ✅ Para forzar cambio de contraseña en primer login
+        usuario.setPrimerInicio(true);
         return usuarioRepository.save(usuario);
     }
 
@@ -168,5 +167,13 @@ public class UsuarioServiceImpl extends BaseServiceImpl<Usuario, Long> implement
         } catch (Exception e) {
             throw new RuntimeException("No se pudo actualizar el nombre de usuario: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional
+    public Usuario toggleBaja(Long id, boolean baja) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        usuario.setBaja(baja);
+        return usuarioRepository.save(usuario); // <<< Esto es lo que PERSISTE
     }
 }

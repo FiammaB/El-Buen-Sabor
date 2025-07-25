@@ -113,12 +113,18 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
     ) {
         try {
             ArticuloInsumo insumo = articuloInsumoService.findById(id);
-            if (insumo.getBaja() != null && insumo.getBaja()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No se puede actualizar stock de un insumo dado de baja.");
-            }
+
             insumo.setStockActual(insumo.getStockActual() + cantidad);
-            articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(insumo); // o devolver DTO
+            ArticuloInsumo actualizado = articuloInsumoService.save(insumo);
+
+            if (actualizado.getStockActual() > actualizado.getStockMinimo()) {
+                actualizado.setBaja(false);
+            }
+
+            // 🔁 Verificar si algún manufacturado puede ser reactivado
+            articuloInsumoService.verificarYReactivarArticulosManufacturados(actualizado);
+
+            return ResponseEntity.ok(actualizado);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }
@@ -131,17 +137,26 @@ public class ArticuloInsumoController extends BaseController<ArticuloInsumo, Lon
     ) {
         try {
             ArticuloInsumo insumo = articuloInsumoService.findById(id);
-            if (insumo.getBaja() != null && insumo.getBaja()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No se puede actualizar stock de un insumo dado de baja.");
-            }
-            // Validación: No permitir stock negativo
+
             double nuevoStock = insumo.getStockActual() - cantidad;
             if (nuevoStock < 0) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No se puede dejar el stock en negativo.");
             }
+
             insumo.setStockActual(nuevoStock);
+
+            if (nuevoStock < insumo.getStockMinimo()) {
+                if (!insumo.getBaja()) {
+                    insumo.setBaja(true);
+                    System.out.println("⛔ Insumo '" + insumo.getDenominacion() + "' dado de BAJA (stock bajo).");
+                }
+
+                // 🔁 Dar de baja artículos y promociones relacionadas
+                articuloInsumoService.verificarYDarDeBajaRelacionadosPorStockBajo(insumo);
+            }
+
             ArticuloInsumo actualizado = articuloInsumoService.save(insumo);
-            return ResponseEntity.ok(articuloInsumoMapper.toDTO(actualizado)); // o insumo, como prefieras
+            return ResponseEntity.ok(articuloInsumoMapper.toDTO(actualizado));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
         }

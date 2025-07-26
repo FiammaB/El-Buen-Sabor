@@ -43,7 +43,7 @@ public class PromocionServiceImpl extends BaseServiceImpl<Promocion, Long> imple
     public List<Promocion> getPromocionesActivas() {
         // Implementa la lógica para obtener promociones activas globales si es necesario
         // Por ahora, devuelve una lista vacía o podrías llamar a promocionRepository.findByBajaFalse()
-        return promocionRepository.findByBajaFalse(); // O el método correcto en tu repositorio
+        return promocionRepository.findAll(); // O el método correcto en tu repositorio
     }
 
 

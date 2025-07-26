@@ -20,7 +20,7 @@ public interface PerfilMapper {
     @Mapping(source = "apellido", target = "apellido")
     @Mapping(source = "telefono", target = "telefono")
     @Mapping(source = "fechaNacimiento", target = "fechaNacimiento")
-    @Mapping(source = "domicilios", target = "domicilio")
+    @Mapping(source = "domicilios", target = "domicilios")
     @Mapping(source = "imagen", target = "imagen")
     @Mapping(source = "usuario", target = "usuario")
     PerfilDTO toPerfilDTO(Persona persona);

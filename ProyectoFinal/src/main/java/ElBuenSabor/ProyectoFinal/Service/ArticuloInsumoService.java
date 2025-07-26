@@ -7,5 +7,6 @@ import java.util.List;
 public interface ArticuloInsumoService extends BaseService<ArticuloInsumo, Long>{
 
     ArticuloInsumo actualizarPrecioYPropagar(Long id, Double nuevoPrecioCompra) throws Exception;
-
+    void verificarYReactivarArticulosManufacturados(ArticuloInsumo insumoActualizado) throws Exception;
+    void verificarYDarDeBajaRelacionadosPorStockBajo(ArticuloInsumo insumoActualizado) throws Exception;
 }

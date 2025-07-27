@@ -21,4 +21,7 @@ public interface ArticuloManufacturadoRepository extends JpaRepository<ArticuloM
             @Param("baja") Boolean baja
     );
     List<ArticuloManufacturado> findAllByDetalles_ArticuloInsumo_Id(Long articuloInsumoId);
+
+    @Query("SELECT DISTINCT am FROM ArticuloManufacturado am JOIN am.detalles d WHERE d.articuloInsumo.id = :insumoId")
+    List<ArticuloManufacturado> findByInsumoId(@Param("insumoId") Long insumoId);
 }

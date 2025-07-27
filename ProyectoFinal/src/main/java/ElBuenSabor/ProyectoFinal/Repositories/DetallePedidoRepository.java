@@ -57,7 +57,7 @@ public interface DetallePedidoRepository extends JpaRepository<DetallePedido, Lo
         -- Ventas de Artículos Insumo DENTRO de Promociones
         SELECT a.denominacion AS nombreProducto, SUM(dp.cantidad) AS cantidadVendida, a.precio_venta as precioVenta, p.fecha_pedido as fechaVenta
         FROM detalle_pedido dp
-        JOIN promocion_articulo_insumo pai ON dp.id_promocion = pai.promocion_id
+        JOIN `promocion_insumo_detalle` pai ON dp.id_promocion = pai.promocion_id -- ¡Aquí está el cambio clave!
         JOIN articulo a ON pai.articulo_insumo_id = a.id
         JOIN articulo_insumo ai ON a.id = ai.id
         JOIN pedido p ON dp.id_pedido = p.id

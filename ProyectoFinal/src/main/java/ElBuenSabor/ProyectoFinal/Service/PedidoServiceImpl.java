@@ -88,8 +88,19 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             Pedido pedido = new Pedido();
             System.out.println("DEBUG Pedido: Creando instancia de Pedido para Mercado Pago: " + pedido.getFormaPago());
             // 🧩 Asignación de relaciones obligatorias
-            pedido.setPersona(personaRepository.findById(dto.getPersonaId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrado")));
+            Persona persona = personaRepository.findById(dto.getPersonaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con ID: " + dto.getPersonaId()));
+
+
+            if (dto.getTelefono() != null && !dto.getTelefono().trim().isEmpty()) {
+                if (!dto.getTelefono().equals(persona.getTelefono())) {
+                    System.out.println("DEBUG: Actualizando teléfono de Persona " + persona.getId() + " de '" + persona.getTelefono() + "' a '" + dto.getTelefono() + "'");
+                    persona.setTelefono(String.valueOf(dto.getTelefono())); // ✨ Asigna el String directamente
+                    personaRepository.save(persona); // Guarda la Persona actualizada
+                }
+            }
+
+            pedido.setPersona(persona);
 
             if (dto.getDomicilioId() != null) {
                 pedido.setDomicilioEntrega(domicilioRepository.findById(dto.getDomicilioId())

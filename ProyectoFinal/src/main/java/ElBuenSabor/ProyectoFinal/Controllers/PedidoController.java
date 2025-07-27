@@ -370,7 +370,7 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
-    @PreAuthorize("hasRole('CAJERO')") // Mantenido si usas seguridad
+    @PreAuthorize("hasAnyRole('CAJERO','ADMINISTRADOR')")// Mantenido si usas seguridad
     @GetMapping("/cajero")
     public ResponseEntity<?> getPedidosParaCobrar() {
         try {

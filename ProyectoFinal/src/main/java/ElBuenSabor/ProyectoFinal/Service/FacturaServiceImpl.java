@@ -55,7 +55,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
 
         try {
             // Título de la factura
-            document.add(new Paragraph("FACTURA DE VENTA")
+            document.add(new Paragraph("FACTURA DE VENTA EL BUEN SABOR")
                     .setTextAlignment(TextAlignment.CENTER)
                     .setFontSize(20));
             document.add(new Paragraph("\n")); // Salto de línea
@@ -91,7 +91,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
             table.addHeaderCell(new Paragraph("Cant.").setTextAlignment(TextAlignment.CENTER)); //
             table.addHeaderCell(new Paragraph("P. Unit.").setTextAlignment(TextAlignment.CENTER)); //
             table.addHeaderCell(new Paragraph("Subtotal").setTextAlignment(TextAlignment.CENTER)); //
-            table.addHeaderCell(new Paragraph("Tiempo Est.").setTextAlignment(TextAlignment.CENTER)); //
+
 
 
             // Filas de detalles
@@ -129,7 +129,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
                     table.addCell(new Paragraph(String.valueOf(detalle.getCantidad())).setTextAlignment(TextAlignment.CENTER));
                     table.addCell(new Paragraph(String.format("%.2f", precioUnitario)).setTextAlignment(TextAlignment.RIGHT));
                     table.addCell(new Paragraph(String.format("%.2f", subtotalDetalle)).setTextAlignment(TextAlignment.RIGHT));
-                    table.addCell(new Paragraph(String.valueOf(tiempoEstimado)).setTextAlignment(TextAlignment.CENTER));
+
                 }
             }
             document.add(table);

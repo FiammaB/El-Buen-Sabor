@@ -90,7 +90,9 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // 🧩 Asignación de relaciones obligatorias
             Persona persona = personaRepository.findById(dto.getPersonaId())
                     .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con ID: " + dto.getPersonaId()));
-
+            if (persona.getBaja()) {
+                throw new IllegalStateException("El cliente se encuentra dado de baja y no puede realizar pedidos.");
+            }
 
             if (dto.getTelefono() != null && !dto.getTelefono().trim().isEmpty()) {
                 if (!dto.getTelefono().equals(persona.getTelefono())) {

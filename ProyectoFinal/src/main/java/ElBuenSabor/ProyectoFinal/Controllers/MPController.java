@@ -114,6 +114,10 @@ public class MPController {
                     continue;
                 }
 
+                if(pedidoDTO.getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL){
+                    itemPrice = itemPrice.multiply(new BigDecimal("0.9"));
+                }
+
                 PreferenceItemRequest item = PreferenceItemRequest.builder()
                         .id(itemId)
                         .title(itemTitle)
@@ -135,7 +139,6 @@ public class MPController {
                             .pending("https://localhost:5173/")
                             .failure("https://localhost:5173/order-failed")
                             .build();
-
 
             // 4. Construir la solicitud de preferencia
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()

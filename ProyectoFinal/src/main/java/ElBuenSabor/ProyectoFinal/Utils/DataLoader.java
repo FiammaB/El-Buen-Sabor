@@ -1645,12 +1645,30 @@ public class DataLoader implements CommandLineRunner {
                     .username("Juan Cocinero")
                     .rol(Rol.COCINERO)
                     .build());
+
+            Persona personaCocinero = personaService.save(Persona.builder()
+                    .nombre("Juan")
+                    .apellido("Perez")//Apellido inventado
+                    .telefono("2615554433")//telefono inventado
+                    .fechaNacimiento(LocalDate.of(2000, 1, 1))//Nacimiento inventado
+                    .usuario(usuarioCocinero)
+                    .build());
+
             Usuario usuarioCajero = usuarioService.save(Usuario.builder()
                     .email("cajero@buen.com")
                     .password(passwordEncoder.encode("cajero123"))
                     .username("Carlos Cajero")
                     .rol(Rol.CAJERO)
                     .build());
+
+            Persona personaCajero = personaService.save(Persona.builder()
+                    .nombre("Juan")
+                    .apellido("Perez")//Apellido inventado
+                    .telefono("2615554433")//telefono inventado
+                    .fechaNacimiento(LocalDate.of(2000, 1, 1))//Nacimiento inventado
+                    .usuario(usuarioCajero)
+                    .build());
+
             Usuario usuarioDelivery = usuarioService.save(Usuario.builder()
                     .email("delivery@buen.com")
                     .password(passwordEncoder.encode("delivery123"))
@@ -1658,7 +1676,13 @@ public class DataLoader implements CommandLineRunner {
                     .rol(Rol.DELIVERY)
                     .build());
 
-
+            Persona personaDelivery = personaService.save(Persona.builder()
+                    .nombre("Juan")
+                    .apellido("Perez")//Apellido inventado
+                    .telefono("2615554433")//telefono inventado
+                    .fechaNacimiento(LocalDate.of(2000, 1, 1))//Nacimiento inventado
+                    .usuario(usuarioDelivery)
+                    .build());
 
             //Pedido
 

@@ -29,6 +29,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Archivos de configuración de Spring Boot
+src/main/resources/application.properties
+
 ### VS Code ###
 .vscode/
 .idea/php.xml

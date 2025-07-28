@@ -35,7 +35,7 @@ public class PersonaServiceImpl extends BaseServiceImpl<Persona, Long> implement
         Usuario usuario = persona.getUsuario();
         if (usuario != null) {
             boolean nuevaBaja = !dto.isActivo();
-            if (usuario.isBaja() != nuevaBaja) {
+            if (usuario.getBaja() != nuevaBaja) {
                 usuarioService.toggleBaja(usuario.getId(), nuevaBaja);
             }
         } else {

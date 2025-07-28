@@ -55,7 +55,9 @@ public class AuthController {
                 persona != null ? persona.getApellido() : "",
                 usuario.getEmail(),
                 persona != null ? persona.getTelefono() : "",
-                usuario.getRol()
+                usuario.getRol(),
+                persona != null ? persona.getBaja() : false
+
         );
 
         // ✅ Devolvemos usuario + flag de cambio de password
@@ -102,7 +104,8 @@ public class AuthController {
                     persona.getApellido(),
                     nuevoUsuario.getEmail(),
                     persona.getTelefono(),
-                    nuevoUsuario.getRol()
+                    nuevoUsuario.getRol(),
+                    persona.getBaja()
             );
 
             return ResponseEntity.ok(response);
@@ -239,7 +242,9 @@ public class AuthController {
                         persona != null ? persona.getApellido() : apellido,
                         email,
                         persona != null ? persona.getTelefono() : "",
-                        usuario.getRol()
+                        usuario.getRol(),
+                        persona != null ? persona.getBaja() : false
+
                 );
 
                 return ResponseEntity.ok(response);

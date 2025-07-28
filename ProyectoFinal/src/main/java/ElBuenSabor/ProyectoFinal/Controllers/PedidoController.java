@@ -112,7 +112,6 @@ public class PedidoController extends BaseController<Pedido, Long> {
         }
     }
 
-    // --- MÉTODO CREATE (CON LA NUEVA LÓGICA DE VALIDACIÓN DE STOCK AL INICIO) ---
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE) // Especifica el tipo de consumo
     public ResponseEntity<?> create(@RequestBody PedidoCreateDTO dto) {
@@ -120,7 +119,20 @@ public class PedidoController extends BaseController<Pedido, Long> {
             Pedido pedidoParaPersistir = new Pedido();
 
             // 1. Asignación de relaciones obligatorias y opcionales
-            pedidoParaPersistir.setPersona(personaService.findById(dto.getPersonaId()));
+            Persona persona = personaService.findById(dto.getPersonaId());
+            if (persona == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Persona no encontrada con ID: " + dto.getPersonaId()));
+            }
+            if (persona.getBaja()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "El cliente se encuentra dado de baja y no puede realizar pedidos."));
+            }
+            if (dto.getTelefono() != null && !dto.getTelefono().trim().isEmpty()) {
+                if (!dto.getTelefono().equals(persona.getTelefono())) {
+                    persona.setTelefono(dto.getTelefono());
+                    personaService.save(persona); // Guarda la Persona actualizada
+                }
+            }
+            pedidoParaPersistir.setPersona(persona);
             if (dto.getDomicilioId() != null) {
                 pedidoParaPersistir.setDomicilioEntrega(domicilioService.findById(dto.getDomicilioId()));
             }

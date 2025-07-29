@@ -83,7 +83,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
 
             // Tabla de detalles del pedido
             // NOTA: Asegúrate que el array de floats coincida con el número de columnas (5 en este caso)
-            Table table = new Table(UnitValue.createPercentArray(new float[]{4, 1, 1, 1, 1})); // Ajuste de anchos para Descripción y Cantidad
+            Table table = new Table(UnitValue.createPercentArray(new float[]{4, 1, 1, 1})); // Ajuste de anchos para Descripción y Cantidad
             table.setWidth(UnitValue.createPercentValue(100)); // Ancho de la tabla al 100%
 
             // Encabezados de la tabla - ORDEN CORREGIDO
@@ -142,7 +142,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
 
             Factura factura = pedido.getFactura();
             if (factura != null) {
-                document.add(new Paragraph("Total Venta (MP): $" + String.format("%.2f", factura.getTotalVenta()))
+                document.add(new Paragraph("Total Venta: $" + String.format("%.2f", factura.getTotalVenta()))
                         .setTextAlignment(TextAlignment.RIGHT));
                 document.add(new Paragraph("Forma de Pago: " + factura.getFormaPago().name())
                         .setTextAlignment(TextAlignment.RIGHT));

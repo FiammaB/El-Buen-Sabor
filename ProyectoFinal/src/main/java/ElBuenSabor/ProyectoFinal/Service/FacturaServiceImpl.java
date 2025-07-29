@@ -245,9 +245,15 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
             document.add(new Paragraph("\n"));
 
             // Totales de la Nota de Crédito
-            document.add(new Paragraph("TOTAL NOTA DE CRÉDITO: $" + String.format("%.2f", totalNotaCredito))
-                    .setTextAlignment(TextAlignment.RIGHT)
-                    .setFontSize(14));
+            if(notaCredito.getFacturaAnulada().getPedido().getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL){
+                document.add(new Paragraph("TOTAL NOTA DE CRÉDITO (Con Descuento Aplicado): $" + String.format("%.2f", notaCredito.getFacturaAnulada().getTotalVenta()))
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setFontSize(14));
+            }else {
+                document.add(new Paragraph("TOTAL NOTA DE CRÉDITO: $" + String.format("%.2f", totalNotaCredito))
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setFontSize(14));
+            }
 
         } catch (Exception e) { // <-- El catch va aquí
             System.err.println("Error al generar el PDF de la Nota de Crédito: " + e.getMessage());

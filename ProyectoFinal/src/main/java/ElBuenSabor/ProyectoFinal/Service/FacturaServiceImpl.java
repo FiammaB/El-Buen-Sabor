@@ -83,7 +83,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
 
             // Tabla de detalles del pedido
             // NOTA: Asegúrate que el array de floats coincida con el número de columnas (5 en este caso)
-            Table table = new Table(UnitValue.createPercentArray(new float[]{4, 1, 1, 1, 1})); // Ajuste de anchos para Descripción y Cantidad
+            Table table = new Table(UnitValue.createPercentArray(new float[]{4, 1, 1, 1})); // Ajuste de anchos para Descripción y Cantidad
             table.setWidth(UnitValue.createPercentValue(100)); // Ancho de la tabla al 100%
 
             // Encabezados de la tabla - ORDEN CORREGIDO
@@ -142,7 +142,7 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
 
             Factura factura = pedido.getFactura();
             if (factura != null) {
-                document.add(new Paragraph("Total Venta (MP): $" + String.format("%.2f", factura.getTotalVenta()))
+                document.add(new Paragraph("Total Venta: $" + String.format("%.2f", factura.getTotalVenta()))
                         .setTextAlignment(TextAlignment.RIGHT));
                 document.add(new Paragraph("Forma de Pago: " + factura.getFormaPago().name())
                         .setTextAlignment(TextAlignment.RIGHT));
@@ -245,9 +245,15 @@ public class FacturaServiceImpl extends BaseServiceImpl<Factura, Long> implement
             document.add(new Paragraph("\n"));
 
             // Totales de la Nota de Crédito
-            document.add(new Paragraph("TOTAL NOTA DE CRÉDITO: $" + String.format("%.2f", totalNotaCredito))
-                    .setTextAlignment(TextAlignment.RIGHT)
-                    .setFontSize(14));
+            if(notaCredito.getFacturaAnulada().getPedido().getTipoEnvio() == TipoEnvio.RETIRO_EN_LOCAL){
+                document.add(new Paragraph("TOTAL NOTA DE CRÉDITO (Con Descuento Aplicado): $" + String.format("%.2f", notaCredito.getFacturaAnulada().getTotalVenta()))
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setFontSize(14));
+            }else {
+                document.add(new Paragraph("TOTAL NOTA DE CRÉDITO: $" + String.format("%.2f", totalNotaCredito))
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setFontSize(14));
+            }
 
         } catch (Exception e) { // <-- El catch va aquí
             System.err.println("Error al generar el PDF de la Nota de Crédito: " + e.getMessage());

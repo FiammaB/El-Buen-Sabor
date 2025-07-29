@@ -28,11 +28,4 @@ public class Usuario extends BaseEntity {
     @Column(nullable = false)
     private boolean primerInicio = true;
 
-    private boolean baja;
-    // 👇 AÑADÍ ESTE MÉTODO
-    public boolean isBaja() {
-        return baja;
-    };
-
-
 }

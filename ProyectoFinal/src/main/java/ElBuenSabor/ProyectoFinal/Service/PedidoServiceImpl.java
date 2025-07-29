@@ -326,6 +326,13 @@ public class PedidoServiceImpl extends BaseServiceImpl<Pedido, Long> implements 
             // --- DEBUG: Confirmar el valor de urlPdf justo antes del save final ---
             System.out.println("DEBUG FINAL: Valor de urlPdf en factura antes del save: " + (factura != null ? factura.getUrlPdf() : "FACTURA ES NULL"));
             System.out.println("DEBUG FINAL: Llamando a baseRepository.save(pedido) para Pedido ID: " + pedido.getId());
+            // ----- INICIO DE LA CORRECCIÓN PUNTUAL -----
+// SOLUCIÓN: Recargamos la entidad Persona desde la base de datos para obtener la versión más actualizada (con el teléfono nuevo)
+            Persona personaActualizada = personaRepository.findById(pedido.getPersona().getId())
+                    .orElse(pedido.getPersona()); // Mantenemos la original como fallback (no debería pasar)
+
+            pedido.setPersona(personaActualizada);
+// ----- FIN DE LA CORRECCIÓN -----
             baseRepository.save(pedido);
             System.out.println("DEBUG FINAL: baseRepository.save(pedido) completado.");
 
